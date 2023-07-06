@@ -15,13 +15,13 @@
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 import React from "react";
-import {Maps} from "./mapList";
-import {FancyBox} from "../../components/fancyBox";
+import { Maps } from "./mapList";
+import { FancyBox } from "../../components/fancyBox";
 import PropTypes from "prop-types";
 
 export class PanelChooseMap extends React.Component {
     render() {
-        const mapImg = require(`../../../diplomacy/maps/svg/${this.props.params.map.svgName()}.svg`);
+        const mapImg = require(`../../../../../maps/svg/${this.props.params.map.svgName()}.svg`);
         const mapEntries = [];
         let count = 0;
         for (let mapInfo of Maps) {
@@ -30,9 +30,9 @@ export class PanelChooseMap extends React.Component {
                 mapEntries.push(
                     <div key={count} className="mb-1 d-flex flex-row">
                         <button type="button"
-                                className="btn btn-secondary btn-sm flex-grow-1 mr-1"
-                                onMouseOver={() => this.props.onUpdateParams({map: mapInfo})}
-                                onClick={() => this.props.forward()}>
+                            className="btn btn-secondary btn-sm flex-grow-1 mr-1"
+                            onMouseOver={() => this.props.onUpdateParams({ map: mapInfo })}
+                            onClick={() => this.props.forward()}>
                             {mapInfo.title}
                         </button>
                         <button type="button" className="btn btn-outline-secondary btn-sm" disabled={true}>
@@ -48,17 +48,17 @@ export class PanelChooseMap extends React.Component {
                     <div key={count}>
                         <div className="mb-1 d-flex flex-row">
                             <button type="button"
-                                    className="btn btn-secondary btn-sm flex-grow-1 mr-1"
-                                    onMouseOver={() => this.props.onUpdateParams({map: defaultVariant})}
-                                    onClick={() => this.props.forward()}>
+                                className="btn btn-secondary btn-sm flex-grow-1 mr-1"
+                                onMouseOver={() => this.props.onUpdateParams({ map: defaultVariant })}
+                                onClick={() => this.props.forward()}>
                                 {mapInfo.title} ({defaultVariant.title})
                             </button>
                             <button type="button"
-                                    className="btn btn-outline-secondary btn-sm collapsed"
-                                    data-toggle="collapse"
-                                    data-target={`#${dropDownID}`}
-                                    aria-expanded={false}
-                                    aria-controls={dropDownID}>
+                                className="btn btn-outline-secondary btn-sm collapsed"
+                                data-toggle="collapse"
+                                data-target={`#${dropDownID}`}
+                                aria-expanded={false}
+                                aria-controls={dropDownID}>
                                 <span className="unroll"><strong>+</strong></span>
                                 <span className="roll"><strong>-</strong></span>
                             </button>
@@ -72,9 +72,9 @@ export class PanelChooseMap extends React.Component {
                                         views.push(
                                             <div key={variantInfo.name} className="mb-1">
                                                 <button type="button"
-                                                        className="btn btn-outline-secondary btn-sm btn-block"
-                                                        onMouseOver={() => this.props.onUpdateParams({map: variantInfo})}
-                                                        onClick={() => this.props.forward()}>
+                                                    className="btn btn-outline-secondary btn-sm btn-block"
+                                                    onMouseOver={() => this.props.onUpdateParams({ map: variantInfo })}
+                                                    onClick={() => this.props.forward()}>
                                                     {variantInfo.title}
                                                 </button>
                                             </div>
@@ -97,7 +97,7 @@ export class PanelChooseMap extends React.Component {
                         </div>
                     </div>
                     <div className="col-md">
-                        <img className="img-fluid" src={mapImg} alt={this.props.params.map.title}/>
+                        <img className="img-fluid" src={mapImg} alt={this.props.params.map.title} />
                     </div>
                 </div>
             </FancyBox>

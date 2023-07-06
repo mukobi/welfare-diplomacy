@@ -64,7 +64,7 @@ to_saved_game_format(game, output_path='game.json')
 
 It is also possible to install a web interface in React to play against bots and/or other humans and to visualize games.
 
-The web interface can be installed with:
+The web interface can be installed on Linux with:
 
 ```bash
 # Install NVM
@@ -82,6 +82,35 @@ pip install -r requirements_dev.txt
 cd diplomacy/web
 npm install .
 npm install . --only=dev
+
+# In a terminal window or tab - Launch React server
+npm start
+
+# In another terminal window or tab - Launch diplomacy server
+python -m diplomacy.server.run
+```
+
+Or on Windows with WSL and Chocolatey with:
+```bash
+# Install NVM
+choco install nvm
+
+# Install Node (must be <=v16)
+nvm install 16
+nm use 16
+
+# Clone repo
+git clone https://github.com/diplomacy/diplomacy.git
+
+# Install package locally
+# You may want to install it in a conda or virtualenv environment
+cd diplomacy/
+pip install -r requirements_dev.txt
+
+# Build node modules
+cd diplomacy/web
+npm install .
+npm install . --only=dev  # Broken/unecessary?
 
 # In a terminal window or tab - Launch React server
 npm start
