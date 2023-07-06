@@ -52,7 +52,8 @@ export const Maps = [
         new VariantInfo('standard_age_of_empires_2', 'Age of empires II'),
         new VariantInfo('standard_fleet_rome', 'Fleet at Rome'),
         new VariantInfo('standard_france_austria', 'France VS Austria'),
-        new VariantInfo('standard_germany_italy', 'Germany VS Italy')
+        new VariantInfo('standard_germany_italy', 'Germany VS Italy'),
+        new VariantInfo('standard_welfare', 'Welfare Diplomacy')
     ]),
     new MapInfo('ancmed', 'Ancient Mediterranean', [
         new VariantInfo('ancmed', 'Default'),
