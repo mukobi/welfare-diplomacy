@@ -15,17 +15,17 @@
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 /*eslint no-unused-vars: ["error", { "args": "none" }]*/
-import {STRINGS} from "../utils/strings";
-import {UTILS} from "../utils/utils";
-import {REQUESTS} from "../communication/requests";
-import {RESPONSES} from "../communication/responses";
-import {NOTIFICATIONS} from "../communication/notifications";
-import {RESPONSE_MANAGERS} from "./response_managers";
-import {NOTIFICATION_MANAGERS} from "./notification_managers";
-import {Future} from "../utils/future";
-import {FutureEvent} from "../utils/future_event";
-import {RequestFutureContext} from "./request_future_context";
-import {Diplog} from "../utils/diplog";
+import { STRINGS } from "../utils/strings";
+import { UTILS } from "../utils/utils";
+import { REQUESTS } from "../communication/requests";
+import { RESPONSES } from "../communication/responses";
+import { NOTIFICATIONS } from "../communication/notifications";
+import { RESPONSE_MANAGERS } from "./response_managers";
+import { NOTIFICATION_MANAGERS } from "./notification_managers";
+import { Future } from "../utils/future";
+import { FutureEvent } from "../utils/future_event";
+import { RequestFutureContext } from "./request_future_context";
+import { Diplog } from "../utils/diplog";
 
 class Reconnection {
     constructor(connection) {

@@ -14,9 +14,9 @@
 //  You should have received a copy of the GNU Affero General Public License along
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
-import {STRINGS} from "../utils/strings";
-import {UTILS} from "../utils/utils";
-import {REQUESTS} from "../communication/requests";
+import { STRINGS } from "../utils/strings";
+import { UTILS } from "../utils/utils";
+import { REQUESTS } from "../communication/requests";
 
 /** Class Channel. **/
 export class Channel {
@@ -193,11 +193,11 @@ export class Channel {
     }
 
     wait(parameters, game) {
-        return this._req('set_wait_flag', {wait: true}, undefined, parameters, game);
+        return this._req('set_wait_flag', { wait: true }, undefined, parameters, game);
     }
 
     noWait(parameters, game) {
-        return this._req('set_wait_flag', {wait: false}, undefined, parameters, game);
+        return this._req('set_wait_flag', { wait: false }, undefined, parameters, game);
     }
 
     vote(parameters, game) {
@@ -235,22 +235,22 @@ export class Channel {
     }
 
     start(parameters, game) {
-        return this._req('set_game_status', {status: STRINGS.ACTIVE}, undefined, parameters, game);
+        return this._req('set_game_status', { status: STRINGS.ACTIVE }, undefined, parameters, game);
     }
 
     pause(parameters, game) {
-        return this._req('set_game_status', {status: STRINGS.PAUSED}, undefined, parameters, game);
+        return this._req('set_game_status', { status: STRINGS.PAUSED }, undefined, parameters, game);
     }
 
     resume(parameters, game) {
-        return this._req('set_game_status', {status: STRINGS.ACTIVE}, undefined, parameters, game);
+        return this._req('set_game_status', { status: STRINGS.ACTIVE }, undefined, parameters, game);
     }
 
     cancel(parameters, game) {
-        return this._req('set_game_status', {status: STRINGS.CANCELED}, undefined, parameters, game);
+        return this._req('set_game_status', { status: STRINGS.CANCELED }, undefined, parameters, game);
     }
 
     draw(parameters, game) {
-        return this._req('set_game_status', {status: STRINGS.COMPLETED}, undefined, parameters, game);
+        return this._req('set_game_status', { status: STRINGS.COMPLETED }, undefined, parameters, game);
     }
 }

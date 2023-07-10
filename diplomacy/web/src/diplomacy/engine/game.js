@@ -14,12 +14,12 @@
 //  You should have received a copy of the GNU Affero General Public License along
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
-import {UTILS} from "../utils/utils";
-import {STRINGS} from "../utils/strings";
-import {SortedDict} from "../utils/sorted_dict";
-import {Power} from "./power";
-import {Message} from "./message";
-import {Order} from "../../gui/utils/order";
+import { UTILS } from "../utils/utils";
+import { STRINGS } from "../utils/strings";
+import { SortedDict } from "../utils/sorted_dict";
+import { Power } from "./power";
+import { Message } from "./message";
+import { Order } from "../../gui/utils/order";
 
 export function comparablePhase(shortPhaseName) {
     /** Return a unique integer corresponding to given short phase name, so that
@@ -33,8 +33,8 @@ export function comparablePhase(shortPhaseName) {
         return Number.MAX_SAFE_INTEGER;
     if (shortPhaseName.length !== 6)
         throw new Error(`Invalid short phase name: ${shortPhaseName}`);
-    const seasonOrder = {S: 0, F: 1, W: 2};
-    const stepOrder = {M: 0, R: 1, A: 2};
+    const seasonOrder = { S: 0, F: 1, W: 2 };
+    const stepOrder = { M: 0, R: 1, A: 2 };
     const phaseSeason = shortPhaseName[0];
     const phaseYear = parseInt(shortPhaseName.substring(1, 5), 10);
     const phaseStep = shortPhaseName[5];

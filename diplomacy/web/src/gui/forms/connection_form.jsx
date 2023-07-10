@@ -15,10 +15,10 @@
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 import React from 'react';
-import {Forms} from "../components/forms";
-import {UTILS} from "../../diplomacy/utils/utils";
+import { Forms } from "../components/forms";
+import { UTILS } from "../../diplomacy/utils/utils";
 import PropTypes from "prop-types";
-import {DipStorage} from "../utils/dipStorage";
+import { DipStorage } from "../utils/dipStorage";
 
 export class ConnectionForm extends React.Component {
     constructor(props) {
@@ -46,14 +46,14 @@ export class ConnectionForm extends React.Component {
             hostname: window.location.hostname,
             port: (window.location.protocol.toLowerCase() === 'https:') ? 8433 : 8432,
             username: '',
-            password: '',
+            password: 'password',
             showServerFields: false
         };
     }
 
     updateServerFieldsView() {
         DipStorage.setConnectionshowServerFields(!this.state.showServerFields);
-        this.setState({showServerFields: !this.state.showServerFields});
+        this.setState({ showServerFields: !this.state.showServerFields });
     }
 
     onChange(newState) {
@@ -82,31 +82,31 @@ export class ConnectionForm extends React.Component {
                 {Forms.createRow(
                     Forms.createColLabel('username', 'username:'),
                     <input className={'form-control'} type={'text'} id={'username'}
-                           value={Forms.getValue(this.state, 'username')} onChange={onChange}/>
+                        value={Forms.getValue(this.state, 'username')} onChange={onChange} />
                 )}
                 {Forms.createRow(
                     Forms.createColLabel('password', 'password:'),
                     <input className={'form-control'} type={'password'} id={'password'}
-                           value={Forms.getValue(this.state, 'password')} onChange={onChange}/>
+                        value={Forms.getValue(this.state, 'password')} onChange={onChange} />
                 )}
                 <div>
                     <div className={this.state.showServerFields ? 'mb-2' : 'mb-4'}>
-                    <span className={'button-server'} onClick={this.updateServerFieldsView}>
-                        server settings {this.state.showServerFields ? UTILS.html.UNICODE_BOTTOM_ARROW : UTILS.html.UNICODE_TOP_ARROW}
-                    </span>
+                        <span className={'button-server'} onClick={this.updateServerFieldsView}>
+                            server settings {this.state.showServerFields ? UTILS.html.UNICODE_BOTTOM_ARROW : UTILS.html.UNICODE_TOP_ARROW}
+                        </span>
                     </div>
                     {this.state.showServerFields && (
                         <div className={'mb-4'}>
                             {Forms.createRow(
                                 <label className={'col'} htmlFor={'hostname'}>hostname:</label>,
                                 <input className={'form-control'} type={'text'} id={'hostname'}
-                                       value={Forms.getValue(this.state, 'hostname')} onChange={onChange}/>
+                                    value={Forms.getValue(this.state, 'hostname')} onChange={onChange} />
                             )}
                             {Forms.createRow(
                                 <label className={'col'} htmlFor={'port'}>port:</label>,
                                 <input className={'form-control'} type={'number'} id={'port'}
-                                       value={Forms.getValue(this.state, 'port')}
-                                       onChange={onChange}/>
+                                    value={Forms.getValue(this.state, 'port')}
+                                    onChange={onChange} />
                             )}
                         </div>
                     )}
