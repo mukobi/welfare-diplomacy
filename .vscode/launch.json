@@ -12,11 +12,11 @@
             "justMyCode": true
         },
         {
-            "command": "npm run start",
-            "name": "Web App Start",
+            "name": "Launch Edge",
             "request": "launch",
-            "cwd": "${workspaceFolder}/diplomacy/web",
-            "type": "node-terminal",
+            "type": "msedge",
+            "url": "http://localhost:3000",
+            "webRoot": "${workspaceFolder}"
         }
     ]
 }
