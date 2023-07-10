@@ -457,6 +457,7 @@ class Game(Jsonable):
     real_time = property(lambda self: 'REAL_TIME' in self.rules)
     start_master = property(lambda self: 'START_MASTER' in self.rules)
     solitaire = property(lambda self: 'SOLITAIRE' in self.rules)
+    welfare = property(lambda self: 'WELFARE' in self.rules)
 
     # ==============================================================
     # Application/network methods (mainly used for connected games).
