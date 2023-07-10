@@ -16,13 +16,13 @@
 // ==============================================================================
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Panels} from "./panelList";
-import {PanelChooseMap} from "./panelChooseMap";
-import {PanelChoosePlayers} from "./panelChoosePlayers";
-import {PanelChoosePower} from "./panelChoosePower";
-import {PanelChooseSettings} from "./panelChooseSettings";
-import {Maps} from "./mapList";
-import {UTILS} from "../../../diplomacy/utils/utils";
+import { Panels } from "./panelList";
+import { PanelChooseMap } from "./panelChooseMap";
+import { PanelChoosePlayers } from "./panelChoosePlayers";
+import { PanelChoosePower } from "./panelChoosePower";
+import { PanelChooseSettings } from "./panelChooseSettings";
+import { Maps } from "./mapList";
+import { UTILS } from "../../../diplomacy/utils/utils";
 import './gameCreationWizard.css';
 
 export class GameCreationWizard extends React.Component {
@@ -69,7 +69,7 @@ export class GameCreationWizard extends React.Component {
                 rules: rules
             });
         } else
-            this.setState({panel: panelID, registration_password: ''});
+            this.setState({ panel: panelID, registration_password: '' });
     }
 
     backward(step) {
@@ -84,28 +84,28 @@ export class GameCreationWizard extends React.Component {
         switch (this.state.panel) {
             case Panels.CHOOSE_MAP:
                 return <PanelChooseMap forward={this.forward}
-                                       params={this.state}
-                                       onUpdateParams={this.updateParams}
-                                       cancel={this.props.onCancel}/>;
+                    params={this.state}
+                    onUpdateParams={this.updateParams}
+                    cancel={this.props.onCancel} />;
             case Panels.CHOOSE_PLAYERS:
                 return <PanelChoosePlayers backward={this.backward}
-                                           forward={this.forward}
-                                           onUpdateParams={this.updateParams}
-                                           nbPowers={this.props.availableMaps[this.state.map.name].powers.length}
-                                           cancel={this.props.onCancel}/>;
+                    forward={this.forward}
+                    onUpdateParams={this.updateParams}
+                    nbPowers={this.props.availableMaps[this.state.map.name].powers.length}
+                    cancel={this.props.onCancel} />;
             case Panels.CHOOSE_POWER:
                 return <PanelChoosePower backward={this.backward}
-                                         forward={this.forward}
-                                         onUpdateParams={this.updateParams}
-                                         powers={this.props.availableMaps[this.state.map.name].powers}
-                                         cancel={this.props.onCancel}/>;
+                    forward={this.forward}
+                    onUpdateParams={this.updateParams}
+                    powers={this.props.availableMaps[this.state.map.name].powers}
+                    cancel={this.props.onCancel} />;
             case Panels.CHOOSE_SETTINGS:
                 return <PanelChooseSettings backward={this.backward}
-                                            forward={this.forward}
-                                            onUpdateParams={this.updateParams}
-                                            username={this.props.username}
-                                            params={this.state}
-                                            cancel={this.props.onCancel}/>;
+                    forward={this.forward}
+                    onUpdateParams={this.updateParams}
+                    username={this.props.username}
+                    params={this.state}
+                    cancel={this.props.onCancel} />;
             default:
                 return '';
         }
