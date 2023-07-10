@@ -12,15 +12,6 @@
             "justMyCode": true
         },
         {
-            "type": "node",
-            "request": "launch",
-            "name": "Launch Program",
-            "skipFiles": [
-                "<node_internals>/**"
-            ],
-            "program": "${file}"
-        },
-        {
             "command": "npm run start",
             "name": "Web App Start",
             "request": "launch",
