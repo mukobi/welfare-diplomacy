@@ -22,7 +22,7 @@ class Dict {
 export const UTILS = {
     NB_CONNECTION_ATTEMPTS: 12,
     ATTEMPT_DELAY_SECONDS: 5,
-    REQUEST_TIMEOUT_SECONDS: 30,
+    REQUEST_TIMEOUT_SECONDS: 30 * 999, // NOTE: Extended for debugging
 
     /** Return a random integer in interval [from, to). **/
     randomInteger: function (from, to) {
