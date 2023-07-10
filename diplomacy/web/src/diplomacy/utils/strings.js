@@ -62,6 +62,7 @@ export const STRINGS = {
         'SHARED_VICTORY',
         'SOLITAIRE',
         'START_MASTER',
+        'WELFARE',
     ],
     PUBLIC_RULES: [
         'ALWAYS_WAIT',
@@ -82,5 +83,6 @@ export const STRINGS = {
         'SHARED_VICTORY',
         'SOLITAIRE',
         'START_MASTER',
+        'WELFARE',
     ]
 };
