@@ -59,8 +59,9 @@ class Power(Jsonable):
         - **tokens** - Only for server power: set of tokens of current power controlled (if not None).
         - **units** - Contains the list of units (e.g. ['A PAR', 'A MAR', ...]
         - **vote** - Only for omniscient, player and server power: power vote ('yes', 'no' or 'neutral').
+        - **welfare_points** - Int cumulatively counting the number of welfare points the power has
     """
-    __slots__ = ['game', 'name', 'abbrev', 'adjust', 'centers', 'units', 'influence', 'homes',
+    __slots__ = ['game', 'name', 'abbrev', 'adjust', 'centers', 'units', 'welfare_points', 'influence', 'homes',
                  'retreats', 'goner', 'civil_disorder', 'orders', 'role', 'controller', 'vote',
                  'order_is_set', 'wait', 'tokens']
     model = {
@@ -80,6 +81,7 @@ class Power(Jsonable):
         strings.UNITS: parsing.DefaultValueType(parsing.SequenceType(str), []),
         strings.VOTE: parsing.DefaultValueType(parsing.EnumerationType(strings.ALL_VOTE_DECISIONS), strings.NEUTRAL),
         strings.WAIT: parsing.DefaultValueType(bool, True),
+        strings.WELFARE_POINTS: parsing.DefaultValueType(int, 0),
     }
 
     def __init__(self, game=None, name=None, **kwargs):
@@ -88,6 +90,7 @@ class Power(Jsonable):
         self.abbrev = None
         self.adjust, self.centers, self.units, self.influence = [], [], [], []
         self.homes = None
+        self.welfare_points = 0
         self.retreats = {}
         self.goner = self.civil_disorder = 0
         self.orders = {}
@@ -117,6 +120,7 @@ class Power(Jsonable):
         text += '\nCD' if show_cd else ''
         text += '\nINHABITS %s' % ' '.join(self.homes) if show_inhabits else ''
         text += '\nOWNS %s' % ' '.join(self.centers) if show_owns else ''
+        text += '\nWELFARE POINTS %d' % self.welfare_points
         if show_retreats:
             text += '\n'.join([''] + [' '.join([unit, '-->'] + places) for unit, places in self.retreats.items()])
         text = '\n'.join([text] + self.units + self.adjust)
@@ -173,6 +177,7 @@ class Power(Jsonable):
             self.homes = None
             self.centers, self.units, self.influence = [], [], []
             self.retreats = {}
+            self.welfare_points = 0
 
         # Initialize the order-related parameters
         if reinit_orders:
@@ -235,6 +240,9 @@ class Power(Jsonable):
                 game.update_hash(self.name, unit_type=unit[0], loc=unit[2:])
                 self.units.append(unit)
                 self.influence.append(unit[2:5])
+
+        # Reset welfare points
+        self.welfare_points = 0
 
     def merge(self, other_power):
         """ Transfer all units, centers, and homes of the other_power to this power
