@@ -239,6 +239,7 @@ def on_get_all_possible_orders(server, request, connection_handler):
         :type request: diplomacy.communication.requests.GetAllPossibleOrders
     """
     level = verify_request(server, request, connection_handler, require_master=False)
+    assert level is not None and level.game is not None
     return responses.DataPossibleOrders(possible_orders=level.game.get_all_possible_orders(),
                                         orderable_locations=level.game.get_orderable_locations(),
                                         request_id=request.request_id)

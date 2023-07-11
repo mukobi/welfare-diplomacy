@@ -20,6 +20,7 @@
 from collections.__init__ import namedtuple
 
 from diplomacy.communication import notifications
+from diplomacy.engine.game import Game
 from diplomacy.server.notifier import Notifier
 
 from diplomacy.utils import strings, exceptions
@@ -70,7 +71,7 @@ class GameRequestLevel:
             :type power_name: str
         """
         assert action_level in {'power', 'observer', 'omniscient', 'master'}
-        self.game = game
+        self.game: Game = game
         self.power_name = power_name  # type: str
         self.__action_level = action_level  # type: str
 
