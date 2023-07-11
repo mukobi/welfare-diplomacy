@@ -181,6 +181,11 @@
         of the game.
 
 ==================================================================
+** WELFARE ** ()
+        You can build fewer units than your current supply center count, and the difference each year adds to your Welfare Points (WP). Scoring is based on accumulated WP at the end of the game, meaning powers have incentives to trade off military conquest with making peace to mutually benefit their nations. See https://docs.google.com/document/d/1vbUSG2x-n31NX7Bpg4VVgxhJFe4sIF44C-hYN5jJ6Ts/edit#heading=h.yqt1sx7nropl for more specific rule changes.
+
+
+==================================================================
 *******************************************************
 ** VARIANT standard **
 *******************************************************
@@ -224,6 +229,7 @@
 <!-- RULE NO_OBSERVATIONS -->
 <!-- RULE SOLITAIRE +NO_DEADLINE +CD_DUMMIES +ALWAYS_WAIT -->
 <!-- RULE START_MASTER -->
+<!-- RULE WELFARE -->
 <!-- RULE GROUP 2 Player Press -->
 <!-- RULE NO_PRESS -PUBLIC_PRESS -->
 <!-- RULE PUBLIC_PRESS -NO_PRESS -->

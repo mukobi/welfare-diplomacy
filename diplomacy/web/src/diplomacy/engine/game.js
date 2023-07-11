@@ -311,6 +311,10 @@ export class Game {
         return this.rules.includes('NO_CHECK');
     }
 
+    isWelfare() {
+        return this.rules.includes('WELFARE');
+    }
+
     setPhaseData(phaseData) {
         this.setState(phaseData.state);
         this.clearOrders();
