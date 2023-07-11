@@ -268,7 +268,7 @@ class Game(Jsonable):
         self.meta_rules = []
         self.phase, self.note = '', ''
         self.map = None  # type: Map
-        self.powers = {}
+        self.powers: dict[str, Power] = {}
         self.outcome, self.error, self.popped = [], [], []
         self.orders, self.ordered_units = {}, {}
         self.phase_type = None
@@ -996,23 +996,23 @@ class Game(Jsonable):
 
         # Single power
         if power_name is not None:
+            assert power is not None
             current_phase_type = self.get_current_phase()[-1]
 
             # Adjustment
             if current_phase_type == 'A':
                 build_count = len(power.centers) - len(power.units)
+                orderable_locs = []
+
+                # Disbanding - All units location (always available in Welfare)
+                if build_count < 0 or self.welfare:
+                    orderable_locs.extend([unit[2:5] for unit in power.units])
 
                 # Building - All unoccupied homes
                 if build_count > 0:
-                    orderable_locs = self._build_sites(power)
+                    orderable_locs.extend(self._build_sites(power))
 
-                # Nothing can be built.
-                elif build_count == 0:
-                    orderable_locs = []
-
-                # Disbanding - All units location
-                else:
-                    orderable_locs = [unit[2:5] for unit in power.units]
+                # Else nothing can be built.
 
             # Retreating
             elif current_phase_type == 'R':
@@ -1081,7 +1081,7 @@ class Game(Jsonable):
             return order_status
         return {}
 
-    def get_power(self, power_name):
+    def get_power(self, power_name) -> Power:
         """ Retrieves a power instance from given power name.
 
             :param power_name: name of power instance to retrieve. Power name must be as given
@@ -1864,7 +1864,7 @@ class Game(Jsonable):
                 power_build_sites = build_sites[power_name]
 
                 # Disband
-                if power_build_count < 0:
+                if power_build_count < 0 or self.welfare:
                     for unit in power_units[power_name]:
                         unit_on_coast = '/' in unit
                         order = unit + ' D'
@@ -2899,8 +2899,8 @@ class Game(Jsonable):
             # Capturing supply centers
             self._capture_centers()
 
-            # If completed, can't skip
-            if self.phase == 'COMPLETED':
+            # If completed or Welfare variant, can't skip
+            if self.phase == 'COMPLETED' or self.welfare:
                 return 0
 
             # If we have units to remove or to build, we need to process
@@ -3376,7 +3376,7 @@ class Game(Jsonable):
         # Calculating if the power can build or remove units
         adjust, places = [], []
         need, sites = len(power.centers) - len(power.units), []
-        order_type = 'D' if need < 0 else 'B'
+        valid_order_types = 'DB' if self.welfare else 'D' if need < 0 else 'B'
 
         # If we can build, calculating list of possible build locations
         if need > 0:
@@ -3401,7 +3401,7 @@ class Game(Jsonable):
             word = self._expand_order([order]) if expand else order.split()
 
             # Checking if unit can Build/Disband, otherwise voiding order
-            if word[-1] == order_type:
+            if word[-1] in valid_order_types:
                 pass
             elif word[-1] in 'BD':
                 adjust += ['VOID ' + order]
@@ -4288,7 +4288,7 @@ class Game(Jsonable):
             # Emptying the results for the Adjustments Phase
             for power in self.powers.values():
                 self.ordered_units.setdefault(power.name, [])
-                for order in power.adjust[:]:
+                for order in power.adjust:
 
                     # Void order - Marking it as such in results
                     if order.split()[0] == 'VOID':
@@ -4307,40 +4307,63 @@ class Game(Jsonable):
                         if unit not in self.ordered_units[power.name]:
                             self.ordered_units[power.name] += [unit]
 
-            # CIVIL DISORDER
+            # CIVIL DISORDER - If the player didn't enter orders matching the number of units to
+            # build/disband, then we'll disband down to the build limit or waive unused builds.
             for power in self.powers.values():
                 diff = len(power.units) - len(power.centers)
 
-                # Detecting missing orders
-                for order in power.adjust[:]:
-                    if diff == 0:
+                # In Welfare, allow for either building or disbanding to supply count, but not both
+                if self.welfare and len(power.adjust) > 0:
+                    first_order_type = power.adjust[0].split()[-1]
+                    assert first_order_type in 'BD'
+                    for order in power.adjust:
                         word = order.split()
                         unit = ' '.join(word[:2])
-                        self.result.setdefault(unit, []).append(VOID)
-                        power.adjust.remove(order)
-
-                    # Looking for builds
-                    elif diff < 0:
-                        word = order.split()
-                        unit = ' '.join(word[:2])
-                        if word[-1] == 'B':
-                            diff += 1
+                        if word[-1] == first_order_type:
+                            if first_order_type == 'D':
+                                diff -= 1
+                                disbanded_units.add(unit)
+                            else:
+                                diff += 1
                         else:
+                            # Invalid order, void it
                             self.result.setdefault(unit, []).append(VOID)
                             power.adjust.remove(order)
 
-                    # Looking for removes
-                    else:
-                        word = order.split()
-                        unit = ' '.join(word[:2])
-                        if word[-1] == 'D':
-                            diff -= 1
-                            disbanded_units.add(unit)
-                        else:
+                # Detecting missing orders. This loop looks through the inputted adjustments and
+                # determines if they add up correctly or not.
+                else:
+                    for order in power.adjust:
+                        # No more builds or disbands allowed, just remove the order
+                        if diff == 0:
+                            word = order.split()
+                            unit = ' '.join(word[:2])
                             self.result.setdefault(unit, []).append(VOID)
                             power.adjust.remove(order)
+
+                        # Looking for builds
+                        elif diff < 0:
+                            word = order.split()
+                            unit = ' '.join(word[:2])
+                            if word[-1] == 'B':
+                                diff += 1
+                            else:
+                                self.result.setdefault(unit, []).append(VOID)
+                                power.adjust.remove(order)
+
+                        # Looking for removes
+                        else:
+                            word = order.split()
+                            unit = ' '.join(word[:2])
+                            if word[-1] == 'D':
+                                diff -= 1
+                                disbanded_units.add(unit)
+                            else:
+                                self.result.setdefault(unit, []).append(VOID)
+                                power.adjust.remove(order)
 
                 if not diff:
+                    # Units to be built/disbanded equals supply count, no changes needed
                     continue
 
                 power.civil_disorder = 1
@@ -4379,7 +4402,7 @@ class Game(Jsonable):
                         power.adjust += ['%s D' % goner]
                         self.result.setdefault(goner, [])
 
-                # Need to build units
+                # Leaving units unbuilt, so add waive orders to fill them.
                 else:
                     sites = self._build_sites(power)
                     need = min(self._build_limit(power, sites), -diff)
@@ -4452,12 +4475,15 @@ class Game(Jsonable):
 
                 # Disband
                 elif word[-1] == 'D' and self.phase_type == 'A':
-                    if diff > 0 and ' '.join(word[:2]) in power.units:
+                    if (diff > 0 or self.welfare) and ' '.join(word[:2]) in power.units:
+                        # More units than centers, so disbanding of owned units is allowed
+                        # (always allowed in Welfare)
                         self.update_hash(power.name, unit_type=unit[0], loc=unit[2:])
                         power.units.remove(' '.join(word[:2]))
                         diff -= 1
                         self.result[unit] += [OK]
                     else:
+                        # Fewer units than centers, so disbanding is not allowed
                         self.result[unit] += [VOID]
                     if unit not in self.ordered_units[power.name]:
                         self.ordered_units[power.name] += [unit]
@@ -4483,7 +4509,7 @@ class Game(Jsonable):
                 self.update_hash(power.name, unit_type=dis_unit[0], loc=dis_unit[2:], is_dislodged=True)
             power.adjust, power.retreats, power.civil_disorder = [], {}, 0
 
-        # Disbanding
+        # Disbanding through dislodgement
         for unit in [u for u in self.dislodged]:
             self.result.setdefault(unit, [])
             if DISBAND not in self.result[unit]:
