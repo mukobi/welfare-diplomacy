@@ -4518,6 +4518,13 @@ class Game(Jsonable):
             if unit not in self.popped:
                 self.popped += [unit]
 
+        # Welfare variant: Calculate and accumulate welfare points
+        if self.welfare:
+            for power in self.powers.values():
+                welfare_point_gain = len(power.centers) - len(power.units)
+                assert welfare_point_gain >= 0  # For now, should be impossible to lose WP
+                power.welfare_points += welfare_point_gain
+
         return []
 
     def _resolve(self):
