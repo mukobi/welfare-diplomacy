@@ -86,13 +86,19 @@ class Renderer:
         xml_map = minidom.parseString(self.xml_map)
 
         # Setting phase and note
-        nb_centers = [(power.name[:3], len(power.centers))
+        nb_power_data = [(power.name[:3], len(power.centers), len(power.units), power.welfare_points)
                       for power in self.game.powers.values()
                       if not power.is_eliminated()]
-        nb_centers = sorted(nb_centers, key=lambda key: key[1], reverse=True)
-        nb_centers_per_power = ' '.join(['{}: {}'.format(name, centers) for name, centers in nb_centers])
+        nb_power_data = sorted(nb_power_data, key=lambda key: key[1], reverse=True)
         xml_map = self._set_current_phase(xml_map, self.game.get_current_phase())
-        xml_map = self._set_note(xml_map, nb_centers_per_power, self.game.note)
+        if self.game.welfare:
+            # Display the center, unit, and welfare counts
+            nb_text = ' '.join([f'{name}: {centers}/{units}/{welfare}' for name, centers, units, welfare in nb_power_data])
+            xml_map = self._set_note(xml_map, nb_text, self.game.note)
+        else:
+            # Display just the center counts and any game notes
+            nb_centers_per_power = ' '.join([f'{name}: {centers}' for name, centers, *_ in nb_power_data])
+            xml_map = self._set_note(xml_map, nb_centers_per_power, self.game.note)
 
         # Adding units and influence
         for power in self.game.powers.values():
