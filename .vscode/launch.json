@@ -17,6 +17,23 @@
             "type": "msedge",
             "url": "http://localhost:3000",
             "webRoot": "${workspaceFolder}"
-        }
+        },
+        {
+            "name": "Python: SVG to React (Generate Maps and JS)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/diplomacy/web/svg_to_react.py",
+            "cwd": "${workspaceFolder}/diplomacy/web",
+            "args": [
+                "--input",
+                "../maps/svg/standard.svg",
+                "--output",
+                "src/gui/maps/standard/",
+                "--name",
+                "SvgStandard"
+            ],
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
     ]
 }
