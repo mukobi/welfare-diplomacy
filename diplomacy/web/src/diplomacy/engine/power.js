@@ -15,8 +15,8 @@
 //  with this program.  If not, see <https://www.gnu.org/licenses/>.
 // ==============================================================================
 /** Class Power. **/
-import {SortedDict} from "../utils/sorted_dict";
-import {STRINGS} from "../utils/strings";
+import { SortedDict } from "../utils/sorted_dict";
+import { STRINGS } from "../utils/strings";
 
 export class Power {
     constructor(name, role, game) {
@@ -34,6 +34,7 @@ export class Power {
         this.retreats = {};
         this.orders = [];
         this.influence = [];
+        this.welfare_points = 0;
     }
 
     isControlled() {
@@ -62,6 +63,7 @@ export class Power {
         this.units = powerState.units;
         this.retreats = powerState.retreats;
         this.influence = powerState.influence || [];
+        this.welfare_points = powerState.welfare_points;
         // Get orders.
         this.orders = [];
         if (this.game.phase.charAt(this.game.phase.length - 1) === 'M') {
@@ -92,6 +94,7 @@ export class Power {
         power.retreats = Object.assign({}, this.retreats);
         power.influence = this.influence.slice();
         power.orders = this.orders.slice();
+        power.welfare_points = this.welfare_points;
         return power;
     }
 

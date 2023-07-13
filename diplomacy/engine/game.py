@@ -1619,6 +1619,7 @@ class Game(Jsonable):
         state['influence'] = {}
         state['civil_disorder'] = {}
         state['builds'] = {}
+        state['welfare_points'] = {}
 
         # Setting powers data: units, centers, homes, influence and civil disorder.
         for power in self.powers.values():
@@ -1628,6 +1629,7 @@ class Game(Jsonable):
             state['homes'][power.name] = list(power.homes)
             state['influence'][power.name] = list(power.influence)
             state['civil_disorder'][power.name] = power.civil_disorder
+            state['welfare_points'][power.name] = power.welfare_points
             # Setting build
             state['builds'][power.name] = {}
             if self.phase_type != 'A':

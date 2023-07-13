@@ -606,13 +606,19 @@ export class %(classname)s extends React.Component {
         const nb_centers = [];
         for (let power of Object.values(game.powers)) {
             if (!power.isEliminated())
-                nb_centers.push([power.name.substr(0, 3), power.centers.length]);
+                nb_centers.push([power.name.substr(0, 3), power.centers.length, power.units.length, power.welfare_points]);
         }
         /* Sort nb_centers by descending number of centers. */
         nb_centers.sort((a, b) => {
-            return -(a[1] - b[1]) || a[0].localeCompare(b[0]);
+        return -(a[1] - b[1]) || a[0].localeCompare(b[0]);
         });
-        const nb_centers_per_power = nb_centers.map((couple) => (couple[0] + ': ' + couple[1])).join(' ');
+        let nb_centers_per_power;
+        if (game.isWelfare()) {
+            nb_centers_per_power = "C/U/W: " + nb_centers.map((power_data) => (power_data[0] + ' ' + power_data[1] + '/' + power_data[2] + '/' + power_data[3])).join(' ');
+        }
+        else {
+            nb_centers_per_power = nb_centers.map((couple) => (couple[0] + ': ' + couple[1])).join(' ');
+        }
         const note = game.note;
 
         /* Adding units, influence and orders. */
@@ -806,11 +812,10 @@ export class %(classname)s extends React.Component {
        'svg': '\n'.join(lines)})
 
     # Adding license and minifying
-    map_js_code = LICENSE_TEXT \
-                  + '\n/** Generated with parameters: %s **/\n' % args \
-                  + minify(map_js_code) \
-                  + '// eslint-disable-line semi'
-
+    map_js_code = (LICENSE_TEXT \
+                   + '\n/** Generated with parameters: %s **/\n' % args \
+                   + minify(map_js_code) \
+                   + '// eslint-disable-line semi')
     # Writing to disk
     with open(output_file_name, 'w') as file:
         file.write(map_js_code)

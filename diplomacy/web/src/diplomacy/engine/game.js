@@ -361,6 +361,10 @@ export class Game {
             for (let power_name of Object.keys(state.civil_disorder))
                 if (this.powers.hasOwnProperty(power_name))
                     this.powers[power_name].civil_disorder = state.civil_disorder[power_name];
+        if (state.welfare_points)
+            for (let power_name of Object.keys(state.welfare_points))
+                if (this.powers.hasOwnProperty(power_name))
+                    this.powers[power_name].welfare_points = state.welfare_points[power_name];
         if (state.builds)
             this.builds = state.builds;
     }
