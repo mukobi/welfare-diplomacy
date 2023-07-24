@@ -102,7 +102,7 @@ class Renderer:
         xml_map = self._set_current_phase(xml_map, self.game.get_current_phase())
         if self.game.welfare:
             # Display the center, unit, and welfare counts
-            nb_text = " ".join(
+            nb_text = "C/U/W: " + " ".join(
                 [
                     f"{name}: {centers}/{units}/{welfare}"
                     for name, centers, units, welfare in nb_power_data
