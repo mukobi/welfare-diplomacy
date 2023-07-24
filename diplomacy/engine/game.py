@@ -27,6 +27,7 @@ import sys
 import time
 import random
 from copy import deepcopy
+from typing import Optional
 
 from diplomacy import settings
 import diplomacy.utils.errors as err
@@ -353,7 +354,7 @@ class Game(Jsonable):
         self.no_rules = set()
         self.meta_rules = []
         self.phase, self.note = "", ""
-        self.map = None  # type: Map
+        self.map: Optional[Map] = None
         self.powers: dict[str, Power] = {}
         self.outcome, self.error, self.popped = [], [], []
         self.orders, self.ordered_units = {}, {}
@@ -368,10 +369,10 @@ class Game(Jsonable):
         )
         self.zobrist_hash = 0
         self.renderer = None
-        self.game_id = None  # type: str
-        self.map_name = None  # type: str
-        self.messages = None  # type: SortedDict
-        self.role = None  # type: str
+        self.game_id: str = ""
+        self.map_name: str = ""
+        self.messages: Optional[SortedDict] = None
+        self.role: str = ""
         self.rules = []
         (
             self.state_history,
@@ -379,8 +380,8 @@ class Game(Jsonable):
             self.result_history,
             self.message_history,
         ) = ({}, {}, {}, {})
-        self.status = None  # type: str
-        self.timestamp_created = None  # type: int
+        self.status: str = ""
+        self.timestamp_created: Optional[int] = None
         self.n_controls = None
         self.deadline = 0
         self.registration_password = None
@@ -457,7 +458,8 @@ class Game(Jsonable):
         # Game loaded.
 
         # Check map powers.
-        assert all(self.has_power(power_name) for power_name in self.map.powers)
+        assert self.map is not None
+        assert all(self.has_power(power_name) for power_name in self.map.powers)  # type: ignore
 
         # Check role and consistency between all power roles and game role.
         if self.has_power(self.role):
@@ -687,6 +689,7 @@ class Game(Jsonable):
 
     def has_power(self, power_name):
         """Return True if this game has given power name."""
+        assert self.map is not None
         return power_name in self.map.powers
 
     def has_expected_controls_count(self):
@@ -778,7 +781,9 @@ class Game(Jsonable):
         :rtype: int
         """
         timestamp = self.timestamp_created
+        assert timestamp is not None
         if self.state_history:
+            assert isinstance(self.state_history, SortedDict)
             timestamp = max(self.state_history.last_value()["timestamp"], timestamp)
         if self.messages:
             timestamp = max(self.messages.last_key(), timestamp)
@@ -850,6 +855,10 @@ class Game(Jsonable):
 
         :return: a list of GamePhaseHistory objects
         """
+        assert isinstance(self.state_history, SortedDict)
+        assert isinstance(self.order_history, SortedDict)
+        assert isinstance(self.message_history, SortedDict)
+        assert isinstance(self.result_history, SortedDict)
         if isinstance(from_phase, int):
             from_phase = self.state_history.key_from_index(from_phase)
         elif isinstance(from_phase, str):
@@ -887,6 +896,7 @@ class Game(Jsonable):
 
     def phase_history_from_timestamp(self, timestamp):
         """Return list of game phase data from game history for which state timestamp >= given timestamp."""
+        assert isinstance(self.state_history, SortedDict)
         earliest_phase = ""
         for state in self.state_history.reversed_values():
             if state["timestamp"] < timestamp:
@@ -907,6 +917,10 @@ class Game(Jsonable):
         assert phase not in self.message_history
         assert phase not in self.order_history
         assert phase not in self.result_history
+        assert isinstance(self.state_history, SortedDict)
+        assert isinstance(self.order_history, SortedDict)
+        assert isinstance(self.message_history, SortedDict)
+        assert isinstance(self.result_history, SortedDict)
         self.state_history.put(phase, game_phase_data.state)
         self.message_history.put(phase, game_phase_data.messages)
         self.order_history.put(phase, game_phase_data.orders)
@@ -933,6 +947,7 @@ class Game(Jsonable):
         self.clear_orders()
 
         # Collect data about current phase before drawing.
+        assert isinstance(self.messages, SortedDict)
         previous_phase = self._phase_wrapper_type(self.current_short_phase)
         previous_orders = self.get_orders()
         previous_messages = self.messages.copy()
@@ -945,6 +960,10 @@ class Game(Jsonable):
         self.clear_vote()
         self.clear_orders()
         self.messages.clear()
+        assert isinstance(self.state_history, SortedDict)
+        assert isinstance(self.order_history, SortedDict)
+        assert isinstance(self.message_history, SortedDict)
+        assert isinstance(self.result_history, SortedDict)
         self.order_history.put(previous_phase, previous_orders)
         self.message_history.put(previous_phase, previous_messages)
         self.state_history.put(previous_phase, previous_state)
@@ -1044,9 +1063,13 @@ class Game(Jsonable):
         """
         assert isinstance(message, Message)
         if self.is_player_game():
-            assert message.is_global() or self.power.name in (
-                message.sender,
-                message.recipient,
+            assert message.is_global() or (
+                self.power
+                and self.power.name
+                in (
+                    message.sender,
+                    message.recipient,
+                )
             )
 
         if message.time_sent is None:
@@ -1066,6 +1089,7 @@ class Game(Jsonable):
             time.sleep(1e-6)
             message.time_sent = common.timestamp_microseconds()
 
+        assert isinstance(self.messages, SortedDict)
         self.messages.put(message.time_sent, message)
         return message.time_sent
 
@@ -1165,7 +1189,9 @@ class Game(Jsonable):
         # Getting orders for a particular power
         # Skipping VOID and WAIVE orders in Adjustment/Retreats phase
         if power_name is not None:
-            if self.get_current_phase()[-1] == "M":
+            phase = self.get_current_phase()
+            assert isinstance(phase, str)
+            if phase[-1] == "M":
                 if "NO_CHECK" in self.rules:
                     power_orders = [
                         power.orders[order]
@@ -1208,7 +1234,9 @@ class Game(Jsonable):
         # Single power
         if power_name is not None:
             assert power is not None
-            current_phase_type = self.get_current_phase()[-1]
+            phase = self.get_current_phase()
+            assert isinstance(phase, str)
+            current_phase_type = phase[-1]
 
             # Adjustment
             if current_phase_type == "A":
@@ -1267,6 +1295,7 @@ class Game(Jsonable):
             assert bool(unit) != bool(
                 loc
             ), "Required either a unit or a location, not both."
+            assert isinstance(self.result_history, SortedDict)
             result_dict = (
                 self.result_history.last_value() if self.result_history else {}
             )
@@ -1275,6 +1304,7 @@ class Game(Jsonable):
                 return result_dict[unit][:] if unit in result_dict else []
             # Loc given, return a couple (unit found, list of order status)
             for result_unit, result_list in result_dict.items():
+                assert loc is not None
                 if result_unit[2:5] == loc[:3]:
                     return result_unit, result_list[:]
             return loc, []
@@ -1285,6 +1315,7 @@ class Game(Jsonable):
         if power_name is not None:
             order_status = {}
             if self.state_history:
+                assert isinstance(self.state_history, SortedDict)
                 state_history = self.state_history.last_value()
                 for ordered_unit in state_history["units"][power_name]:
                     ordered_unit = ordered_unit.replace("*", "")
@@ -1306,10 +1337,12 @@ class Game(Jsonable):
 
         :param power_name: name of power instance to retrieve. Power name must be as given
             in map file.
-        :return: the power instance, or None if power name is not found.
+        :return: the power instance, or KeyError if power name is not found.
         :rtype: diplomacy.engine.power.Power
         """
-        return self.powers.get(power_name, None)
+        if power_name not in self.powers:
+            raise KeyError(power_name)
+        return self.powers[power_name]
 
     def set_units(self, power_name, units, reset=False):
         """Sets units directly on the map
@@ -1320,6 +1353,8 @@ class Game(Jsonable):
         :param reset: Boolean. If, clear all units of the power before setting them
         :return: Nothing
         """
+        assert self.map is not None
+
         power_name = power_name.upper()
         if not isinstance(units, list):
             units = [units]
@@ -1398,7 +1433,9 @@ class Game(Jsonable):
                     power.retreats[unit] = []
 
         # Set retreats locations for all powers
-        if self.get_current_phase()[-1] == "R":
+        phase = self.get_current_phase()
+        assert isinstance(phase, str)
+        if phase[-1] == "R":
             for power in self.powers.values():
                 for unit in power.retreats:
                     word = unit.upper().split()
@@ -1424,6 +1461,8 @@ class Game(Jsonable):
         :param reset: Boolean. If, removes ownership of all power's SC before transferring ownership of the new SC
         :return: Nothing
         """
+        assert self.map is not None
+
         power_name = power_name.upper()
         if not isinstance(centers, list):
             centers = [centers]
@@ -1513,7 +1552,7 @@ class Game(Jsonable):
         if not self.has_power(power_name):
             return
 
-        power = self.get_power(power_name.upper())  # type: diplomacy.engine.power.Power
+        power: Power = self.get_power(power_name.upper())
         power.wait = wait
 
     def clear_units(self, power_name=None):
@@ -1563,6 +1602,7 @@ class Game(Jsonable):
 
     def set_current_phase(self, new_phase):
         """Changes the phase to the specified new phase (e.g. 'S1901M')"""
+        assert self.map is not None
         if new_phase in ("FORMING", "COMPLETED"):
             self.phase = new_phase
             self.phase_type = None
@@ -1602,14 +1642,15 @@ class Game(Jsonable):
         """
         if not self.__class__.rule_cache:
             self._load_rules()
-        valid_rules = {valid_rule for valid_rule in self.__class__.rule_cache[0]}
+        first_rule_cache = self.__class__.rule_cache[0]  # type: ignore
+        valid_rules = {valid_rule for valid_rule in first_rule_cache}
 
         if rule not in valid_rules or rule in self.no_rules:
             return
 
-        forbidden_rules = self.__class__.rule_cache[0].get(rule, {}).get("!", [])
-        rules_to_add = self.__class__.rule_cache[0].get(rule, {}).get("+", [])
-        rules_to_remove = self.__class__.rule_cache[0].get(rule, {}).get("-", [])
+        forbidden_rules = first_rule_cache.get(rule, {}).get("!", [])
+        rules_to_add = first_rule_cache.get(rule, {}).get("+", [])
+        rules_to_remove = first_rule_cache.get(rule, {}).get("-", [])
 
         # Making sure we don't already have a forbidden rule
         for forbidden in forbidden_rules:
@@ -1687,6 +1728,12 @@ class Game(Jsonable):
 
         :return: game phase data with data before processing.
         """
+        assert self.messages is not None
+        assert isinstance(self.messages, SortedDict)
+        assert isinstance(self.order_history, SortedDict)
+        assert isinstance(self.message_history, SortedDict)
+        assert isinstance(self.state_history, SortedDict)
+
         previous_phase = self._phase_wrapper_type(self.current_short_phase)
         previous_orders = self.get_orders()
         previous_messages = self.messages.copy()
@@ -1715,6 +1762,7 @@ class Game(Jsonable):
         # Set empty orders for unorderable powers.
         if not self.is_game_done:
             orderable_locations = self.get_orderable_locations()
+            assert isinstance(orderable_locations, dict)
             for power_name, power_orderable_locs in orderable_locations.items():
                 if (
                     not power_orderable_locs
@@ -1759,8 +1807,9 @@ class Game(Jsonable):
                 )
             for center in power.centers:
                 self.update_hash(power.name, loc=center, is_center=True)
-            for home in power.homes:
-                self.update_hash(power.name, loc=home, is_home=True)
+            if power.homes is not None:
+                for home in power.homes:
+                    self.update_hash(power.name, loc=home, is_home=True)
 
         # Clearing cache
         self.clear_cache()
@@ -1822,6 +1871,7 @@ class Game(Jsonable):
 
     def get_phase_data(self):
         """Return a GamePhaseData object representing current game."""
+        assert self.messages is not None
         # Associate each power name to power orders, or None if order ist not set for the power.
         # This is done to make distinction between voluntary empty orders ([]) and unset orders (None).
         current_orders = {
@@ -1864,7 +1914,7 @@ class Game(Jsonable):
             Game.clear_vote(self)
             Game.clear_orders(self)
 
-        for game_phase_data in phase_data[:-1]:  # type: GamePhaseData
+        for game_phase_data in phase_data[:-1]:
             Game.extend_phase_history(self, game_phase_data)
 
         current_phase_data = phase_data[-1]  # type: GamePhaseData
@@ -1872,6 +1922,7 @@ class Game(Jsonable):
         for power_name, power_orders in current_phase_data.orders.items():
             if power_orders is not None:
                 Game.set_orders(self, power_name, power_orders)
+        assert isinstance(current_phase_data.messages, SortedDict)
         self.messages = current_phase_data.messages.copy()
         # We ignore 'results' for current phase data.
 
@@ -1908,6 +1959,7 @@ class Game(Jsonable):
             ]
             state["retreats"][power.name] = power.retreats.copy()
             state["centers"][power.name] = list(power.centers)
+            assert power.homes is not None
             state["homes"][power.name] = list(power.homes)
             state["influence"][power.name] = list(power.influence)
             state["civil_disorder"][power.name] = power.civil_disorder
@@ -1938,6 +1990,8 @@ class Game(Jsonable):
         :param clear_history: Boolean. If true, all game histories are cleared.
         :return: Nothing
         """
+        assert self.map is not None
+
         if clear_history:
             self._clear_history()
 
@@ -1992,6 +2046,7 @@ class Game(Jsonable):
 
         :return: A dictionary with locations as keys, and their respective list of possible orders as values
         """
+        assert self.map is not None
         # pylint: disable=too-many-branches,too-many-nested-blocks
         possible_orders = {loc.upper(): set() for loc in self.map.locs}
 
@@ -2232,6 +2287,7 @@ class Game(Jsonable):
     # ====================================================================
     def _build_list_possible_convoys(self):
         """Regenerates the list of possible convoy paths given the current fleet locations"""
+        assert self.map is not None
         # Already generated
         if self.convoy_paths_possible is not None:
             return
@@ -2265,6 +2321,7 @@ class Game(Jsonable):
         :param loc: Location we are checking (e.g. 'STP/SC')
         :return: Boolean to indicate if unit can be convoyed through location
         """
+        assert self.map is not None
         # Armies can't convoy fleet, so if unit being convoyed is not an army, convoy not possible
         if not army:
             return False
@@ -2306,6 +2363,7 @@ class Game(Jsonable):
 
         # Checking in table if there is a valid path and optionally if the convoying loc is in the path
         self._build_list_possible_convoys()
+        assert self.convoy_paths_dest is not None
         active_paths = self.convoy_paths_dest.get(start, {}).get(end, [])
         return active_paths and (
             convoying_loc is None
@@ -2347,6 +2405,7 @@ class Game(Jsonable):
 
         # Building cache
         self._build_list_possible_convoys()
+        assert self.convoy_paths_dest is not None
 
         # If we are moving via convoy, we just read the destinations from the table
         if not unit_is_convoyer:
@@ -2368,6 +2427,7 @@ class Game(Jsonable):
 
         # If we are convoying, we need to loop through the possible convoy paths
         valid_dests = set([])
+        assert self.convoy_paths_possible is not None
         for _, fleets, dests in self.convoy_paths_possible:
             if start in fleets and (
                 exclude_convoy_locs is None
@@ -2395,6 +2455,7 @@ class Game(Jsonable):
         # Building cache and finding possible paths with convoying units
         # Adding start and end location to every path
         self._build_list_possible_convoys()
+        assert self.convoy_paths_dest is not None
         fleets = {loc[2:] for loc in convoying_units}
         paths = [
             path
@@ -2440,6 +2501,7 @@ class Game(Jsonable):
         :param homes: The list of homes (first one reached calculates the distance)
         :return: The minimum distance from unit to one of the homes
         """
+        assert self.map is not None
         visited = []
         if not homes:
             return 99999
@@ -2448,7 +2510,8 @@ class Game(Jsonable):
         to_check = PriorityDict()
         to_check[start] = 0
         while to_check:
-            distance, current = to_check.smallest()
+            smallest = to_check.smallest()
+            distance, current = smallest if smallest else (99999, "")
             del to_check[current]
 
             # Found smallest distance
@@ -2491,6 +2554,7 @@ class Game(Jsonable):
             * 0    -  It is valid, BUT some unit mentioned does not exist
             * 1    -  It is completed valid
         """
+        assert self.map is not None
         # pylint: disable=too-many-return-statements,too-many-branches,too-many-statements
         # No order
         if not order:
@@ -2791,6 +2855,7 @@ class Game(Jsonable):
             (e.g. ['England:', 'Army', 'Rumania', 'SUPPORT', 'German', 'Army', 'Bulgaria']).
         :return: The compacted and expanded order (e.g. ['A', 'RUM', 'S', 'A', 'BUL'])
         """
+        assert self.map is not None
         if not word:
             return word
 
@@ -2880,6 +2945,7 @@ class Game(Jsonable):
         :param word: A list of tokens (e.g. ['F', 'GRE', '-', 'BUL'])
         :return: The updated list of tokens (e.g. ['F', 'GRE', '-', 'BUL/SC'])
         """
+        assert self.map is not None
         if not word:
             return word
 
@@ -2937,6 +3003,7 @@ class Game(Jsonable):
         :param item: The words for expand_order() (e.g. ['A', 'RUM', 'S', 'BUL'])
         :return: The list of items with A/F and coasts added (e.g. ['A', 'RUM', 'S', 'A', 'BUL'])
         """
+        assert self.map is not None
         # dependent is set when A/F is expected afterwards (so at start and after C/S)
         # had_type indicates that A/F was found
         word, dependent, had_type = [], 1, 0
@@ -3022,6 +3089,7 @@ class Game(Jsonable):
         # Loading map and setting victory condition
         if not self.map:
             self.load_map(reinit_powers=reinit_powers)
+        assert self.map is not None
         self.victory = self.map.victory
 
         # By default, 50% +1 of the scs
@@ -3032,6 +3100,7 @@ class Game(Jsonable):
         # Ensure game phase was set
         if not self.phase:
             self.phase = self.map.phase
+        assert self.phase is not None
         apart = self.phase.split()
         if len(apart) == 3:
             if "%s %s" % (apart[0], apart[2]) not in self.map.seq:
@@ -3042,6 +3111,7 @@ class Game(Jsonable):
 
         # Validate the BEGIN phase (if one was given)
         if self.phase == "FORMING":
+            assert self.map.phase is not None
             apart = self.map.phase.split()
             try:
                 int(apart[1])
@@ -3188,6 +3258,9 @@ class Game(Jsonable):
 
         :return: Nothing
         """
+        assert self.victory is not None
+        assert self.map is not None
+
         self._move_to_start_phase()
         self.note = ""
         self.win = self.victory[0]
@@ -3236,6 +3309,8 @@ class Game(Jsonable):
 
         :return: A list of lines to put in the results
         """
+        assert self.map is not None
+        assert isinstance(self.result_history, SortedDict)
 
         # Save results for current phase.
         # NB: result_history is updated here, neither in process() nor in draw(),
@@ -3272,8 +3347,10 @@ class Game(Jsonable):
 
         :return: Nothing, but sets the self.phase and self.phase_type settings
         """
+        assert self.map is not None
         # Retrieve the beginning phase and phase type from the map
         self.phase = self.map.phase
+        assert self.phase is not None
         self.phase_type = self.phase.split()[-1][0]
 
     def _find_next_phase(self, phase_type=None, skip=0):
@@ -3284,6 +3361,7 @@ class Game(Jsonable):
         :param skip: The number of match to skip (e.g. 1 to find not the next phase, but the one after)
         :return: The long name of the next phase (e.g. FALL 1905 MOVEMENT)
         """
+        assert self.map is not None
         return self.map.find_next_phase(self.phase, phase_type, skip)
 
     def _find_previous_phase(self, phase_type=None, skip=0):
@@ -3294,6 +3372,7 @@ class Game(Jsonable):
         :param skip: The number of match to skip (e.g. 1 to find not the next phase, but the one after)
         :return: The long name of the previous phase (e.g. SPRING 1905 MOVEMENT)
         """
+        assert self.map is not None
         return self.map.find_previous_phase(self.phase, phase_type, skip)
 
     def _get_start_phase(self):
@@ -3437,6 +3516,8 @@ class Game(Jsonable):
             (from the previous year)
         :return: Nothing
         """
+        assert self.map is not None
+        assert self.phase is not None
         victors, this_year = [], self._calculate_victory_score()
         year_centers = list(this_year.values())
 
@@ -3472,6 +3553,7 @@ class Game(Jsonable):
 
         :return: Nothing
         """
+        assert self.map is not None
         victory_score_prev_year = self._calculate_victory_score()
 
         # If no power owns centers, initialize them
@@ -3480,6 +3562,7 @@ class Game(Jsonable):
                 for center in power.centers:
                     self.update_hash(power.name, loc=center, is_center=True)
                 power.centers = []
+                assert power.homes is not None
                 for center in power.homes:
                     self.update_hash(power.name, loc=center, is_center=True)
                     power.centers.append(center)
@@ -3561,6 +3644,7 @@ class Game(Jsonable):
         :param phase: The full phase (e.g. SPRING 1901 MOVEMENT)
         :return: A 5 character representation of the phase
         """
+        assert self.map is not None
         return self.map.phase_abbr(phase or self.phase)
 
     # ====================================================================
@@ -3580,6 +3664,7 @@ class Game(Jsonable):
             A LON H, F IRI - MAO, A IRI - MAO VIA, A WAL S F LON, A WAL S F MAO - IRI,
             F NWG C A NWY - EDI, A IRO R MAO, A IRO D, A LON B, F LIV B
         """
+        assert self.map is not None
         if not word:
             return None
 
@@ -3844,6 +3929,7 @@ class Game(Jsonable):
             A LON H, F IRI - MAO, A IRI - MAO VIA, A WAL S F LON, A WAL S F MAO - IRI, F NWG C A NWY - EDI
             A IRO R MAO, A IRO D, A LON B, F LIV B
         """
+        assert self.map is not None
         # pylint: disable=too-many-branches
         # No orders submitted, returning
         if not orders:
@@ -4054,6 +4140,7 @@ class Game(Jsonable):
         :param other_loc: The location of the other unit
         :return: 1 if the locations are adjacent for the move, 0 otherwise
         """
+        assert self.map is not None
         # Check if the map says the adjacency is good
         if not self.map.abuts(unit_type, unit_loc, order_type, other_loc):
             return 0
@@ -4085,6 +4172,7 @@ class Game(Jsonable):
         # return the owner if we find a unit that starts with unit
         # Don't count the unit if it needs to retreat (i.e. it has been dislodged)
         self._build_unit_owner_cache()
+        assert self._unit_owner_cache is not None
         return self._unit_owner_cache.get((unit, bool(coast_required)), None)
 
     def _occupant(self, site, any_coast=0):
@@ -4183,7 +4271,7 @@ class Game(Jsonable):
             word = [w for w in word if w != "-"]
 
             # Checking order of unit at dest
-            offset = 1 if self.command.get(unit, []).split()[-1] == "VIA" else 0
+            offset = 1 if self.command.get(unit, "").split()[-1] == "VIA" else 0
             convoy_dest = self.command.get(unit, "H").split()[-1 - offset]
             unit_at_dest = self._occupant(convoy_dest)
             order_unit_at_dest = self.command.get(unit_at_dest, "H")
@@ -4722,6 +4810,7 @@ class Game(Jsonable):
 
         :return: A list of lines for the results file explaining what happened during the phase
         """
+        assert self.map is not None
         # Resolving moves
         self._resolve_moves()
 
@@ -4939,9 +5028,13 @@ class Game(Jsonable):
                         # Removing units with largest distance (using fleets if they are equal)
                         # (using alpha name if multiple units)
                         if fleets:
-                            goner_distance, goner = fleets.smallest()
-                        if armies and armies.smallest()[0] < goner_distance:
-                            goner_distance, goner = armies.smallest()
+                            smallest = fleets.smallest()
+                            goner_distance, goner = (
+                                smallest if smallest is not None else (99999, None)
+                            )
+                        smallest = armies.smallest()
+                        if armies and smallest and smallest[0] < goner_distance:
+                            goner_distance, goner = smallest
                         if goner is None:
                             break
                         if goner[0] == "F":
@@ -5089,6 +5182,7 @@ class Game(Jsonable):
         :return: A list of strings for the results file explaining how the phase was resolved.
         """
         this_phase = self.phase_type
+        assert isinstance(this_phase, str) and len(this_phase) == 1
 
         # This method knows how to process movement, retreat, and adjustment phases.
         # For others, implement resolve_phase()
