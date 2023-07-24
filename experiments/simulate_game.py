@@ -31,6 +31,7 @@ def main():
         save_code=True,
         config=vars(args),
         mode="disabled" if args.disable_wandb else "online",
+        settings=wandb.Settings(code_dir="experiments"),
     )
     assert wandb.run is not None
     game = Game(map_name=args.map_name)

@@ -13,7 +13,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Simulate Game (no wandb)",
+            "name": "Sim Game (no wandb)",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
@@ -24,7 +24,7 @@
             "justMyCode": true
         },
         {
-            "name": "Python: Simulate Game",
+            "name": "Sim Game",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
