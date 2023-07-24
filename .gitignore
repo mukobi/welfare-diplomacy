@@ -132,3 +132,6 @@ events.out.*
 
 # Weights and Biases
 wandb
+
+# Debug logs
+games/game-debug.json

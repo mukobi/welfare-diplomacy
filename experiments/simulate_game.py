@@ -74,6 +74,10 @@ def main():
         # Processing the game to move to the next phase
         game.process()
 
+        # Check whether to end the game
+        if game.phase is not None and int(game.phase.split()[1]) > args.last_turn_year:
+            game._finish([])
+
         # Log to wandb
         rendered = game.render(incl_abbrev=True)
         logger.info(rendered)
@@ -104,6 +108,9 @@ def parse_args():
     parser.add_argument("--entity", dest="entity", default="gabrielmukobi")
     parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
     parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
+    parser.add_argument(
+        "--last_turn_year", dest="last_turn_year", type=int, default=1910
+    )
 
     args = parser.parse_args()
     return args

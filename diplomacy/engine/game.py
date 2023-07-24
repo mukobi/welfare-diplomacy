@@ -3635,7 +3635,8 @@ class Game(Jsonable):
         """
         # Setting outcome, and end date. Clearing orders and saving.
         self.outcome = [self._phase_abbr()] + victors
-        self.note = "Victory by: " + ", ".join([vic[:3] for vic in victors])
+        if len(victors) > 0:
+            self.note = "Victory by: " + ", ".join([vic[:3] for vic in victors])
         self.phase = "COMPLETED"
         self.set_status(strings.COMPLETED)
         for power in self.powers.values():
