@@ -668,7 +668,9 @@ class Game(Jsonable):
         :type power_name: str
         :rtype: bool
         """
-        return self.get_power(power_name).is_controlled()
+        power = self.get_power(power_name)
+        assert power is not None
+        return power.is_controlled()
 
     def is_dummy(self, power_name):
         """Return True if given power name is not currently controlled."""
@@ -729,7 +731,7 @@ class Game(Jsonable):
             power_name
             for power_name in self.get_map_power_names()
             if self.is_dummy(power_name)
-            and not self.get_power(power_name).is_eliminated()
+            and not self.get_power(power_name).is_eliminated()  # type: ignore
         )
 
     def get_dummy_unordered_power_names(self):
@@ -743,13 +745,13 @@ class Game(Jsonable):
             # power must not be controlled by a user
             self.is_dummy(power_name)
             # power must be still playable
-            and not self.get_power(power_name).is_eliminated()
+            and not self.get_power(power_name).is_eliminated()  # type: ignore
             # power must not have yet orders
             and not self.get_orders(power_name)
             # power must have orderable locations
             and self.get_orderable_locations(power_name)
             # power must be waiting
-            and self.get_power(power_name).wait
+            and self.get_power(power_name).wait  # type: ignore
         ]
 
     def get_controllers(self):
@@ -992,7 +994,9 @@ class Game(Jsonable):
         """Control power with given username (may be None to set dummy power).
         See method diplomacy.Power#set_controlled.
         """
-        self.get_power(power_name).set_controlled(username)
+        power = self.get_power(power_name)
+        assert power is not None
+        power.set_controlled(username)
 
     def update_dummy_powers(self, dummy_power_names):
         """Force all power associated to given dummy power names to be uncontrolled.
@@ -1012,9 +1016,9 @@ class Game(Jsonable):
         :type powers_controllers: dict
         """
         for power_name, controller in powers_controllers.items():
-            self.get_power(power_name).update_controller(
-                controller, timestamps[power_name]
-            )
+            power = self.get_power(power_name)
+            assert power is not None
+            power.update_controller(controller, timestamps[power_name])
 
     def new_power_message(self, recipient, body):
         """Create a undated (without timestamp) power message to be sent from a power to another via server.
@@ -1145,6 +1149,7 @@ class Game(Jsonable):
         if power_name is not None:
             power_name = power_name.upper()
         power = self.get_power(power_name)
+        assert power is not None
         if power_name is not None:
             return power.units[:] + ["*{}".format(unit) for unit in power.retreats]
         if power_name is None:
@@ -1165,6 +1170,7 @@ class Game(Jsonable):
         if power_name is not None:
             power_name = power_name.upper()
         power = self.get_power(power_name)
+        assert power is not None
         if power_name is not None:
             return power.centers[:]
         if power_name is None:
@@ -1191,6 +1197,7 @@ class Game(Jsonable):
         if power_name is not None:
             phase = self.get_current_phase()
             assert isinstance(phase, str)
+            assert power is not None
             if phase[-1] == "M":
                 if "NO_CHECK" in self.rules:
                     power_orders = [
@@ -1332,17 +1339,15 @@ class Game(Jsonable):
             return order_status
         return {}
 
-    def get_power(self, power_name) -> Power:
+    def get_power(self, power_name) -> Optional[Power]:
         """Retrieves a power instance from given power name.
 
         :param power_name: name of power instance to retrieve. Power name must be as given
             in map file.
-        :return: the power instance, or KeyError if power name is not found.
+        :return: the power instance, or None if power name is not found.
         :rtype: diplomacy.engine.power.Power
         """
-        if power_name not in self.powers:
-            raise KeyError(power_name)
-        return self.powers[power_name]
+        return self.powers.get(power_name, None)
 
     def set_units(self, power_name, units, reset=False):
         """Sets units directly on the map
@@ -1519,6 +1524,7 @@ class Game(Jsonable):
             )
 
         power = self.get_power(power_name)
+        assert power is not None
 
         if not isinstance(orders, list):
             orders = [orders]
@@ -1552,7 +1558,8 @@ class Game(Jsonable):
         if not self.has_power(power_name):
             return
 
-        power: Power = self.get_power(power_name.upper())
+        power = self.get_power(power_name.upper())
+        assert power is not None
         power.wait = wait
 
     def clear_units(self, power_name=None):
@@ -1590,6 +1597,7 @@ class Game(Jsonable):
             return
         if power_name is not None:
             power = self.get_power(power_name.upper())
+            assert power is not None
             power.clear_orders()
         else:
             for power in self.powers.values():
@@ -1766,7 +1774,7 @@ class Game(Jsonable):
             for power_name, power_orderable_locs in orderable_locations.items():
                 if (
                     not power_orderable_locs
-                    and not self.get_power(power_name).is_eliminated()
+                    and not self.get_power(power_name).is_eliminated()  # type: ignore
                 ):
                     self.set_orders(power_name, [])
                     self.set_wait(power_name, False)
@@ -2031,10 +2039,12 @@ class Game(Jsonable):
         if "influence" in state:
             for power_name, influence in state["influence"].items():
                 power = self.get_power(power_name)
+                assert power is not None
                 power.influence = deepcopy(influence)
         if "civil_disorder" in state:
             for power_name, civil_disorder in state["civil_disorder"].items():
                 power = self.get_power(power_name)
+                assert power is not None
                 power.civil_disorder = civil_disorder
 
         # Rebuilding hash and returning
