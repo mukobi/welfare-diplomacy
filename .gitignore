@@ -129,3 +129,6 @@ data
 
 # Tensorboard
 events.out.*
+
+# Weights and Biases
+wandb
