@@ -36,6 +36,8 @@ def main():
     assert wandb.run is not None
     game = Game(map_name=args.map_name)
     logger = logging.getLogger(__name__)
+    logging.basicConfig()
+    logger.setLevel(args.log_level)
 
     # to_saved_game_format(game, output_path=args.output_path)
 
@@ -75,17 +77,27 @@ def main():
         game.process()
 
         # Check whether to end the game
-        if game.phase is not None and int(game.phase.split()[1]) > args.last_turn_year:
+        phase = game.get_phase_history()[-1]
+        if utils.get_game_year(phase) > args.last_turn_year:
             game._finish([])
 
         # Log to wandb
         rendered = game.render(incl_abbrev=True)
-        logger.info(rendered)
         wandb.log(
             {
+                "meta/year_fractional": utils.get_game_fractional_year(phase),
                 "board/rendering": wandb.Html(rendered),
             }
         )
+
+        # Print some information about the game
+        score_string = " ".join(
+            [
+                f"{power.abbrev}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+                for power in game.powers.values()
+            ]
+        )
+        logger.info(f"{phase.name} C/U/W: {score_string}")
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
@@ -102,6 +114,7 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Simulate a game of Diplomacy with the given parameters."
     )
+    parser.add_argument("--log_level", dest="log_level", default="INFO")
     parser.add_argument("--map", dest="map_name", default="standard_welfare")
     parser.add_argument("--output_folder", dest="output_folder", default="games")
     parser.add_argument("--seed", dest="seed", type=int, default=0, help="random seed")
