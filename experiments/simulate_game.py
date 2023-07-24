@@ -45,11 +45,22 @@ def main():
 
         # For each power, randomly sampling a valid order
         for power_name, power in game.powers.items():
-            power_orders = [
-                random.choice(possible_orders[loc])
-                for loc in game.get_orderable_locations(power_name)
-                if possible_orders[loc]
-            ]
+            power_orders = []
+            for loc in game.get_orderable_locations(power_name):
+                if possible_orders[loc]:
+                    # If this is a disbandable unit in an adjustment phase in welfare,
+                    # then randomly choose whether to disband or not
+                    if (
+                        "ADJUSTMENTS" in str(game.phase)
+                        and " D" in possible_orders[loc][0][-2:]
+                        and game.welfare
+                    ):
+                        power_orders.append(
+                            random.choice(["WAIVE", possible_orders[loc][0]])
+                        )
+                    else:
+                        power_orders.append(random.choice(possible_orders[loc]))
+
             game.set_orders(power_name, power_orders)
 
         # Messages can be sent locally with game.add_message
