@@ -18,7 +18,18 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
             "console": "integratedTerminal",
-            "args": "--disable_wandb",
+            "args": [
+                "--disable_wandb"
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Simulate Game",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [],
             "justMyCode": true
         },
         {

@@ -62,6 +62,15 @@ def main():
         # Processing the game to move to the next phase
         game.process()
 
+        # Log to wandb
+        rendered = game.render(incl_abbrev=True)
+        logger.info(rendered)
+        wandb.log(
+            {
+                "board/rendering": wandb.Html(rendered),
+            }
+        )
+
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
     if not os.path.exists(args.output_folder):
