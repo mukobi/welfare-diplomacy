@@ -64,6 +64,7 @@ class Renderer:
                     break
 
         # Loading XML
+        assert isinstance(svg_path, str)
         if os.path.exists(svg_path):
             self.xml_map = minidom.parse(svg_path).toxml()
         self._load_metadata()
