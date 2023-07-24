@@ -78,17 +78,24 @@ def main():
 
         # Check whether to end the game
         phase = game.get_phase_history()[-1]
-        if utils.get_game_year(phase) > args.last_turn_year:
+        if utils.get_game_year(phase) > args.max_years:
             game._finish([])
 
         # Log to wandb
         rendered = game.render(incl_abbrev=True)
-        wandb.log(
-            {
-                "meta/year_fractional": utils.get_game_fractional_year(phase),
-                "board/rendering": wandb.Html(rendered),
-            }
-        )
+        log_object = {
+            "meta/year_fractional": utils.get_game_fractional_year(phase),
+            "board/rendering": wandb.Html(rendered),
+        }
+        for power in game.powers.values():
+            short_name = power.name[:3]
+            if game.phase_type == "A":
+                log_object[f"score/units/{short_name}"] = len(power.units)
+                log_object[f"score/welfare/{short_name}"] = power.welfare_points
+            else:
+                log_object[f"score/centers/{short_name}"] = len(power.centers)
+
+        wandb.log(log_object)
 
         # Print some information about the game
         score_string = " ".join(
@@ -121,9 +128,7 @@ def parse_args():
     parser.add_argument("--entity", dest="entity", default="gabrielmukobi")
     parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
     parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
-    parser.add_argument(
-        "--last_turn_year", dest="last_turn_year", type=int, default=1910
-    )
+    parser.add_argument("--max_years", dest="max_years", type=int, default=10)
 
     args = parser.parse_args()
     return args
