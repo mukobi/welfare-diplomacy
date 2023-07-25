@@ -19,7 +19,8 @@
             "program": "${workspaceFolder}/experiments/simulate_game.py",
             "console": "integratedTerminal",
             "args": [
-                "--disable_wandb"
+                "--disable_wandb",
+                "--no_save"
             ],
             "justMyCode": true
         },
@@ -29,7 +30,9 @@
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
             "console": "integratedTerminal",
-            "args": [],
+            "args": [
+                "--no_save"
+            ],
             "justMyCode": true
         },
         {

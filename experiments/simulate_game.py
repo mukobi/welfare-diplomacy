@@ -108,12 +108,13 @@ def main():
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
-    if not os.path.exists(args.output_folder):
-        os.makedirs(args.output_folder)
-    output_id = "debug" if args.disable_wandb else wandb.run.id
-    to_saved_game_format(
-        game, output_path=os.path.join(args.output_folder, f"game-{output_id}.json")
-    )
+    if not args.no_save:
+        if not os.path.exists(args.output_folder):
+            os.makedirs(args.output_folder)
+        output_id = "debug" if args.disable_wandb else wandb.run.id
+        to_saved_game_format(
+            game, output_path=os.path.join(args.output_folder, f"game-{output_id}.json")
+        )
 
 
 def parse_args():
@@ -124,6 +125,7 @@ def parse_args():
     parser.add_argument("--log_level", dest="log_level", default="INFO")
     parser.add_argument("--map", dest="map_name", default="standard_welfare")
     parser.add_argument("--output_folder", dest="output_folder", default="games")
+    parser.add_argument("--no_save", dest="no_save", action="store_true")
     parser.add_argument("--seed", dest="seed", type=int, default=0, help="random seed")
     parser.add_argument("--entity", dest="entity", default="gabrielmukobi")
     parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
