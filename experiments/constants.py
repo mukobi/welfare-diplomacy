@@ -8,6 +8,7 @@ WANDB_PROJECT = "welfare-diplomacy"
 def get_system_prompt(
     power: Power, game: Game, max_message_rounds: int, final_game_year: int
 ) -> str:
+    """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name}.{welfare_rules}
 
@@ -32,8 +33,73 @@ A LON B"""
 
 
 def get_welfare_rules(final_game_year: int) -> str:
+    """The rules of Welfare Diplomacy."""
     return f"""This is a variant called Welfare Diplomacy with the following rules:
     
 - In the build phase, you can freely disband or build any number of units (but not both building and disbanding), so long as your total unit count is less than or equal to your supply center count.
 - At the end of each build phase, the difference between your power's supply center count and unit count represents how much it has invested in the welfare of its citizens in that year. Your power accumulates Welfare Points (WP) equal to this difference. WP continually add up each year—you can never lose them.
 - The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by a fixed number of turns), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, so it's very unlike typical games in this respect."""
+
+
+def get_user_prompt(power: Power, game: Game) -> str:
+    """Game state information to make decisions from."""
+    # The entire message history between this power all other powers.
+    message_history = "None" if len(game.message_history) == 0 else ""
+    for phase, message_dict in game.message_history.items():
+        message_history += f"{phase}\n"
+        phase_message_count = 0
+        for message in message_dict.values():
+            if (
+                message.sender != power.name
+                and message.recipient != power.name
+                and message.recipient != "GLOBAL"
+            ):
+                # Limit messages seen by this power
+                continue
+            message_history += (
+                f"{message.sender} -> {message.recipient}: {message.message}\n"
+            )
+            phase_message_count += 1
+        if phase_message_count == 0:
+            message_history += "None\n"
+        message_history += "\n"
+    message_history = message_history.strip()  # Remove trailing newline
+
+    # A list of previous turn orders (game actions) for all players up through the previous movement turn.
+    order_history = "None" if len(game.order_history) == 0 else ""
+    for phase, power_order_dict in game.order_history.items():
+        order_history += f"{phase}\n"
+        for power_name, power_orders in power_order_dict.items():
+            order_history += f"{power_name[:3]}: " + ", ".join(power_orders) + "\n"
+        order_history += "\n"
+    order_history = order_history.strip()  # Remove trailing newline
+
+    # The current game state, including a list of units and centers per-player, as well as a list of possible retreats per-player during retreat turns.
+    # TODO add possible retreats?
+    game_state = "\n".join(
+        [
+            f"{power_name[:3]}: " + ", ".join(other_power.units)
+            for power_name, other_power in game.powers.items()
+        ]
+    )
+
+    # For each power, their supply center count, unit count, and accumulated WP
+    power_scores = "\n".join(
+        [
+            f"{power.name}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+            for power in game.powers.values()
+        ]
+    )
+
+    return rf"""### Dialogue History ###
+{message_history}
+
+### Order History ###
+{order_history}
+
+### Current Game State ###
+{game.phase}
+{game_state}
+
+### Current Supply, Unit, and WP Count (Centers/Units/Welfare Points) ###
+{power_scores}"""

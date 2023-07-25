@@ -8,8 +8,9 @@ import argparse
 import logging
 import os
 import random
+import time
 
-from diplomacy import Game
+from diplomacy import Game, Message
 from diplomacy.utils.export import to_saved_game_format
 import wandb
 
@@ -67,15 +68,20 @@ def main():
             system_prompt = constants.get_system_prompt(
                 power, game, args.max_message_rounds, args.max_years + 1900
             )
+            user_prompt = constants.get_user_prompt(power, game)
 
             game.set_orders(power_name, power_orders)
 
         # Messages can be sent locally with game.add_message
-        # e.g. game.add_message(Message(sender='FRANCE',
-        #                               recipient='ENGLAND',
-        #                               message='This is a message',
-        #                               phase=self.get_current_phase(),
-        #                               time_sent=int(time.time())))
+        game.add_message(
+            Message(
+                sender="FRANCE",
+                recipient="ENGLAND",
+                message="This is a message",
+                phase=game.get_current_phase(),
+                time_sent=int(time.time()),
+            )
+        )
 
         # Processing the game to move to the next phase
         game.process()
