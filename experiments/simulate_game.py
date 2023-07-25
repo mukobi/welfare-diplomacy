@@ -16,6 +16,7 @@ import wandb
 
 import constants
 import utils
+from prompter import Prompter, RandomPrompter
 
 
 def main():
@@ -23,7 +24,7 @@ def main():
     # Parse args
     args = parse_args()
 
-    # Initialize seed, wandb, game, and logger
+    # Initialize seed, wandb, game, logger, and prompter
     utils.set_seed(args.seed)
 
     wandb.init(
@@ -40,48 +41,37 @@ def main():
     logging.basicConfig()
     logger.setLevel(args.log_level)
 
-    # to_saved_game_format(game, output_path=args.output_path)
+    prompter: Prompter = RandomPrompter()
 
-    # Creating a game
     while not game.is_game_done:
-        # Getting the list of possible orders for all locations
+        # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
 
         for power_name, power in game.powers.items():
-            # For each power, randomly sampling a valid order
-            power_orders = []
-            for loc in game.get_orderable_locations(power_name):
-                if possible_orders[loc]:
-                    # If this is a disbandable unit in an adjustment phase in welfare,
-                    # then randomly choose whether to disband or not
-                    if (
-                        "ADJUSTMENTS" in str(game.phase)
-                        and " D" in possible_orders[loc][0][-2:]
-                        and game.welfare
-                    ):
-                        power_orders.append(
-                            random.choice(["WAIVE", possible_orders[loc][0]])
-                        )
-                    else:
-                        power_orders.append(random.choice(possible_orders[loc]))
-
             system_prompt = constants.get_system_prompt(
                 power, game, args.max_message_rounds, args.max_years + 1900
             )
             user_prompt = constants.get_user_prompt(power, game)
 
-            game.set_orders(power_name, power_orders)
-
-        # Messages can be sent locally with game.add_message
-        game.add_message(
-            Message(
-                sender="FRANCE",
-                recipient="ENGLAND",
-                message="This is a message",
-                phase=game.get_current_phase(),
-                time_sent=int(time.time()),
+            # Prompting the model for a response
+            prompter_response = prompter.respond(
+                power, game, possible_orders, args.max_message_rounds, args.max_years
             )
-        )
+
+            # Set orders
+            game.set_orders(power_name, prompter_response.orders)
+
+            # Send messages
+            for recipient, message in prompter_response.messages.items():
+                game.add_message(
+                    Message(
+                        sender=power_name,
+                        recipient=recipient,
+                        message=message,
+                        phase=game.get_current_phase(),
+                        # time_sent=int(time.time()),
+                    )
+                )
 
         # Processing the game to move to the next phase
         game.process()
