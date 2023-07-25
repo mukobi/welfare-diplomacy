@@ -46,8 +46,8 @@ def main():
         # Getting the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
 
-        # For each power, randomly sampling a valid order
         for power_name, power in game.powers.items():
+            # For each power, randomly sampling a valid order
             power_orders = []
             for loc in game.get_orderable_locations(power_name):
                 if possible_orders[loc]:
@@ -63,6 +63,10 @@ def main():
                         )
                     else:
                         power_orders.append(random.choice(possible_orders[loc]))
+
+            system_prompt = constants.get_system_prompt(
+                power, game, args.max_message_rounds, args.max_years + 1900
+            )
 
             game.set_orders(power_name, power_orders)
 
@@ -131,6 +135,9 @@ def parse_args():
     parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
     parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
     parser.add_argument("--max_years", dest="max_years", type=int, default=10)
+    parser.add_argument(
+        "--max_message_rounds", dest="max_message_rounds", type=int, default=5
+    )
 
     args = parser.parse_args()
     return args
