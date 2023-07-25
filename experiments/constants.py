@@ -17,16 +17,17 @@ You are in an interactive setting where, at each time step, you are given the ga
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
     "orders": ["List of strings of intended orders to your units in the same abbreviated format as the history. You will converse with the other powers for several steps, then your most recent orders will be executed."],
-    "messages": A dictionary mapping from abbreviated 3-letter power names to messages to send to them on the current turn, or empty if nothing to send.
+    "messages": A dictionary mapping from abbreviated 3-letter power names (or “GLOBAL” for all) to messages that will be sent to them on the current turn, or empty if nothing to send.
 }}
 
 Here are examples showing the format for orders:
 A LON H
-F IRI - MAO
-A WAL - SPA VIA
+A WAL - LVP
+F SPA/NC - MAO
 A WAL S F LON
 A WAL S F IRI - LVP
-F NWG C A NWY - EDI
+F NTH C A YOR - NWY
+A YOR - NWY VIA
 F IRI R MAO
 F IRI D
 A LON B"""
