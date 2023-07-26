@@ -4959,11 +4959,15 @@ class Game(Jsonable):
                         first_order_type = non_waive_adjustments[0].split()[-1]
                     else:
                         first_order_type = "WAIVE"
-                    assert first_order_type in ["B", "D", "WAIVE"]
+                    # assert first_order_type in ["B", "D", "WAIVE"]
                     for order in power.adjust:
                         word = order.split()
                         unit = " ".join(word[:2])
-                        if word[-1] == first_order_type:
+                        if word[-1] == first_order_type and first_order_type in [
+                            "B",
+                            "D",
+                            "WAIVE",
+                        ]:
                             if first_order_type == "D":
                                 diff -= 1
                                 disbanded_units.add(unit)
