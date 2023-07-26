@@ -10,14 +10,14 @@ def get_system_prompt(
 ) -> str:
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
-    return rf"""You are an expert AI playing the game Diplomacy as the power {power.name}.{welfare_rules}
+    return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
 You are in an interactive setting where, at each time step, you are given the game state and history as text. You will then be able to exchange up to {max_message_rounds} sets of messages with the other players per turn (each of your completions will send out a set of messages). Given this information, respond in the following JSON format to submit orders and exchange messages with other players:
 
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
     "orders": ["List of strings of intended orders to your units in the same abbreviated format as the history. You will converse with the other powers for several steps, then your most recent orders will be executed."],
-    "messages": A dictionary mapping from abbreviated 3-letter power names (or “GLOBAL” for all) to messages that will be sent to them on the current turn, or empty if nothing to send.
+    "messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send.
 }}
 
 Here are examples showing the format for orders:
@@ -57,9 +57,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
             ):
                 # Limit messages seen by this power
                 continue
-            message_history += (
-                f"{message.sender} -> {message.recipient}: {message.message}\n"
-            )
+            message_history += f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
             phase_message_count += 1
         if phase_message_count == 0:
             message_history += "None\n"
@@ -71,7 +69,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
     for phase, power_order_dict in game.order_history.items():
         order_history += f"{phase}\n"
         for power_name, power_orders in power_order_dict.items():
-            order_history += f"{power_name[:3]}: " + ", ".join(power_orders) + "\n"
+            order_history += f"{power_name.title()}: " + ", ".join(power_orders) + "\n"
         order_history += "\n"
     order_history = order_history.strip()  # Remove trailing newline
 
@@ -79,7 +77,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
     # TODO add possible retreats?
     game_state = "\n".join(
         [
-            f"{power_name[:3]}: " + ", ".join(other_power.units)
+            f"{power_name.title()}: " + ", ".join(other_power.units)
             for power_name, other_power in game.powers.items()
         ]
     )
@@ -87,7 +85,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
     # For each power, their supply center count, unit count, and accumulated WP
     power_scores = "\n".join(
         [
-            f"{power.name}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+            f"{power.name.title()}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
             for power in game.powers.values()
         ]
     )

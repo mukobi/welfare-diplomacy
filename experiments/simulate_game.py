@@ -125,9 +125,9 @@ def parse_args():
     parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
     parser.add_argument("--max_years", dest="max_years", type=int, default=10)
     parser.add_argument(
-        "--max_message_rounds", dest="max_message_rounds", type=int, default=5
+        "--max_message_rounds", dest="max_message_rounds", type=int, default=1
     )
-    parser.add_argument("--model", dest="model", default="gpt-4")
+    parser.add_argument("--model", dest="model", default="gpt-4-0613")
 
     args = parser.parse_args()
     return args

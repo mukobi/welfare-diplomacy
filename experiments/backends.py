@@ -45,15 +45,21 @@ class OpenAIChatBackend(LanguageModelBackend):
 
     def complete(self, system_prompt: str, user_prompt: str) -> ModelResponse:
         try:
-            completion = self.completions_with_backoff(
+            response = self.completions_with_backoff(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
             )
+            completion = response.choices[0].message.content  # type: ignore
             self.logger.debug("Completion:\n%s", completion)
             completion = json.loads(completion)
+            # Turn recipients in messages into ALLCAPS for the engine
+            completion["messages"] = {
+                recipient.upper(): message
+                for recipient, message in completion["messages"].items()
+            }
             return ModelResponse(
                 model_name=self.model_name,
                 reasoning=completion["reasoning"],
@@ -80,4 +86,4 @@ class OpenAIChatBackend(LanguageModelBackend):
         response = openai.ChatCompletion.create(**kwargs)
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
-        return response.choices[0].message.content  # type: ignore
+        return response
