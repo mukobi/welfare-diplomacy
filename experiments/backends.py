@@ -83,7 +83,8 @@ class OpenAIChatBackend(LanguageModelBackend):
     @backoff.on_exception(backoff.expo, RateLimitError)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
-        response = openai.ChatCompletion.create(**kwargs)
+        temperature = kwargs.get("temperature", 0.0)
+        response = openai.ChatCompletion.create(**kwargs, temperature=temperature)
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
         return response
