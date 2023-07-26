@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 import json
 import logging
+from typing import Optional
 
 import backoff
 import openai
@@ -18,6 +19,12 @@ class ModelResponse:
     reasoning: str  # Private reasoning to generate the response.
     orders: list[str]  # Orders to execute.
     messages: dict[str, str]  # Messages to send to other powers.
+    system_prompt: str  # System prompt
+    user_prompt: Optional[str]  # User prompt if available
+    prompt_tokens: int  # Number of tokens in prompt
+    completion_tokens: int  # Number of tokens in completion
+    total_tokens: int  # Total number of tokens in prompt and completion
+    completion_time_sec: float  # Time to generate completion in seconds
 
 
 class LanguageModelBackend(ABC):
@@ -60,25 +67,29 @@ class OpenAIChatBackend(LanguageModelBackend):
                 recipient.upper(): message
                 for recipient, message in completion["messages"].items()
             }
+            assert "usage" in response, "OpenAI response does not contain usage"
+            usage = response["usage"]  # type: ignore
+            completion_time_sec = response.response_ms / 1000.0  # type: ignore
             return ModelResponse(
                 model_name=self.model_name,
                 reasoning=completion["reasoning"],
                 orders=completion["orders"],
                 messages=completion["messages"],
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                prompt_tokens=usage.prompt_tokens,
+                completion_tokens=usage.completion_tokens,
+                total_tokens=usage.total_tokens,
+                completion_time_sec=completion_time_sec,
             )
 
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error(
-                "Error completing prompt ending in\n%s:\n%s",
-                user_prompt[:-20],
+                "Error completing prompt ending in\n%s\n\nException:\n%s",
+                user_prompt[-100:],
                 exc,
             )
-            return ModelResponse(
-                model_name=self.model_name,
-                reasoning="Error completing prompt.",
-                orders=[],
-                messages={},
-            )
+            raise
 
     @backoff.on_exception(backoff.expo, RateLimitError)
     def completions_with_backoff(self, **kwargs):

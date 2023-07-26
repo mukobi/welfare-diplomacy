@@ -67,6 +67,12 @@ class RandomPrompter(Prompter):
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
             messages={recipient: message},
+            system_prompt="",
+            user_prompt="",
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            completion_time_sec=0.0,
         )
 
 

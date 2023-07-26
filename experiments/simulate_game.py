@@ -41,28 +41,45 @@ def main():
 
     prompter: Prompter = model_name_to_prompter(args.model)
 
+    logger.info(
+        f"Starting game with map {args.map_name} and model {args.model} ending after {args.max_years} years with {args.max_message_rounds} message rounds."
+    )
+
     while not game.is_game_done:
+        logger.info(f"Beginning phase {game.get_current_phase()}")
         # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
 
+        total_num_orders = 0
+        total_num_valid_orders = 0
+        sum_valid_order_ratio = 0.0
+        total_message_sent = 0
+        sum_completion_time_sec = 0.0
         for power_name, power in game.powers.items():
             # Prompting the model for a response
             prompter_response = prompter.respond(
                 power, game, possible_orders, args.max_message_rounds, args.max_years
             )
+            sum_completion_time_sec += prompter_response.completion_time_sec
+            logger.info(
+                f"Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nResponse:\n{prompter_response}"
+            )
 
             # Check how many of the orders were valid
-            valid_order_count = 0
+            num_valid_orders = 0
             for order in prompter_response.orders:
                 word = order.split()
                 unit, destination = " ".join(word[:2]), " ".join(word[2:])
                 if game._valid_order(power, unit, destination):
-                    valid_order_count += 1
+                    num_valid_orders += 1
             num_orders = len(prompter_response.orders)
-            valid_order_ratio = valid_order_count / len(prompter_response.orders)
+            valid_order_ratio = num_valid_orders / len(prompter_response.orders)
             logger.info(
-                f"{power_name} valid orders: {valid_order_count}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
+                f"{power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
             )
+            total_num_orders += num_orders
+            total_num_valid_orders += num_valid_orders
+            sum_valid_order_ratio += valid_order_ratio
 
             # Set orders
             game.set_orders(power_name, prompter_response.orders)
@@ -77,6 +94,7 @@ def main():
                         phase=game.get_current_phase(),
                     )
                 )
+                total_message_sent += 1
 
         # Processing the game to move to the next phase
         game.process()
@@ -86,11 +104,18 @@ def main():
         if utils.get_game_year(phase) > args.max_years:
             game._finish([])
 
-        # Log to wandb
+        # Log to Weights & Biases
         rendered = game.render(incl_abbrev=True)
         log_object = {
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering": wandb.Html(rendered),
+            "orders/num_total": total_num_orders,
+            "orders/num_valid": total_num_valid_orders,
+            "orders/valid_ratio_total_avg": total_num_valid_orders / total_num_orders,
+            "orders/valid_ratio_avg_avg": sum_valid_order_ratio / len(game.powers),
+            "messages/num_total": total_message_sent,
+            "messages/num_avg": total_message_sent / len(game.powers),
+            "model/completion_time_sec_avg": sum_completion_time_sec / len(game.powers),
         }
         for power in game.powers.values():
             short_name = power.name[:3]
