@@ -51,6 +51,19 @@ def main():
                 power, game, possible_orders, args.max_message_rounds, args.max_years
             )
 
+            # Check how many of the orders were valid
+            valid_order_count = 0
+            for order in prompter_response.orders:
+                word = order.split()
+                unit, destination = " ".join(word[:2]), " ".join(word[2:])
+                if game._valid_order(power, unit, destination):
+                    valid_order_count += 1
+            num_orders = len(prompter_response.orders)
+            valid_order_ratio = valid_order_count / len(prompter_response.orders)
+            logger.info(
+                f"{power_name} valid orders: {valid_order_count}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
+            )
+
             # Set orders
             game.set_orders(power_name, prompter_response.orders)
 
@@ -62,7 +75,6 @@ def main():
                         recipient=recipient,
                         message=message,
                         phase=game.get_current_phase(),
-                        # time_sent=int(time.time()),
                     )
                 )
 
