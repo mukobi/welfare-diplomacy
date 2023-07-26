@@ -1,11 +1,23 @@
 """Language model backends."""
 
-import logging
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+import json
+import logging
 
 import backoff
 import openai
 from openai.error import RateLimitError
+
+
+@dataclass
+class ModelResponse:
+    """A response from a model for a single turn of actions."""
+
+    model_name: str  # Name of the generating model.
+    reasoning: str  # Private reasoning to generate the response.
+    orders: list[str]  # Orders to execute.
+    messages: dict[str, str]  # Messages to send to other powers.
 
 
 class LanguageModelBackend(ABC):
@@ -15,11 +27,11 @@ class LanguageModelBackend(ABC):
         self.logger = logging.getLogger(__name__)
 
     @abstractmethod
-    def complete(self, system_prompt, user_prompt):
+    def complete(self, system_prompt: str, user_prompt: str) -> ModelResponse:
         """
         Complete a prompt with the language model backend.
 
-        Returns the string of the completion without the prompt or further processing.
+        Returns the completion as a dict.
         """
         raise NotImplementedError("Subclass must implement abstract method")
 
@@ -31,14 +43,22 @@ class OpenAIChatBackend(LanguageModelBackend):
         super().__init__()
         self.model_name = model_name
 
-    def complete(self, system_prompt, user_prompt):
+    def complete(self, system_prompt: str, user_prompt: str) -> ModelResponse:
         try:
-            return self.completions_with_backoff(
+            completion = self.completions_with_backoff(
                 model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
+            )
+            self.logger.debug("Completion:\n%s", completion)
+            completion = json.loads(completion)
+            return ModelResponse(
+                model_name=self.model_name,
+                reasoning=completion["reasoning"],
+                orders=completion["orders"],
+                messages=completion["messages"],
             )
 
         except Exception as exc:  # pylint: disable=broad-except
@@ -47,7 +67,12 @@ class OpenAIChatBackend(LanguageModelBackend):
                 user_prompt[:-20],
                 exc,
             )
-            return ""
+            return ModelResponse(
+                model_name=self.model_name,
+                reasoning="Error completing prompt.",
+                orders=[],
+                messages={},
+            )
 
     @backoff.on_exception(backoff.expo, RateLimitError)
     def completions_with_backoff(self, **kwargs):

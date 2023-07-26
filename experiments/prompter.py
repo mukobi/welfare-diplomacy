@@ -6,21 +6,12 @@ an underlying model for a response, and return back the extracted response.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+import random
 
 from diplomacy import Power, Game
 
-import random
-
-
-@dataclass
-class PrompterResponse:
-    """A response from a prompter."""
-
-    prompter_name: str  # Name of the prompter.
-    reasoning: str  # Private reasoning to generate the response.
-    orders: list[str]  # Orders to execute.
-    messages: dict[str, str]  # Messages to send to other powers.
+from backends import ModelResponse, OpenAIChatBackend
+import constants
 
 
 class Prompter(ABC):
@@ -34,7 +25,7 @@ class Prompter(ABC):
         possible_orders: dict[str, list[str]],
         max_message_rounds: int,
         final_game_year: int,
-    ) -> PrompterResponse:
+    ) -> ModelResponse:
         """Prompt the model for a response."""
 
 
@@ -48,7 +39,7 @@ class RandomPrompter(Prompter):
         possible_orders: dict[str, list[str]],
         max_message_rounds: int,
         final_game_year: int,
-    ) -> PrompterResponse:
+    ) -> ModelResponse:
         """Randomly generate orders and messages."""
         # For each power, randomly sampling a valid order
         power_orders = []
@@ -71,9 +62,42 @@ class RandomPrompter(Prompter):
         other_powers = [p for p in game.powers if p != power.name]
         recipient = random.choice(other_powers)
         message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
-        return PrompterResponse(
-            prompter_name="RandomPrompter",
+        return ModelResponse(
+            model_name="RandomPrompter",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
             messages={recipient: message},
         )
+
+
+class OpenAIChatPrompter(Prompter):
+    """Uses OpenAI Chat to generate orders and messages."""
+
+    def __init__(self, model_name: str):
+        self.backend = OpenAIChatBackend(model_name)
+
+    def respond(
+        self,
+        power: Power,
+        game: Game,
+        possible_orders: dict[str, list[str]],
+        max_message_rounds: int,
+        final_game_year: int,
+    ) -> ModelResponse:
+        """Prompt the model for a response."""
+        system_prompt = constants.get_system_prompt(
+            power, game, max_message_rounds, final_game_year
+        )
+        user_prompt = constants.get_user_prompt(power, game)
+        return self.backend.complete(system_prompt, user_prompt)
+
+
+def model_name_to_prompter(model_name: str) -> Prompter:
+    """Given a model name, return an instantiated corresponding prompter."""
+    model_name = model_name.lower()
+    if model_name == "random":
+        return RandomPrompter()
+    elif "gpt-4" in model_name or "gpt-3.5" in model_name:
+        return OpenAIChatPrompter(model_name)
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")

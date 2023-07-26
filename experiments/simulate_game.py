@@ -7,8 +7,6 @@ Language model scaffolding to play Diplomacy.
 import argparse
 import logging
 import os
-import random
-import time
 
 from diplomacy import Game, Message
 from diplomacy.utils.export import to_saved_game_format
@@ -16,7 +14,7 @@ import wandb
 
 import constants
 import utils
-from prompter import Prompter, RandomPrompter
+from prompter import Prompter, model_name_to_prompter
 
 
 def main():
@@ -41,18 +39,13 @@ def main():
     logging.basicConfig()
     logger.setLevel(args.log_level)
 
-    prompter: Prompter = RandomPrompter()
+    prompter: Prompter = model_name_to_prompter(args.model)
 
     while not game.is_game_done:
         # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
 
         for power_name, power in game.powers.items():
-            system_prompt = constants.get_system_prompt(
-                power, game, args.max_message_rounds, args.max_years + 1900
-            )
-            user_prompt = constants.get_user_prompt(power, game)
-
             # Prompting the model for a response
             prompter_response = prompter.respond(
                 power, game, possible_orders, args.max_message_rounds, args.max_years
@@ -134,6 +127,7 @@ def parse_args():
     parser.add_argument(
         "--max_message_rounds", dest="max_message_rounds", type=int, default=5
     )
+    parser.add_argument("--model", dest="model", default="gpt-4")
 
     args = parser.parse_args()
     return args
