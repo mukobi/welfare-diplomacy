@@ -45,8 +45,24 @@ def main():
         f"Starting game with map {args.map_name} and model {args.model} ending after {args.max_years} years with {args.max_message_rounds} message rounds."
     )
 
+    # Log the initial state of the game
+    rendered = game.render(incl_abbrev=True)
+    log_object = {
+        "meta/year_fractional": 0.0,
+        "board/rendering": wandb.Html(rendered),
+    }
+    for power in game.powers.values():
+        short_name = power.name[:3]
+        if game.phase_type == "A":
+            log_object[f"score/units/{short_name}"] = len(power.units)
+            log_object[f"score/welfare/{short_name}"] = power.welfare_points
+        else:
+            log_object[f"score/centers/{short_name}"] = len(power.centers)
+
+    wandb.log(log_object)
+
     while not game.is_game_done:
-        logger.info(f"Beginning phase {game.get_current_phase()}")
+        logger.info(f"🕰️ Beginning phase {game.get_current_phase()}")
 
         # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
@@ -65,7 +81,7 @@ def main():
             sum_completion_time_sec += prompter_response.completion_time_sec
             prompter_response_history[power_name] = prompter_response
             logger.info(
-                f"Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}"
+                f"⚙️ Power {power_name}: Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}"
             )
 
             # Check how many of the orders were valid
@@ -79,9 +95,11 @@ def main():
                 if game._valid_order(power, unit, destination):
                     num_valid_orders += 1
             num_orders = len(prompter_response.orders)
-            valid_order_ratio = num_valid_orders / len(prompter_response.orders)
+            valid_order_ratio = 1.0
+            if num_orders > 0:
+                valid_order_ratio = num_valid_orders / num_orders
             logger.info(
-                f"{power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
+                f"✔️ {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
             )
             total_num_orders += num_orders
             total_num_valid_orders += num_valid_orders
