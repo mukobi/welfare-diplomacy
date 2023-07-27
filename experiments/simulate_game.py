@@ -8,7 +8,7 @@ import argparse
 import logging
 import os
 
-from diplomacy import Game, Message
+from diplomacy import Game, GamePhaseData, Message
 from diplomacy.utils.export import to_saved_game_format
 import numpy as np
 import wandb
@@ -140,7 +140,7 @@ def main():
         game.process()
 
         # Check whether to end the game
-        phase = game.get_phase_history()[-1]
+        phase: GamePhaseData = game.get_phase_history()[-1]
         if utils.get_game_year(phase) > args.max_years:
             game._finish([])
 
@@ -155,6 +155,8 @@ def main():
                 "reasoning",
                 "orders",
                 "messages",
+                "system_prompt",
+                "user_prompt",
             ],
             data=[
                 [
@@ -168,6 +170,8 @@ def main():
                         f"{power_name} -> {recipient}: {message}"
                         for recipient, message in prompter_response.messages.items()
                     ],
+                    prompter_response.system_prompt,
+                    prompter_response.user_prompt,
                 ]
                 for power_name, prompter_response in prompter_response_history.items()
             ],
@@ -191,14 +195,14 @@ def main():
 
         for power in game.powers.values():
             short_name = power.name[:3]
-            if game.phase_type == "A":
+            if phase.name[-1] == "A" or phase.name[-1] == "R":
+                # Centers/welfare/units only change after adjustments or sometimes retreats
                 log_object[f"score/units/{short_name}"] = len(power.units)
                 log_object[f"score/welfare/{short_name}"] = power.welfare_points
-            else:
                 log_object[f"score/centers/{short_name}"] = len(power.centers)
 
-        if game.phase_type == "A":
-            # Track different metrics of welfare
+        if phase.name[-1] == "A":
+            # Track metrics of aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
             log_object["welfare/min"] = np.min(welfare_list)
             log_object["welfare/max"] = np.max(welfare_list)
