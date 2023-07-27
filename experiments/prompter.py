@@ -71,7 +71,7 @@ class RandomPrompter(Prompter):
         message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
 
         # Sleep to allow wandb to catch up
-        sleep_time = 0.2
+        sleep_time = 0.3
         time.sleep(sleep_time)
 
         return ModelResponse(
