@@ -4927,7 +4927,7 @@ class Game(Jsonable):
             # Emptying the results for the Adjustments Phase
             for power in self.powers.values():
                 self.ordered_units.setdefault(power.name, [])
-                for order in power.adjust:
+                for order in power.adjust[::-1]:
                     # Void order - Marking it as such in results
                     if order.split()[0] == "VOID":
                         word = order.split()[1:]
@@ -4984,7 +4984,7 @@ class Game(Jsonable):
                 # Detecting missing orders. This loop looks through the inputted adjustments and
                 # determines if they add up correctly or not.
                 else:
-                    for order in power.adjust:
+                    for order in power.adjust[::-1]:
                         # No more builds or disbands allowed, just remove the order
                         if diff == 0:
                             word = order.split()
@@ -5077,7 +5077,7 @@ class Game(Jsonable):
 
             # Emptying void orders - And marking them as such
             for power in self.powers.values():
-                for order in power.adjust[:]:
+                for order in power.adjust[::-1]:
                     if order.split()[0] == "VOID":
                         word = order.split()[1:]
                         unit = " ".join(word[:2])
