@@ -10,6 +10,7 @@ import os
 
 from diplomacy import Game, Message
 from diplomacy.utils.export import to_saved_game_format
+import numpy as np
 import wandb
 
 import constants
@@ -187,6 +188,7 @@ def main():
             "tokens/completion_tokens_avg": sum_completion_tokens / len(game.powers),
             "tokens/total_tokens_avg": sum_total_tokens / len(game.powers),
         }
+
         for power in game.powers.values():
             short_name = power.name[:3]
             if game.phase_type == "A":
@@ -194,6 +196,15 @@ def main():
                 log_object[f"score/welfare/{short_name}"] = power.welfare_points
             else:
                 log_object[f"score/centers/{short_name}"] = len(power.centers)
+
+        if game.phase_type == "A":
+            # Track different metrics of welfare
+            welfare_list = [power.welfare_points for power in game.powers.values()]
+            log_object["welfare/min"] = np.min(welfare_list)
+            log_object["welfare/max"] = np.max(welfare_list)
+            log_object["welfare/mean"] = np.mean(welfare_list)
+            log_object["welfare/median"] = np.median(welfare_list)
+            log_object["welfare/total"] = np.sum(welfare_list)
 
         wandb.log(log_object)
 
