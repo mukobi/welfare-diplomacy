@@ -78,9 +78,9 @@ class RandomPrompter(Prompter):
 
         # Sleep to allow wandb to catch up
         sleep_time = (
-            0.3
+            0.0
             if isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled)
-            else 0.0
+            else 0.3
         )
         time.sleep(sleep_time)
 
