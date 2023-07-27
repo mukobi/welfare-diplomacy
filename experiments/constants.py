@@ -73,6 +73,20 @@ def get_user_prompt(power: Power, game: Game) -> str:
         order_history += "\n"
     order_history = order_history.strip()  # Remove trailing newline
 
+    # Owned supply centers for each power and unowned supply centers.
+    supply_center_ownership = ""
+    owned_centers = set()
+    for power_name, other_power in game.powers.items():
+        supply_center_ownership += (
+            f"{power_name.title()}: " + ", ".join(other_power.centers) + "\n"
+        )
+        owned_centers.update(other_power.centers)
+    unowned_centers = []
+    for center in game.map.scs:
+        if center not in owned_centers:
+            unowned_centers.append(center)
+    supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
+
     # The current game state, including a list of units and centers per-player, as well as a list of possible retreats per-player during retreat turns.
     # TODO add possible retreats?
     game_state = "\n".join(
@@ -107,8 +121,10 @@ def get_user_prompt(power: Power, game: Game) -> str:
 ### Recent Order History ###
 {order_history}
 
-### Current Game State ###
-{game.phase}
+### Current Supply Center Ownership ###
+{supply_center_ownership}
+
+### Current Unit State ###
 {game_state}
 
 ### Current Supply, Unit, and WP Count (Centers/Units/Welfare Points) ###
