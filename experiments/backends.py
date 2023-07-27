@@ -50,14 +50,17 @@ class OpenAIChatBackend(LanguageModelBackend):
         super().__init__()
         self.model_name = model_name
 
-    def complete(self, system_prompt: str, user_prompt: str) -> ModelResponse:
+    def complete(
+        self, system_prompt: str, user_prompt: str, temperature: float
+    ) -> ModelResponse:
         try:
             response = self.completions_with_backoff(
-                model="gpt-4",
+                model=self.model_name,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
+                temperature=temperature,
             )
             completion = response.choices[0].message.content  # type: ignore
             self.logger.debug("Completion:\n%s", completion)
@@ -94,8 +97,7 @@ class OpenAIChatBackend(LanguageModelBackend):
     @backoff.on_exception(backoff.expo, RateLimitError)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
-        temperature = kwargs.get("temperature", 0.0)
-        response = openai.ChatCompletion.create(**kwargs, temperature=temperature)
+        response = openai.ChatCompletion.create(**kwargs)
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
         return response

@@ -39,7 +39,9 @@ def main():
     logging.basicConfig()
     logger.setLevel(args.log_level)
 
-    prompter: Prompter = model_name_to_prompter(args.model)
+    prompter: Prompter = model_name_to_prompter(
+        args.model, temperature=args.temperature
+    )
 
     logger.info(
         f"Starting game with map {args.map_name} and model {args.model} ending after {args.max_years} years with {args.max_message_rounds} message rounds."
@@ -224,6 +226,7 @@ def parse_args():
         "--max_message_rounds", dest="max_message_rounds", type=int, default=1
     )
     parser.add_argument("--model", dest="model", default="gpt-4-32k-0613")
+    parser.add_argument("--temperature", dest="temperature", type=float, default=0.7)
 
     args = parser.parse_args()
     return args

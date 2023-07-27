@@ -85,8 +85,9 @@ class RandomPrompter(Prompter):
 class OpenAIChatPrompter(Prompter):
     """Uses OpenAI Chat to generate orders and messages."""
 
-    def __init__(self, model_name: str):
+    def __init__(self, model_name: str, temperature: float):
         self.backend = OpenAIChatBackend(model_name)
+        self.temperature = temperature
 
     def respond(
         self,
@@ -101,15 +102,17 @@ class OpenAIChatPrompter(Prompter):
             power, game, max_message_rounds, final_game_year
         )
         user_prompt = constants.get_user_prompt(power, game)
-        return self.backend.complete(system_prompt, user_prompt)
+        return self.backend.complete(
+            system_prompt, user_prompt, temperature=self.temperature
+        )
 
 
-def model_name_to_prompter(model_name: str) -> Prompter:
+def model_name_to_prompter(model_name: str, temperature: float) -> Prompter:
     """Given a model name, return an instantiated corresponding prompter."""
     model_name = model_name.lower()
     if model_name == "random":
         return RandomPrompter()
     elif "gpt-4" in model_name or "gpt-3.5" in model_name:
-        return OpenAIChatPrompter(model_name)
+        return OpenAIChatPrompter(model_name, temperature)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
