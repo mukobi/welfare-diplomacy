@@ -90,6 +90,17 @@ def get_user_prompt(power: Power, game: Game) -> str:
         ]
     )
 
+    # Instructions about the current phase
+    phase_type = str(game.phase).split()[-1]
+    phase_order_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with parenthetical syntax) are: "
+    if phase_type == "MOVEMENT":
+        phase_order_instructions += "Hold (H), Move (-), Support (S), Convoy (C)."
+    elif phase_type == "RETREATS":
+        phase_order_instructions += "Disband (D), Retreat (R)."
+    elif phase_type == "ADJUSTMENTS":
+        phase_order_instructions += "Build (B), Disband (D)."
+    else:
+        raise ValueError(f"Unknown phase type {phase_type}")
     return rf"""### Dialogue History ###
 {message_history}
 
@@ -101,4 +112,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
 {game_state}
 
 ### Current Supply, Unit, and WP Count (Centers/Units/Welfare Points) ###
-{power_scores}"""
+{power_scores}
+
+### Phase Order Instructions ###
+{phase_order_instructions}"""
