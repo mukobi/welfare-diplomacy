@@ -76,12 +76,18 @@ def main():
         total_message_sent = 0
         sum_completion_time_sec = 0.0
         prompter_response_history = {}
+        sum_prompt_tokens = 0
+        sum_completion_tokens = 0
+        sum_total_tokens = 0
         for power_name, power in game.powers.items():
             # Prompting the model for a response
             prompter_response = prompter.respond(
                 power, game, possible_orders, args.max_message_rounds, args.max_years
             )
             sum_completion_time_sec += prompter_response.completion_time_sec
+            sum_prompt_tokens += prompter_response.prompt_tokens
+            sum_completion_tokens += prompter_response.completion_tokens
+            sum_total_tokens += prompter_response.total_tokens
             prompter_response_history[power_name] = prompter_response
             logger.info(
                 f"⚙️ Power {power_name}: Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}"
@@ -177,6 +183,9 @@ def main():
             "messages/num_avg": total_message_sent / len(game.powers),
             "model/completion_time_sec_avg": sum_completion_time_sec / len(game.powers),
             "model/response_table": model_response_table,
+            "tokens/prompt_tokens_avg": sum_prompt_tokens / len(game.powers),
+            "tokens/completion_tokens_avg": sum_completion_tokens / len(game.powers),
+            "tokens/total_tokens_avg": sum_total_tokens / len(game.powers),
         }
         for power in game.powers.values():
             short_name = power.name[:3]
