@@ -80,7 +80,11 @@ def main():
         sum_prompt_tokens = 0
         sum_completion_tokens = 0
         sum_total_tokens = 0
-        for power_name, power in game.powers.items():
+
+        # Randomize order of powers
+        power_names = list(game.powers.items())
+        np.random.shuffle(power_names)
+        for power_name, power in power_names:
             # Prompting the model for a response
             prompter_response = prompter.respond(
                 power, game, possible_orders, args.max_message_rounds, args.max_years
