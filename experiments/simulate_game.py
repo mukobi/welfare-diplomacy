@@ -223,7 +223,7 @@ def parse_args():
     parser.add_argument(
         "--max_message_rounds", dest="max_message_rounds", type=int, default=1
     )
-    parser.add_argument("--model", dest="model", default="gpt-4-0613")
+    parser.add_argument("--model", dest="model", default="gpt-4-32k-0613")
 
     args = parser.parse_args()
     return args
