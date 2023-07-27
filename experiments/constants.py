@@ -64,9 +64,9 @@ def get_user_prompt(power: Power, game: Game) -> str:
         message_history += "\n"
     message_history = message_history.strip()  # Remove trailing newline
 
-    # A list of previous turn orders (game actions) for all players up through the previous movement turn.
+    # A list of the last N previous turn orders (game actions) for all players up through the previous movement turn.
     order_history = "None" if len(game.order_history) == 0 else ""
-    for phase, power_order_dict in game.order_history.items():
+    for phase, power_order_dict in list(game.order_history.items())[-2:]:
         order_history += f"{phase}\n"
         for power_name, power_orders in power_order_dict.items():
             order_history += f"{power_name.title()}: " + ", ".join(power_orders) + "\n"
@@ -104,7 +104,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
     return rf"""### Dialogue History ###
 {message_history}
 
-### Order History ###
+### Recent Order History ###
 {order_history}
 
 ### Current Game State ###

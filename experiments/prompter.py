@@ -58,6 +58,12 @@ class RandomPrompter(Prompter):
                 else:
                     power_orders.append(random.choice(possible_orders[loc]))
 
+        # For debugging prompting
+        system_prompt = constants.get_system_prompt(
+            power, game, max_message_rounds, final_game_year
+        )
+        user_prompt = constants.get_user_prompt(power, game)
+
         # Randomly sending a message to another power
         other_powers = [p for p in game.powers if p != power.name]
         recipient = random.choice(other_powers)
@@ -67,8 +73,8 @@ class RandomPrompter(Prompter):
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
             messages={recipient: message},
-            system_prompt="",
-            user_prompt="",
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
             prompt_tokens=0,
             completion_tokens=0,
             total_tokens=0,
