@@ -5,15 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
-            "type": "python",
-            "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        },
-        {
-            "name": "Sim Game (no wandb)",
+            "name": "GPT-4 NoWandb",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
@@ -25,7 +17,7 @@
             "justMyCode": true
         },
         {
-            "name": "Sim Game",
+            "name": "GPT-4",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
@@ -33,6 +25,41 @@
             "args": [
                 "--no_save"
             ],
+            "justMyCode": true
+        },
+        {
+            "name": "Random NoWandb",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--no_save",
+                "--model",
+                "random",
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Random",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--no_save",
+                "--model",
+                "random",
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
             "justMyCode": true
         },
         {
