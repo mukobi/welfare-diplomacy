@@ -7,6 +7,7 @@ an underlying model for a response, and return back the extracted response.
 
 from abc import ABC, abstractmethod
 import random
+import time
 
 from diplomacy import Power, Game
 
@@ -68,6 +69,11 @@ class RandomPrompter(Prompter):
         other_powers = [p for p in game.powers if p != power.name]
         recipient = random.choice(other_powers)
         message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
+
+        # Sleep to allow wandb to catch up
+        sleep_time = 0.2
+        time.sleep(sleep_time)
+
         return ModelResponse(
             model_name="RandomPrompter",
             reasoning="Randomly generated orders and messages.",
@@ -78,7 +84,7 @@ class RandomPrompter(Prompter):
             prompt_tokens=0,
             completion_tokens=0,
             total_tokens=0,
-            completion_time_sec=0.0,
+            completion_time_sec=sleep_time,
         )
 
 
