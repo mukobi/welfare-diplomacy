@@ -10,6 +10,7 @@ import random
 import time
 
 from diplomacy import Power, Game
+import wandb
 
 from backends import ModelResponse, OpenAIChatBackend
 import constants
@@ -46,6 +47,9 @@ class RandomPrompter(Prompter):
         power_orders = []
         for loc in game.get_orderable_locations(power.name):
             if possible_orders[loc]:
+                # Sort for determinism
+                possible_orders[loc].sort()
+
                 # If this is a disbandable unit in an adjustment phase in welfare,
                 # then randomly choose whether to disband or not
                 if (
@@ -57,6 +61,8 @@ class RandomPrompter(Prompter):
                         random.choice(["WAIVE", possible_orders[loc][0]])
                     )
                 else:
+                    print(possible_orders[loc])
+                    print(random.choice(range(100)))
                     power_orders.append(random.choice(possible_orders[loc]))
 
         # For debugging prompting
@@ -71,8 +77,9 @@ class RandomPrompter(Prompter):
         message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
 
         # Sleep to allow wandb to catch up
-        sleep_time = 0.3
-        time.sleep(sleep_time)
+        if wandb.run is not None:
+            sleep_time = 0.3
+            time.sleep(sleep_time)
 
         return ModelResponse(
             model_name="RandomPrompter",
