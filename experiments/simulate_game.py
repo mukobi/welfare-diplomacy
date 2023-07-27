@@ -140,11 +140,11 @@ def main():
         game.process()
 
         # Check whether to end the game
-        phase: GamePhaseData = game.get_phase_history()[-1]
-        if utils.get_game_year(phase) > args.max_years:
+        if int(game.phase.split()[1]) - 1900 > args.max_years:
             game._finish([])
 
         # Log to Weights & Biases
+        phase: GamePhaseData = game.get_phase_history()[-1]
         rendered_state = game.render(incl_abbrev=True)
         model_response_table = wandb.Table(
             columns=[
