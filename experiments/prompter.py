@@ -61,8 +61,6 @@ class RandomPrompter(Prompter):
                         random.choice(["WAIVE", possible_orders[loc][0]])
                     )
                 else:
-                    print(possible_orders[loc])
-                    print(random.choice(range(100)))
                     power_orders.append(random.choice(possible_orders[loc]))
 
         # For debugging prompting
