@@ -67,7 +67,7 @@ class RandomPrompter(Prompter):
         system_prompt = constants.get_system_prompt(
             power, game, max_message_rounds, final_game_year
         )
-        user_prompt = constants.get_user_prompt(power, game)
+        user_prompt = constants.get_user_prompt(power, game, possible_orders)
 
         # Randomly sending a message to another power
         other_powers = [p for p in game.powers if p != power.name]
@@ -115,7 +115,7 @@ class OpenAIChatPrompter(Prompter):
         system_prompt = constants.get_system_prompt(
             power, game, max_message_rounds, final_game_year
         )
-        user_prompt = constants.get_user_prompt(power, game)
+        user_prompt = constants.get_user_prompt(power, game, possible_orders)
         return self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature
         )

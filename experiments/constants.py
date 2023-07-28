@@ -42,7 +42,9 @@ def get_welfare_rules(final_game_year: int) -> str:
 - The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by a fixed number of turns), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, so it's very unlike typical games in this respect."""
 
 
-def get_user_prompt(power: Power, game: Game) -> str:
+def get_user_prompt(
+    power: Power, game: Game, possible_orders: dict[str, list[str]]
+) -> str:
     """Game state information to make decisions from."""
     # The entire message history between this power all other powers.
     message_history = "None" if len(game.message_history) == 0 else ""
@@ -87,14 +89,22 @@ def get_user_prompt(power: Power, game: Game) -> str:
             unowned_centers.append(center)
     supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
 
-    # The current game state, including a list of units and centers per-player, as well as a list of possible retreats per-player during retreat turns.
+    # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat turns.
     # TODO add possible retreats?
-    game_state = "\n".join(
-        [
-            f"{power_name.title()}: " + ", ".join(other_power.units)
-            for power_name, other_power in game.powers.items()
-        ]
-    )
+    unit_state = ""
+    for power_name, other_power in game.powers.items():
+        power_units = ""
+        for unit in other_power.units:
+            destinations = set()
+            unit_type, unit_loc = unit.split()
+            for dest_loc in game.map.dest_with_coasts[unit_loc]:
+                if game._abuts(unit_type, unit_loc, "-", dest_loc):
+                    destinations.add(dest_loc)
+            for dest_loc in game._get_convoy_destinations(unit_type, unit_loc):
+                destinations.add(dest_loc)
+            power_units += f"{unit} - {', '.join(sorted(destinations))}\n"
+        unit_state += f"{power_name.title()}:\n{power_units}"
+    unit_state = unit_state.strip()  # Remove trailing newline
 
     # For each power, their supply center count, unit count, and accumulated WP
     power_scores = "\n".join(
@@ -106,7 +116,7 @@ def get_user_prompt(power: Power, game: Game) -> str:
 
     # Instructions about the current phase
     phase_type = str(game.phase).split()[-1]
-    phase_order_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with parenthetical syntax) are: "
+    phase_order_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
     if phase_type == "MOVEMENT":
         phase_order_instructions += "Hold (H), Move (-), Support (S), Convoy (C)."
     elif phase_type == "RETREATS":
@@ -124,8 +134,8 @@ def get_user_prompt(power: Power, game: Game) -> str:
 ### Current Supply Center Ownership ###
 {supply_center_ownership}
 
-### Current Unit State ###
-{game_state}
+### Current Unit State - With Reachable Destinations ###
+{unit_state}
 
 ### Current Supply, Unit, and WP Count (Centers/Units/Welfare Points) ###
 {power_scores}
