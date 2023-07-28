@@ -239,7 +239,7 @@ def main():
                 for power in game.powers.values()
             ]
         )
-        logger.info(f"{phase.name} C/U/W: {score_string}")
+        logger.info(f"{phase.name} SC/UN/WP: {score_string}")
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
