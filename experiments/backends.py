@@ -89,7 +89,7 @@ class OpenAIChatBackend(LanguageModelBackend):
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error(
                 "Error completing prompt ending in\n%s\n\nException:\n%s",
-                user_prompt[-100:],
+                user_prompt[-300:],
                 exc,
             )
             raise
