@@ -80,7 +80,6 @@ class OpenAIChatBackend(LanguageModelBackend):
                 messages=completion["messages"],
                 system_prompt=system_prompt,
                 user_prompt=user_prompt,
-                message_round=None,
                 prompt_tokens=usage.prompt_tokens,
                 completion_tokens=usage.completion_tokens,
                 total_tokens=usage.total_tokens,
