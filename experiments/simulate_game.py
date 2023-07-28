@@ -309,7 +309,7 @@ def parse_args():
         "--early_stop_max_years",
         dest="early_stop_max_years",
         type=int,
-        default=3,
+        default=0,
         help="Early stop while telling the models the game lasts --max_years long. No effect if 0.",
     )
     parser.add_argument(
