@@ -3977,7 +3977,7 @@ class Game(Jsonable):
             # Checking if unit can Build/Disband, otherwise voiding order
             if word[-1] in valid_order_types:
                 pass
-            elif word[-1] in "BD":
+            elif word[-1] not in "BD":
                 adjust += ["VOID " + order]
                 self.error += [err.GAME_ORDER_NOT_ALLOWED % order]
                 continue
@@ -4010,7 +4010,7 @@ class Game(Jsonable):
                     self.error += [err.GAME_BAD_ADJUSTMENT_ORDER % order]
 
             # Checking for BUILD
-            elif len(word) == 3:
+            elif len(word) == 3 and word[-1] == "B":
                 site = word[1][:3]
 
                 # Invalid build site
