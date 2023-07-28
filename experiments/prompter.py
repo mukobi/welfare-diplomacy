@@ -25,6 +25,7 @@ class Prompter(ABC):
         power: Power,
         game: Game,
         possible_orders: dict[str, list[str]],
+        current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
     ) -> ModelResponse:
@@ -39,6 +40,7 @@ class RandomPrompter(Prompter):
         power: Power,
         game: Game,
         possible_orders: dict[str, list[str]],
+        current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
     ) -> ModelResponse:
@@ -65,7 +67,7 @@ class RandomPrompter(Prompter):
 
         # For debugging prompting
         system_prompt = constants.get_system_prompt(
-            power, game, max_message_rounds, final_game_year
+            power, game, current_message_round, max_message_rounds, final_game_year
         )
         user_prompt = constants.get_user_prompt(power, game, possible_orders)
 
@@ -108,17 +110,19 @@ class OpenAIChatPrompter(Prompter):
         power: Power,
         game: Game,
         possible_orders: dict[str, list[str]],
+        current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
     ) -> ModelResponse:
         """Prompt the model for a response."""
         system_prompt = constants.get_system_prompt(
-            power, game, max_message_rounds, final_game_year
+            power, game, current_message_round, max_message_rounds, final_game_year
         )
         user_prompt = constants.get_user_prompt(power, game, possible_orders)
-        return self.backend.complete(
+        response = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature
         )
+        return response
 
 
 def model_name_to_prompter(model_name: str, temperature: float) -> Prompter:

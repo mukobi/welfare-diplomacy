@@ -6,13 +6,17 @@ WANDB_PROJECT = "welfare-diplomacy"
 
 
 def get_system_prompt(
-    power: Power, game: Game, max_message_rounds: int, final_game_year: int
+    power: Power,
+    game: Game,
+    current_message_round: int,
+    max_message_rounds: int,
+    final_game_year: int,
 ) -> str:
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game state and history as text. You will then be able to exchange up to {max_message_rounds} sets of messages with the other players per turn (each of your completions will send out a set of messages). Given this information, respond in the following JSON format to submit orders and exchange messages with other players:
+You are in an interactive setting where, at each time step, you are given the game state and history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per turn (each of your completions will send out a set of messages). It is currently message round {current_message_round}. Given this information, respond in the following JSON format to submit orders and exchange messages with other players:
 
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
