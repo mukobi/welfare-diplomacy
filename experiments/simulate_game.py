@@ -246,16 +246,49 @@ def main():
 def parse_args():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Simulate a game of Diplomacy with the given parameters."
+        description="Simulate a game of Diplomacy with the given parameters.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--log_level", dest="log_level", default="INFO")
-    parser.add_argument("--map", dest="map_name", default="standard_welfare")
-    parser.add_argument("--output_folder", dest="output_folder", default="games")
-    parser.add_argument("--no_save", dest="no_save", action="store_true")
-    parser.add_argument("--seed", dest="seed", type=int, default=0, help="random seed")
-    parser.add_argument("--entity", dest="entity", default="gabrielmukobi")
-    parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
-    parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
+    parser.add_argument(
+        "--log_level", dest="log_level", default="INFO", help="Logging level."
+    )
+    parser.add_argument(
+        "--map",
+        dest="map_name",
+        default="standard_welfare",
+        help="Map name which switches between rulesets.",
+    )
+    parser.add_argument(
+        "--output_folder",
+        dest="output_folder",
+        default="games",
+        help="Folder to save the game to.",
+    )
+    parser.add_argument(
+        "--no_save",
+        dest="no_save",
+        action="store_true",
+        help="Don't save the game to disk.",
+    )
+    parser.add_argument("--seed", dest="seed", type=int, default=0, help="Random seed")
+    parser.add_argument(
+        "--entity",
+        dest="entity",
+        default="gabrielmukobi",
+        help="Weights & Biases entity name (can be your username).",
+    )
+    parser.add_argument(
+        "--project",
+        dest="project",
+        default=constants.WANDB_PROJECT,
+        help="Weights & Biases project name.",
+    )
+    parser.add_argument(
+        "--disable_wandb",
+        dest="disable_wandb",
+        action="store_true",
+        help="Disable logging to wandb.",
+    )
     parser.add_argument(
         "--max_years",
         dest="max_years",
@@ -271,10 +304,25 @@ def parse_args():
         help="Early stop while telling the models the game lasts --max_years long. No effect if 0.",
     )
     parser.add_argument(
-        "--max_message_rounds", dest="max_message_rounds", type=int, default=1
+        "--max_message_rounds",
+        dest="max_message_rounds",
+        type=int,
+        default=1,
+        help="Max rounds of messaging per turn.",
     )
-    parser.add_argument("--model", dest="model", default="gpt-4-32k-0613")
-    parser.add_argument("--temperature", dest="temperature", type=float, default=0.7)
+    parser.add_argument(
+        "--model",
+        dest="model",
+        default="gpt-4-32k-0613",
+        help="Model name to use. Can be an OpenAI Chat model or 'random'.",
+    )
+    parser.add_argument(
+        "--temperature",
+        dest="temperature",
+        type=float,
+        default=0.7,
+        help="Sampling temperature.",
+    )
 
     args = parser.parse_args()
     return args
