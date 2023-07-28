@@ -222,6 +222,9 @@ def main():
             "tokens/prompt_tokens_median": np.median(list_prompt_tokens),
             "tokens/completion_tokens_median": np.median(list_completion_tokens),
             "tokens/total_tokens_median": np.median(list_total_tokens),
+            "tokens/prompt_tokens_hist": wandb.Histogram(list_prompt_tokens),
+            "tokens/completion_tokens_hist": wandb.Histogram(list_completion_tokens),
+            "tokens/total_tokens_hist": wandb.Histogram(list_total_tokens),
         }
 
         for power in game.powers.values():
@@ -235,6 +238,7 @@ def main():
         if phase.name[-1] == "A":
             # Track metrics of aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
+            log_object["welfare/hist"] = wandb.Histogram(welfare_list)
             log_object["welfare/min"] = np.min(welfare_list)
             log_object["welfare/max"] = np.max(welfare_list)
             log_object["welfare/mean"] = np.mean(welfare_list)
