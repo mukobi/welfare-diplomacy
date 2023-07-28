@@ -87,7 +87,11 @@ def main():
         for power_name, power in power_names:
             # Prompting the model for a response
             prompter_response = prompter.respond(
-                power, game, possible_orders, args.max_message_rounds, args.max_years
+                power,
+                game,
+                possible_orders,
+                args.max_message_rounds,
+                args.max_years + 1900,
             )
             sum_completion_time_sec += prompter_response.completion_time_sec
             sum_prompt_tokens += prompter_response.prompt_tokens
@@ -144,7 +148,10 @@ def main():
         game.process()
 
         # Check whether to end the game
-        if int(game.phase.split()[1]) - 1900 > args.max_years:
+        if int(game.phase.split()[1]) - 1900 > args.max_years or (
+            args.early_stop_max_years > 0
+            and int(game.phase.split()[1]) - 1900 > args.early_stop_max_years
+        ):
             game._finish([])
 
         # Log to Weights & Biases
@@ -249,7 +256,20 @@ def parse_args():
     parser.add_argument("--entity", dest="entity", default="gabrielmukobi")
     parser.add_argument("--project", dest="project", default=constants.WANDB_PROJECT)
     parser.add_argument("--disable_wandb", dest="disable_wandb", action="store_true")
-    parser.add_argument("--max_years", dest="max_years", type=int, default=10)
+    parser.add_argument(
+        "--max_years",
+        dest="max_years",
+        type=int,
+        default=10,
+        help="Ends the game after this many years (3x as many turns).",
+    )
+    parser.add_argument(
+        "--early_stop_max_years",
+        dest="early_stop_max_years",
+        type=int,
+        default=3,
+        help="Early stop while telling the models the game lasts --max_years long. No effect if 0.",
+    )
     parser.add_argument(
         "--max_message_rounds", dest="max_message_rounds", type=int, default=1
     )
