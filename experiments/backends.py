@@ -64,7 +64,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
             completion = response.choices[0].message.content  # type: ignore
             self.logger.debug("Completion:\n%s", completion)
-            completion = json.loads(completion)
+            completion = json.loads(completion, strict=False)
             # Turn recipients in messages into ALLCAPS for the engine
             completion["messages"] = {
                 recipient.upper(): message
