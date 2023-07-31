@@ -11,6 +11,7 @@ import os
 from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
 import numpy as np
+from tqdm import tqdm
 import wandb
 
 from backends import ModelResponse
@@ -51,7 +52,7 @@ def main():
 
     # Log the initial state of the game
     rendered_with_orders = game.render(incl_abbrev=True)
-    log_object = {
+    log_object = {  # TODO add other things from below
         "meta/year_fractional": 0.0,
         "board/rendering_with_orders": wandb.Html(rendered_with_orders),
         "board/rendering_state": wandb.Html(rendered_with_orders),
@@ -66,8 +67,13 @@ def main():
 
     wandb.log(log_object)
 
+    simulation_max_years = (
+        args.early_stop_max_years if args.early_stop_max_years > 0 else args.max_years
+    )
+
+    progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
-        logger.info(f"🕰️ Beginning phase {game.get_current_phase()}")
+        logger.info(f"🕰️  Beginning phase {game.get_current_phase()}")
 
         # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
@@ -82,12 +88,16 @@ def main():
         list_completion_tokens = []
         list_total_tokens = []
 
+        progress_bar_messages = tqdm(
+            total=args.max_message_rounds * len(game.powers), desc="🙊 Messages"
+        )
         for message_round in range(args.max_message_rounds):
             logger.info(f"📨 Beginning message round {message_round}")
 
             # Randomize order of powers
             power_names = list(game.powers.items())
             np.random.shuffle(power_names)
+
             power: Power
             for power_name, power in power_names:
                 # Prompting the model for a response
@@ -107,7 +117,7 @@ def main():
                     (power_name, message_round, prompter_response)
                 )
                 logger.info(
-                    f"⚙️ {power_name} {game.get_current_phase()} Round {message_round}: Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}"
+                    f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}"
                 )
 
                 # Check how many of the orders were valid
@@ -131,7 +141,7 @@ def main():
                 if num_orders > 0:
                     valid_order_ratio = num_valid_orders / num_orders
                 logger.info(
-                    f"✔️ {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
+                    f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_ratio * 100.0:.2f}%"
                 )
                 total_num_orders += num_orders
                 total_num_valid_orders += num_valid_orders
@@ -153,6 +163,8 @@ def main():
                     )
                     total_message_sent += 1
 
+                progress_bar_messages.update(1)
+
         # Render saved orders before processing
         rendered_with_orders = game.render(incl_abbrev=True)
 
@@ -160,10 +172,7 @@ def main():
         game.process()
 
         # Check whether to end the game
-        if int(game.phase.split()[1]) - 1900 > args.max_years or (
-            args.early_stop_max_years > 0
-            and int(game.phase.split()[1]) - 1900 > args.early_stop_max_years
-        ):
+        if int(game.phase.split()[1]) - 1900 > simulation_max_years:
             game._finish([])
 
         # Log to Weights & Biases
@@ -255,7 +264,21 @@ def main():
                 for power in game.powers.values()
             ]
         )
-        logger.info(f"{phase.name} SC/UN/WP: {score_string}")
+        logger.info(f"📊  {phase.name} SC/UN/WP: {score_string}")
+
+        # Update the progress bar based on how many turns have progressed (just counting M and A)
+        new_phase_type = game.phase_type
+        if new_phase_type == "M":
+            # Any to M, update 1
+            progress_bar_phase.update(1)
+        elif new_phase_type == "A":
+            # M or R to A, update 1
+            progress_bar_phase.update(1)
+        elif new_phase_type == "R":
+            # Retreats, don't count it
+            pass
+        else:
+            raise ValueError(f"Unknown phase type {new_phase_type}")
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
