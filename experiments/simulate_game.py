@@ -304,85 +304,85 @@ def parse_args():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--log_level", dest="log_level", default="INFO", help="Logging level."
+        "--log_level", dest="log_level", default="INFO", help="🪵 Logging level."
     )
     parser.add_argument(
         "--map",
         dest="map_name",
         default="standard_welfare",
-        help="Map name which switches between rulesets.",
+        help="🗺️ Map name which switches between rulesets.",
     )
     parser.add_argument(
         "--output_folder",
         dest="output_folder",
         default="games",
-        help="Folder to save the game to.",
+        help="📁Folder to save the game to.",
     )
     parser.add_argument(
         "--no_save",
         dest="no_save",
         action="store_true",
-        help="Don't save the game to disk.",
+        help="💾Don't save the game to disk.",
     )
     parser.add_argument("--seed", dest="seed", type=int, default=0, help="Random seed")
     parser.add_argument(
         "--entity",
         dest="entity",
         default="gabrielmukobi",
-        help="Weights & Biases entity name (can be your username).",
+        help="👤Weights & Biases entity name (can be your username).",
     )
     parser.add_argument(
         "--project",
         dest="project",
         default=constants.WANDB_PROJECT,
-        help="Weights & Biases project name.",
+        help="📝Weights & Biases project name.",
     )
     parser.add_argument(
         "--disable_wandb",
         dest="disable_wandb",
         action="store_true",
-        help="Disable logging to wandb.",
+        help="⚖️ Disable logging to wandb.",
     )
     parser.add_argument(
         "--max_years",
         dest="max_years",
         type=int,
         default=10,
-        help="Ends the game after this many years (3x as many turns).",
+        help="🗓️ Ends the game after this many years (3x as many turns).",
     )
     parser.add_argument(
         "--early_stop_max_years",
         dest="early_stop_max_years",
         type=int,
         default=0,
-        help="Early stop while telling the models the game lasts --max_years long. No effect if 0.",
+        help="⏱️ Early stop while telling the models the game lasts --max_years long. No effect if 0.",
     )
     parser.add_argument(
         "--max_message_rounds",
         dest="max_message_rounds",
         type=int,
         default=3,
-        help="Max rounds of messaging per turn.",
+        help="📨 Max rounds of messaging per turn.",
     )
     parser.add_argument(
         "--model",
         dest="model",
         default="gpt-4-32k-0613",
-        help="Model name to use. Can be an OpenAI Chat model or 'random'.",
+        help="🤖Model name to use. Can be an OpenAI Chat model or 'random'.",
     )
     parser.add_argument(
         "--temperature",
         dest="temperature",
         type=float,
         default=0.3,
-        help="Sampling temperature.",
+        help="🌡️ Sampling temperature.",
     )
     parser.add_argument(
         "--top_p",
         dest="top_p",
         type=float,
         default=0.9,
-        help="Top-p for nucleus sampling.",
+        help="⚛️ Top-p for nucleus sampling.",
     )
 
     args = parser.parse_args()
