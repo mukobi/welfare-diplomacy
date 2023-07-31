@@ -191,8 +191,20 @@ def main():
 
                 progress_bar_messages.update(1)
 
-        # Render saved orders before processing
+        # Render saved orders and current turn message history before processing
         rendered_with_orders = game.render(incl_abbrev=True)
+        messages_table = wandb.Table(
+            columns=["phase", "sender", "recipient", "message"],
+            data=[
+                [
+                    message.phase,
+                    message.sender,
+                    message.recipient,
+                    message.message,
+                ]
+                for message in game.messages.values()
+            ],
+        )
 
         # Advance the game simulation to the next phase
         game.process()
@@ -245,6 +257,7 @@ def main():
             "orders/num_valid": total_num_valid_orders,
             "orders/valid_ratio_total_avg": valid_order_total_avg,
             "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
+            "messages/messages_table": messages_table,
             "messages/num_total": total_message_sent,
             "messages/num_avg": total_message_sent / count_completions_one_round,
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
