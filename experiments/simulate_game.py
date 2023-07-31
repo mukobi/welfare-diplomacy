@@ -43,7 +43,9 @@ def main():
     logger.setLevel(args.log_level)
 
     prompter: Prompter = model_name_to_prompter(
-        args.model, temperature=args.temperature
+        args.model,
+        temperature=args.temperature,
+        top_p=args.top_p,
     )
 
     utils.log_info(
@@ -374,6 +376,13 @@ def parse_args():
         type=float,
         default=0.7,
         help="Sampling temperature.",
+    )
+    parser.add_argument(
+        "--top_p",
+        dest="top_p",
+        type=float,
+        default=0.9,
+        help="Top-p for nucleus sampling.",
     )
 
     args = parser.parse_args()

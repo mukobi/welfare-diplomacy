@@ -34,7 +34,13 @@ class LanguageModelBackend(ABC):
         self.logger = logging.getLogger(__name__)
 
     @abstractmethod
-    def complete(self, system_prompt: str, user_prompt: str) -> ModelResponse:
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+    ) -> ModelResponse:
         """
         Complete a prompt with the language model backend.
 
@@ -51,7 +57,11 @@ class OpenAIChatBackend(LanguageModelBackend):
         self.model_name = model_name
 
     def complete(
-        self, system_prompt: str, user_prompt: str, temperature: float
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
     ) -> ModelResponse:
         try:
             response = self.completions_with_backoff(
@@ -61,6 +71,7 @@ class OpenAIChatBackend(LanguageModelBackend):
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=temperature,
+                top_p=top_p,
             )
             completion = response.choices[0].message.content  # type: ignore
             self.logger.debug("Completion:\n%s", completion)
