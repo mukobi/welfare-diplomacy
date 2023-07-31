@@ -4,6 +4,8 @@ import random
 import numpy as np
 
 from diplomacy import GamePhaseData
+from logging import Logger
+from tqdm.contrib.logging import logging_redirect_tqdm
 
 
 def set_seed(seed: int) -> None:
@@ -35,3 +37,15 @@ def get_game_fractional_year(game_phase_data: GamePhaseData) -> float:
     else:
         fraction = 0.0
     return year + fraction
+
+
+def log_info(logger: Logger, message: str):
+    """Redirect logger to play nice with tqdm."""
+    with logging_redirect_tqdm():
+        logger.info(message)
+
+
+def log_warning(logger: Logger, message: str):
+    """Redirect logger to play nice with tqdm."""
+    with logging_redirect_tqdm():
+        logger.warning(message)
