@@ -54,3 +54,21 @@ def log_warning(logger: Logger, message: str):
 def remove_duplicates_keep_order(lst):
     """Remove duplicates from a list while preserving order (keep last occurance)."""
     return list(dict.fromkeys(reversed(lst)))[::-1]
+
+
+def get_power_scores_string(game, abbrev=False):
+    """Get a string of power scores"""
+    if abbrev:
+        return "SC/UN/WP: " + " ".join(
+            [
+                f"{power.abbrev}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+                for power in game.powers.values()
+            ]
+        )
+    else:
+        return "\n".join(
+            [
+                f"{power.name.title()}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+                for power in game.powers.values()
+            ]
+        )

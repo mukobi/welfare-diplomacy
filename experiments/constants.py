@@ -135,12 +135,7 @@ def get_user_prompt(
     unit_state = unit_state.strip()  # Remove trailing newline
 
     # For each power, their supply center count, unit count, and accumulated WP
-    power_scores = "\n".join(
-        [
-            f"{power.name.title()}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
-            for power in game.powers.values()
-        ]
-    )
+    power_scores = utils.get_power_scores_string(game)
 
     # Instructions about the current phase
     phase_type = str(game.phase).split()[-1]

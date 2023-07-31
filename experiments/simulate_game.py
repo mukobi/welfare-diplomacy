@@ -287,13 +287,9 @@ def main():
         wandb.log(log_object)
 
         # Print some information about the game
-        score_string = " ".join(
-            [
-                f"{power.abbrev}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
-                for power in game.powers.values()
-            ]
+        utils.log_info(
+            logger, f"📊 {phase.name} {utils.get_power_scores_string(game, abbrev=True)}"
         )
-        utils.log_info(logger, f"📊 {phase.name} SC/UN/WP: {score_string}")
 
         # Update the progress bar based on how many turns have progressed (just counting M and A)
         new_phase_type = game.phase_type
