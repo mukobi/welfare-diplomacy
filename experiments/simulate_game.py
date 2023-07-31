@@ -328,8 +328,8 @@ def parse_args():
     parser.add_argument(
         "--entity",
         dest="entity",
-        default="gabrielmukobi",
-        help="👤Weights & Biases entity name (can be your username).",
+        default=None,
+        help="👤Weights & Biases entity name (can be your username). Note you can also use the WANDB_ENTITY env var.",
     )
     parser.add_argument(
         "--project",
