@@ -49,3 +49,8 @@ def log_warning(logger: Logger, message: str):
     """Redirect logger to play nice with tqdm."""
     with logging_redirect_tqdm():
         logger.warning(message)
+
+
+def remove_duplicates_keep_order(lst):
+    """Remove duplicates from a list while preserving order (keep last occurance)."""
+    return list(dict.fromkeys(reversed(lst)))[::-1]

@@ -2,6 +2,8 @@
 
 from diplomacy import Game, Message, Power
 
+import utils
+
 WANDB_PROJECT = "welfare-diplomacy"
 
 
@@ -144,7 +146,27 @@ def get_user_prompt(
     elif phase_type == "RETREATS":
         phase_order_instructions += "Disband (D), Retreat (R)."
     elif phase_type == "ADJUSTMENTS":
-        phase_order_instructions += "Build (B), Disband (D)."
+        phase_order_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). Your valid moves for this turn are:\n"
+        this_powers_possible_orders = []
+        # Add build orders if enough capacity
+        if len(power.centers) > len(power.units):
+            for sc in power.centers:
+                this_powers_possible_orders.extend(possible_orders[sc])
+        # Add disband orders
+        for unit in power.units:
+            unit_loc = unit.split()[1]
+            this_powers_possible_orders.extend(possible_orders[unit_loc])
+        # Remove "WAIVE"
+        this_powers_possible_orders = [
+            order for order in this_powers_possible_orders if order != "WAIVE"
+        ]
+        this_powers_possible_orders = utils.remove_duplicates_keep_order(
+            this_powers_possible_orders
+        )
+        if len(this_powers_possible_orders) == 0:
+            phase_order_instructions += "None"
+        else:
+            phase_order_instructions += "\n".join(this_powers_possible_orders)
     else:
         raise ValueError(f"Unknown phase type {phase_type}")
     return rf"""### Dialogue History ###
