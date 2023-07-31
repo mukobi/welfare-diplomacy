@@ -91,11 +91,21 @@ def main():
         list_completion_tokens = []
         list_total_tokens = []
 
-        progress_bar_messages = tqdm(
-            total=args.max_message_rounds * len(game.powers), desc="🙊 Messages"
+        # During Retreats, only 1 round of completions without press
+        num_of_message_rounds = args.max_message_rounds if game.phase_type != "R" else 1
+        num_completing_powers = (
+            len(game.powers)
+            if game.phase_type != "R"
+            else len([power for power in game.powers.values() if power.retreats])
         )
-        for message_round in range(args.max_message_rounds):
-            utils.log_info(logger, f"📨 Beginning message round {message_round}")
+        progress_bar_messages = tqdm(
+            total=num_of_message_rounds * num_completing_powers, desc="🙊 Messages"
+        )
+        for message_round in range(num_of_message_rounds):
+            utils.log_info(
+                logger,
+                f"📨 Beginning message round {message_round}/{num_of_message_rounds}",
+            )
 
             # Randomize order of powers
             power_names = list(game.powers.items())
@@ -124,6 +134,10 @@ def main():
                 prompter_response_history.append(
                     (power_name, message_round, prompter_response)
                 )
+                if game.phase_type == "R":
+                    assert (
+                        len(prompter_response.messages) == 0
+                    ), "No messages are allowed during retreats."
                 count_completions_one_round += 1
                 utils.log_info(
                     logger,

@@ -16,14 +16,19 @@ def get_system_prompt(
 ) -> str:
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
+    message_instructions = (
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send."""
+        if game.phase_type != "R"
+        else f""""messages": {{}} // You are in a RETREATS phase this turn, so don't respond with messages as they are not allowed."""
+    )
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game state and history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per turn (each of your completions will send out a set of messages). It is currently message round {current_message_round}. Given this information, respond in the following JSON format to submit orders and exchange messages with other players:
+You are in an interactive setting where, at each time step, you are given the game state and history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per turn (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in 1 round. It is currently message round {current_message_round}. Given this information, respond in the following JSON format to submit orders and exchange messages with other players:
 
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
     "orders": ["List of strings of intended orders to your units in the same abbreviated format as the history. You will converse with the other powers for several steps, then your most recent orders will be executed."],
-    "messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send.
+    {message_instructions}
 }}
 
 Here are examples showing the format for orders:
