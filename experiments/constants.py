@@ -131,6 +131,11 @@ def get_user_prompt(
             for dest_loc in game._get_convoy_destinations(unit_type, unit_loc):
                 destinations.add(dest_loc)
             power_units += f"{unit} - {', '.join(sorted(destinations))}\n"
+        for unit, destinations in other_power.retreats.items():
+            if len(destinations) == 0:
+                power_units += f"{unit} D (no where to retreat, must disband)\n"
+            else:
+                power_units += f"{unit} R {', R '.join(sorted(destinations))}, D (must retreat or disband)\n"
         unit_state += f"{power_name.title()}:\n{power_units}"
     unit_state = unit_state.strip()  # Remove trailing newline
 
@@ -178,19 +183,22 @@ def get_user_prompt(
 ### Current Unit State - With Reachable Destinations ###
 {unit_state}
 
-### Current Supply, Unit, and WP Count (Centers/Units/Welfare Points) ###
+### Current Supply, Unit, and WP Count (Supply Centers/Units/Welfare Points) ###
 {power_scores}
 
 ### Phase Order Instructions ###
 {phase_order_instructions}"""
 
 
-def find_this_powers_possible_orders(power, possible_orders):
+def find_this_powers_possible_orders(power: Power, possible_orders):
+    """Find the possible orders for this power in the current phase."""
     this_powers_possible_orders = []
     # Add build orders if enough capacity
     if len(power.centers) > len(power.units):
         for sc in power.centers:
-            this_powers_possible_orders.extend(possible_orders[sc])
+            this_powers_possible_orders.extend(
+                [order for order in possible_orders[sc] if order.endswith(" B")]
+            )
         # Add disband orders
     for unit in power.units:
         unit_loc = unit.split()[1]
