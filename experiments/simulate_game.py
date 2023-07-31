@@ -214,13 +214,16 @@ def main():
                 for power_name, response_message_round, prompter_response in prompter_response_history
             ],
         )
+        valid_order_total_avg = 1.0
+        if total_num_orders > 0:
+            valid_order_total_avg = total_num_valid_orders / total_num_orders
         log_object = {
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/num_total": total_num_orders,
             "orders/num_valid": total_num_valid_orders,
-            "orders/valid_ratio_total_avg": total_num_valid_orders / total_num_orders,
+            "orders/valid_ratio_total_avg": valid_order_total_avg,
             "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
             "messages/num_total": total_message_sent,
             "messages/num_avg": total_message_sent / len(game.powers),
