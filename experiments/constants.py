@@ -1,6 +1,6 @@
 """Constant expressions."""
 
-from diplomacy import Power, Game
+from diplomacy import Game, Message, Power
 
 WANDB_PROJECT = "welfare-diplomacy"
 
@@ -51,7 +51,9 @@ def get_user_prompt(
 ) -> str:
     """Game state information to make decisions from."""
     # The entire message history between this power all other powers.
-    message_history = "None" if len(game.message_history) == 0 else ""
+    message_history = ""
+    # game.message_history only contains the previous turns.
+    message: Message
     for phase, message_dict in game.message_history.items():
         message_history += f"{phase}\n"
         phase_message_count = 0
@@ -68,6 +70,22 @@ def get_user_prompt(
         if phase_message_count == 0:
             message_history += "None\n"
         message_history += "\n"
+    # Also add in the current message round.
+    message_history += f"{game.get_current_phase()} (current phase)\n"
+    phase_message_count = 0
+    for message in game.messages.values():
+        if (
+            message.sender != power.name
+            and message.recipient != power.name
+            and message.recipient != "GLOBAL"
+        ):
+            # Limit messages seen by this power
+            continue
+        message_history += f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
+        phase_message_count += 1
+    if phase_message_count == 0:
+        message_history += "None\n"
+
     message_history = message_history.strip()  # Remove trailing newline
 
     # A list of the last N previous turn orders (game actions) for all players up through the previous movement turn.
