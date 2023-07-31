@@ -362,7 +362,7 @@ def parse_args():
         dest="max_message_rounds",
         type=int,
         default=3,
-        help="📨 Max rounds of messaging per turn.",
+        help="📨Max rounds of messaging per turn.",
     )
     parser.add_argument(
         "--model",
