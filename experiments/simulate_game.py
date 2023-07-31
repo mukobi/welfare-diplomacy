@@ -101,8 +101,13 @@ def main():
             power_names = list(game.powers.items())
             np.random.shuffle(power_names)
 
+            count_completions_one_round = 0
             power: Power
             for power_name, power in power_names:
+                # On retreat phases, skip powers that have no retreats to make
+                if game.phase_type == "R" and not power.retreats:
+                    continue
+
                 # Prompting the model for a response
                 prompter_response = prompter.respond(
                     power,
@@ -119,6 +124,7 @@ def main():
                 prompter_response_history.append(
                     (power_name, message_round, prompter_response)
                 )
+                count_completions_one_round += 1
                 utils.log_info(
                     logger,
                     f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Prompter {prompter_response.model_name} took {prompter_response.completion_time_sec:.2f}s to respond.\nReasoning: {prompter_response.reasoning}\nOrders: {prompter_response.orders}\nMessages: {prompter_response.messages}",
@@ -226,7 +232,7 @@ def main():
             "orders/valid_ratio_total_avg": valid_order_total_avg,
             "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
             "messages/num_total": total_message_sent,
-            "messages/num_avg": total_message_sent / len(game.powers),
+            "messages/num_avg": total_message_sent / count_completions_one_round,
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
             "model/response_table": model_response_table,
             "tokens/prompt_tokens_avg": np.mean(list_prompt_tokens),

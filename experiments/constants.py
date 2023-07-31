@@ -114,7 +114,6 @@ def get_user_prompt(
     supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
 
     # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat turns.
-    # TODO add possible retreats?
     unit_state = ""
     for power_name, other_power in game.powers.items():
         power_units = ""
@@ -144,24 +143,19 @@ def get_user_prompt(
     if phase_type == "MOVEMENT":
         phase_order_instructions += "Hold (H), Move (-), Support (S), Convoy (C)."
     elif phase_type == "RETREATS":
-        phase_order_instructions += "Disband (D), Retreat (R)."
+        phase_order_instructions += "Retreat (R), Disband (D). Here are the possible retreats you must choose from this year:\n"
+        assert (
+            len(power.retreats) > 0
+        ), "Prompting model in retreats phase for power that has no retreats."
+        for unit, destinations in power.retreats.items():
+            phase_order_instructions += "\n".join(
+                [f"{unit} R {destination}" for destination in destinations]
+            )
+            phase_order_instructions += f"\n{unit} D\n"
     elif phase_type == "ADJUSTMENTS":
         phase_order_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). Your valid moves for this turn are:\n"
-        this_powers_possible_orders = []
-        # Add build orders if enough capacity
-        if len(power.centers) > len(power.units):
-            for sc in power.centers:
-                this_powers_possible_orders.extend(possible_orders[sc])
-        # Add disband orders
-        for unit in power.units:
-            unit_loc = unit.split()[1]
-            this_powers_possible_orders.extend(possible_orders[unit_loc])
-        # Remove "WAIVE"
-        this_powers_possible_orders = [
-            order for order in this_powers_possible_orders if order != "WAIVE"
-        ]
-        this_powers_possible_orders = utils.remove_duplicates_keep_order(
-            this_powers_possible_orders
+        this_powers_possible_orders = find_this_powers_possible_orders(
+            power, possible_orders
         )
         if len(this_powers_possible_orders) == 0:
             phase_order_instructions += "None"
@@ -169,6 +163,9 @@ def get_user_prompt(
             phase_order_instructions += "\n".join(this_powers_possible_orders)
     else:
         raise ValueError(f"Unknown phase type {phase_type}")
+    phase_order_instructions = (  # Remove trailing newline
+        phase_order_instructions.strip()
+    )
     return rf"""### Dialogue History ###
 {message_history}
 
@@ -186,3 +183,24 @@ def get_user_prompt(
 
 ### Phase Order Instructions ###
 {phase_order_instructions}"""
+
+
+def find_this_powers_possible_orders(power, possible_orders):
+    this_powers_possible_orders = []
+    # Add build orders if enough capacity
+    if len(power.centers) > len(power.units):
+        for sc in power.centers:
+            this_powers_possible_orders.extend(possible_orders[sc])
+        # Add disband orders
+    for unit in power.units:
+        unit_loc = unit.split()[1]
+        this_powers_possible_orders.extend(possible_orders[unit_loc])
+        # Remove "WAIVE"
+    this_powers_possible_orders = [
+        order for order in this_powers_possible_orders if order != "WAIVE"
+    ]
+    this_powers_possible_orders = utils.remove_duplicates_keep_order(
+        this_powers_possible_orders
+    )
+
+    return this_powers_possible_orders
