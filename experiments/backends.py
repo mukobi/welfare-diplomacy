@@ -8,7 +8,7 @@ from typing import Optional
 
 import backoff
 import openai
-from openai.error import RateLimitError
+from openai.error import OpenAIError, RateLimitError
 
 
 @dataclass
@@ -105,7 +105,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, RateLimitError)
+    @backoff.on_exception(backoff.expo, RateLimitError, OpenAIError)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.ChatCompletion.create(**kwargs)
