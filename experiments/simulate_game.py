@@ -8,7 +8,7 @@ import argparse
 import logging
 import os
 
-from diplomacy import Game, GamePhaseData, Message
+from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
 import numpy as np
 import wandb
@@ -36,7 +36,7 @@ def main():
         settings=wandb.Settings(code_dir="experiments"),
     )
     assert wandb.run is not None
-    game = Game(map_name=args.map_name)
+    game: Game = Game(map_name=args.map_name)
     logger = logging.getLogger(__name__)
     logging.basicConfig()
     logger.setLevel(args.log_level)
@@ -88,6 +88,7 @@ def main():
             # Randomize order of powers
             power_names = list(game.powers.items())
             np.random.shuffle(power_names)
+            power: Power
             for power_name, power in power_names:
                 # Prompting the model for a response
                 prompter_response = prompter.respond(
