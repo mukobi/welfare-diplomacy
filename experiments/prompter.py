@@ -98,6 +98,59 @@ class RandomPrompter(Prompter):
         )
 
 
+class ForceRetreatPrompter(Prompter):
+    """Contrive a situation to put the game in a retreats phase."""
+
+    def respond(
+        self,
+        power: Power,
+        game: Game,
+        possible_orders: dict[str, list[str]],
+        current_message_round: int,
+        max_message_rounds: int,
+        final_game_year: int,
+    ) -> ModelResponse:
+        """Get to a retreats phase."""
+        # For each power, randomly sampling a valid order
+        power_orders = []
+
+        if game.get_current_phase() == "S1901M":
+            if power.name == "GERMANY":
+                power_orders = ["A MUN TYR"]
+        elif game.get_current_phase() == "F1901M":
+            if power.name == "AUSTRIA":
+                power_orders = ["A VIE S A VEN TYR"]
+            elif power.name == "ITALY":
+                power_orders = ["A VEN TYR"]
+
+        # For debugging prompting
+        system_prompt = constants.get_system_prompt(
+            power, game, current_message_round, max_message_rounds, final_game_year
+        )
+        user_prompt = constants.get_user_prompt(power, game, possible_orders)
+
+        # Sleep to allow wandb to catch up
+        sleep_time = (
+            0.0
+            if isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled)
+            else 0.3
+        )
+        time.sleep(sleep_time)
+
+        return ModelResponse(
+            model_name="ForceRetreatPrompter",
+            reasoning="Forcing the game into a retreats phase.",
+            orders=power_orders,
+            messages={},
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            prompt_tokens=0,
+            completion_tokens=0,
+            total_tokens=0,
+            completion_time_sec=sleep_time,
+        )
+
+
 class OpenAIChatPrompter(Prompter):
     """Uses OpenAI Chat to generate orders and messages."""
 
@@ -131,6 +184,8 @@ def model_name_to_prompter(model_name: str, **kwargs) -> Prompter:
     model_name = model_name.lower()
     if model_name == "random":
         return RandomPrompter()
+    elif model_name == "retreats":
+        return ForceRetreatPrompter()
     elif "gpt-4" in model_name or "gpt-3.5" in model_name:
         return OpenAIChatPrompter(model_name, **kwargs)
     else:

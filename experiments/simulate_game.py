@@ -371,7 +371,7 @@ def parse_args():
         "--model",
         dest="model",
         default="gpt-4-32k-0613",
-        help="🤖Model name to use. Can be an OpenAI Chat model or 'random'.",
+        help="🤖Model name to use. Can be an OpenAI Chat model, 'random', or 'retreats' (contrive a retreat situation).",
     )
     parser.add_argument(
         "--temperature",

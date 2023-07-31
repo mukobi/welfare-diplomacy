@@ -70,6 +70,20 @@
             "justMyCode": true
         },
         {
+            "name": "Retreats NoWandb",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--no_save",
+                "--model",
+                "retreats",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
