@@ -194,7 +194,7 @@ def main():
         # Render saved orders before processing
         rendered_with_orders = game.render(incl_abbrev=True)
 
-        # Processing the game to move to the next phase
+        # Advance the game simulation to the next phase
         game.process()
 
         # Check whether to end the game

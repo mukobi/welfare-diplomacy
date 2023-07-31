@@ -61,14 +61,14 @@ def get_power_scores_string(game, abbrev=False):
     if abbrev:
         return "SC/UN/WP: " + " ".join(
             [
-                f"{power.abbrev}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+                f"{power.abbrev}: {len(power.centers)}/{len(power.units) + len(power.retreats)}/{power.welfare_points}"
                 for power in game.powers.values()
             ]
         )
     else:
         return "\n".join(
             [
-                f"{power.name.title()}: {len(power.centers)}/{len(power.units)}/{power.welfare_points}"
+                f"{power.name.title()}: {len(power.centers)}/{len(power.units) + len(power.retreats)}/{power.welfare_points}"
                 for power in game.powers.values()
             ]
         )
