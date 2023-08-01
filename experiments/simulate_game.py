@@ -271,7 +271,7 @@ def main():
             "orders/num_valid": total_num_valid_orders,
             "orders/valid_ratio_total_avg": valid_order_total_avg,
             "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
-            f"orders/valid_ratio_avg_avg/phase_{game.phase_type}": np.mean(
+            f"orders/valid_ratio_avg_avg_phase_{game.phase_type}": np.mean(
                 list_valid_order_ratios
             ),
             "messages/messages_table": messages_table,
@@ -397,7 +397,7 @@ def parse_args():
         dest="max_years",
         type=int,
         default=10,
-        help="🗓️ Ends the game after this many years (3x as many turns).",
+        help="🗓️ Ends the game after this many years (~3x as many turns).",
     )
     parser.add_argument(
         "--early_stop_max_years",
