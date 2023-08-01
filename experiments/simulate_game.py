@@ -271,6 +271,9 @@ def main():
             "orders/num_valid": total_num_valid_orders,
             "orders/valid_ratio_total_avg": valid_order_total_avg,
             "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
+            f"orders/valid_ratio_avg_avg/phase_{game.phase_type}": np.mean(
+                list_valid_order_ratios
+            ),
             "messages/messages_table": messages_table,
             "messages/num_total": total_message_sent,
             "messages/num_avg": total_message_sent / count_completions_one_round,
