@@ -21,9 +21,13 @@ def get_system_prompt(
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
+    current_year = int(
+        "".join([char for char in game.get_current_phase() if char.isdigit()])
+    )
+    year_difference = final_game_year + 1 - current_year
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1}. Given this information, respond in the following JSON format to submit orders and optionally exchange messages with other players:
+You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to submit orders and optionally exchange messages with other players:
 
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",

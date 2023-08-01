@@ -16,9 +16,9 @@ def set_seed(seed: int) -> None:
     # torch.cuda.manual_seed_all(seed)
 
 
-def get_game_year(game: GamePhaseData) -> int:
+def get_game_year(phase: GamePhaseData) -> int:
     """Get integer year of phase after 1900."""
-    return int(get_game_fractional_year(game))
+    return int(get_game_fractional_year(phase))
 
 
 def get_game_fractional_year(game_phase_data: GamePhaseData) -> float:
