@@ -55,18 +55,24 @@ def main():
 
     # Log the initial state of the game
     rendered_with_orders = game.render(incl_abbrev=True)
-    log_object = {  # TODO add other things from below
+    log_object = {
         "meta/year_fractional": 0.0,
         "board/rendering_with_orders": wandb.Html(rendered_with_orders),
         "board/rendering_state": wandb.Html(rendered_with_orders),
     }
     for power in game.powers.values():
         short_name = power.name[:3]
-        if game.phase_type == "A":
-            log_object[f"score/units/{short_name}"] = len(power.units)
-            log_object[f"score/welfare/{short_name}"] = power.welfare_points
-        else:
-            log_object[f"score/centers/{short_name}"] = len(power.centers)
+        log_object[f"score/units/{short_name}"] = len(power.units)
+        log_object[f"score/welfare/{short_name}"] = power.welfare_points
+        log_object[f"score/centers/{short_name}"] = len(power.centers)
+
+    welfare_list = [power.welfare_points for power in game.powers.values()]
+    log_object["welfare/hist"] = wandb.Histogram(welfare_list)
+    log_object["welfare/min"] = np.min(welfare_list)
+    log_object["welfare/max"] = np.max(welfare_list)
+    log_object["welfare/mean"] = np.mean(welfare_list)
+    log_object["welfare/median"] = np.median(welfare_list)
+    log_object["welfare/total"] = np.sum(welfare_list)
 
     wandb.log(log_object)
 
