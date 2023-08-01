@@ -17,7 +17,7 @@ def get_system_prompt(
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. For example, if you have already told another player that you are planning a particular move, you don't need to tell them again, unless there is some new reason for them to doubt you."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. For example, if you have already told another player that you are planning a particular move, you don't need to tell them again, unless there is some new reason for them to doubt you. Also, you don't need to communicate all your moves, use messaging instead to coordinate deals about specific territories or commitments."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase this turn, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -131,7 +131,8 @@ def get_user_prompt(
                 if game._abuts(unit_type, unit_loc, "-", dest_loc):
                     destinations.add(dest_loc)
             for dest_loc in game._get_convoy_destinations(unit_type, unit_loc):
-                destinations.add(dest_loc)
+                if dest_loc not in destinations:  # Omit if reachable without convoy
+                    destinations.add(dest_loc + " VIA")
             power_units += f"{unit} - {', '.join(sorted(destinations))}\n"
         for unit, destinations in other_power.retreats.items():
             if len(destinations) == 0:
@@ -182,7 +183,7 @@ def get_user_prompt(
 ### Current Supply Center Ownership ###
 {supply_center_ownership}
 
-### Current Unit State - With Reachable Destinations ###
+### Current Unit State - With Reachable Destinations (VIA denotes convoy needed) ###
 {unit_state}
 
 ### Current Supply, Unit, and WP Count (Supply Centers/Units/Welfare Points) ###
