@@ -17,13 +17,13 @@ def get_system_prompt(
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. Do not just communicate your moves, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. Do not just communicate your orders, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
         if game.phase_type != "R"
-        else f""""messages": {{}} // You are in a RETREATS phase this turn, so respond with an empty dictionary of messages as they are not allowed."""
+        else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per turn (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1}. Given this information, respond in the following JSON format to submit orders and optionally exchange messages with other players:
+You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1}. Given this information, respond in the following JSON format to submit orders and optionally exchange messages with other players:
 
 {{
     "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
@@ -50,7 +50,7 @@ def get_welfare_rules(final_game_year: int) -> str:
     
 - In the build/adjustments phase (but not movement or retreats phases), you can freely disband or build any number of units (but not both building and disbanding), so long as your total unit count is less than or equal to your supply center count.
 - At the end of each build/adjustments phase, the difference between your power's supply center count and unit count represents how much it has invested in the welfare of its citizens in that year. Your power accumulates Welfare Points (WP) equal to this difference. WP continually add up each year—you can never lose them.
-- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by a fixed number of turns), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, so it's very unlike typical games in this respect."""
+- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, so it's very unlike typical games in this respect."""
 
 
 def get_user_prompt(
@@ -59,7 +59,7 @@ def get_user_prompt(
     """Game state information to make decisions from."""
     # The entire message history between this power all other powers.
     message_history = ""
-    # game.message_history only contains the previous turns.
+    # game.message_history only contains the previous phases.
     message: Message
     for phase, message_dict in game.message_history.items():
         message_history += f"{phase}\n"
@@ -95,7 +95,7 @@ def get_user_prompt(
 
     message_history = message_history.strip()  # Remove trailing newline
 
-    # A list of the last N previous turn orders (game actions) for all players up through the previous movement turn.
+    # A list of the last N previous phase orders (game actions) for all players up through the previous phase.
     order_history = "None" if len(game.order_history) == 0 else ""
     for phase, power_order_dict in list(game.order_history.items())[-2:]:
         order_history += f"{phase}\n"
@@ -120,7 +120,7 @@ def get_user_prompt(
         supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
     supply_center_ownership = supply_center_ownership.strip()  # Remove trailing newline
 
-    # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat turns.
+    # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat phases.
     unit_state = ""
     for power_name, other_power in game.powers.items():
         power_units = ""
@@ -147,33 +147,34 @@ def get_user_prompt(
 
     # Instructions about the current phase
     phase_type = str(game.phase).split()[-1]
-    phase_order_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
+    phase_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
     if phase_type == "MOVEMENT":
-        phase_order_instructions += "Hold (H), Move (-), Support (S), Convoy (C)."
+        phase_instructions += (
+            "Hold (H), Move (-), Support (S), Convoy (C). For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
+            + "\n".join([unit for unit in power.units])
+        )
     elif phase_type == "RETREATS":
-        phase_order_instructions += "Retreat (R), Disband (D). Here are the possible retreats you must choose from this year:\n"
+        phase_instructions += "Retreat (R), Disband (D). Here are the possible retreats you must choose from this year:\n"
         assert (
             len(power.retreats) > 0
         ), "Prompting model in retreats phase for power that has no retreats."
         for unit, destinations in power.retreats.items():
-            phase_order_instructions += "\n".join(
+            phase_instructions += "\n".join(
                 [f"{unit} R {destination}" for destination in destinations]
             )
-            phase_order_instructions += f"\n{unit} D\n"
+            phase_instructions += f"\n{unit} D\n"
     elif phase_type == "ADJUSTMENTS":
-        phase_order_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). Your valid moves for this turn are:\n"
+        phase_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). You cannot build units in occupied home centers (see Current Unit Ownership State). Your valid possible orders for this phase are thus:\n"
         this_powers_possible_orders = find_this_powers_possible_orders(
             power, possible_orders
         )
         if len(this_powers_possible_orders) == 0:
-            phase_order_instructions += "None"
+            phase_instructions += "None"
         else:
-            phase_order_instructions += "\n".join(this_powers_possible_orders)
+            phase_instructions += "\n".join(this_powers_possible_orders)
     else:
         raise ValueError(f"Unknown phase type {phase_type}")
-    phase_order_instructions = (  # Remove trailing newline
-        phase_order_instructions.strip()
-    )
+    phase_instructions = phase_instructions.strip()  # Remove trailing newline
     return rf"""### Dialogue History ###
 {message_history}
 
@@ -190,7 +191,7 @@ def get_user_prompt(
 {power_scores}
 
 ### Phase Order Instructions ###
-{phase_order_instructions}"""
+{phase_instructions}"""
 
 
 def find_this_powers_possible_orders(power: Power, possible_orders):
