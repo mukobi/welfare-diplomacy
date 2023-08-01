@@ -105,7 +105,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, RateLimitError, OpenAIError)
+    @backoff.on_exception(backoff.expo, OpenAIError)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.ChatCompletion.create(**kwargs)
