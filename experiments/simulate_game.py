@@ -337,7 +337,7 @@ def main():
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
-    if not args.no_save:
+    if args.save:
         if not os.path.exists(args.output_folder):
             os.makedirs(args.output_folder)
         output_id = "debug" if args.disable_wandb else wandb.run.id
@@ -368,10 +368,10 @@ def parse_args():
         help="📁Folder to save the game to.",
     )
     parser.add_argument(
-        "--no_save",
-        dest="no_save",
+        "--save",
+        dest="save",
         action="store_true",
-        help="💾Don't save the game to disk.",
+        help="💾Save the game to disk (uses W&B run ID).",
     )
     parser.add_argument("--seed", dest="seed", type=int, default=0, help="Random seed")
     parser.add_argument(
