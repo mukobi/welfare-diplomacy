@@ -53,6 +53,8 @@
                 "--no_save",
                 "--model",
                 "random",
+                "--max_message_rounds",
+                "1",
             ],
             "justMyCode": true
         },

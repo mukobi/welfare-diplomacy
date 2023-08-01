@@ -17,7 +17,7 @@ def get_system_prompt(
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current turn, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. For example, if you have already told another player that you are planning a particular move, you don't need to tell them again, unless there is some new reason for them to doubt you."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase this turn, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -116,7 +116,9 @@ def get_user_prompt(
     for center in game.map.scs:
         if center not in owned_centers:
             unowned_centers.append(center)
-    supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
+    if len(unowned_centers) > 0:
+        supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
+    supply_center_ownership = supply_center_ownership.strip()  # Remove trailing newline
 
     # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat turns.
     unit_state = ""
