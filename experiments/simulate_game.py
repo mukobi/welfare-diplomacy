@@ -27,8 +27,6 @@ def main():
     args = parse_args()
 
     # Initialize seed, wandb, game, logger, and prompter
-    utils.set_seed(args.seed)
-
     wandb.init(
         entity=args.entity,
         project=args.project,
@@ -40,20 +38,22 @@ def main():
     assert wandb.run is not None
     autolog()  # Logs OpenAI API calls to wandb
 
-    game: Game = Game(map_name=args.map_name)
+    utils.set_seed(wandb.config.seed)
+
+    game: Game = Game(map_name=wandb.config.map_name)
     logger = logging.getLogger(__name__)
     logging.basicConfig()
-    logger.setLevel(args.log_level)
+    logger.setLevel(wandb.config.log_level)
 
     prompter: Prompter = model_name_to_prompter(
-        args.model,
-        temperature=args.temperature,
-        top_p=args.top_p,
+        wandb.config.model,
+        temperature=wandb.config.temperature,
+        top_p=wandb.config.top_p,
     )
 
     utils.log_info(
         logger,
-        f"Starting game with map {args.map_name} and model {args.model} ending after {args.max_years} years with {args.max_message_rounds} message rounds.",
+        f"Starting game with map {wandb.config.map_name} and model {wandb.config.model} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds.",
     )
 
     # Log the initial state of the game
@@ -80,7 +80,9 @@ def main():
     wandb.log(log_object)
 
     simulation_max_years = (
-        args.early_stop_max_years if args.early_stop_max_years > 0 else args.max_years
+        wandb.config.early_stop_max_years
+        if wandb.config.early_stop_max_years > 0
+        else wandb.config.max_years
     )
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
@@ -102,7 +104,9 @@ def main():
         message_history: list[tuple(str, int, str, str, str)] = []
 
         # During Retreats, only 1 round of completions without press
-        num_of_message_rounds = args.max_message_rounds if game.phase_type != "R" else 1
+        num_of_message_rounds = (
+            wandb.config.max_message_rounds if game.phase_type != "R" else 1
+        )
         num_completing_powers = (
             len(game.powers)
             if game.phase_type != "R"
@@ -134,8 +138,8 @@ def main():
                     game,
                     possible_orders,
                     message_round,
-                    args.max_message_rounds,
-                    args.max_years + 1900,
+                    wandb.config.max_message_rounds,
+                    wandb.config.max_years + 1900,
                 )
                 list_completion_times_sec.append(prompter_response.completion_time_sec)
                 list_prompt_tokens.append(prompter_response.prompt_tokens)
@@ -337,12 +341,15 @@ def main():
 
     # Exporting the game to disk to visualize (game is appended to file)
     # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
-    if args.save:
-        if not os.path.exists(args.output_folder):
-            os.makedirs(args.output_folder)
-        output_id = "debug" if args.disable_wandb else wandb.run.id
+    if wandb.config.save:
+        if not os.path.exists(wandb.config.output_folder):
+            os.makedirs(wandb.config.output_folder)
+        output_id = "debug" if wandb.config.disable_wandb else wandb.run.id
         to_saved_game_format(
-            game, output_path=os.path.join(args.output_folder, f"game-{output_id}.json")
+            game,
+            output_path=os.path.join(
+                wandb.config.output_folder, f"game-{output_id}.json"
+            ),
         )
 
 
