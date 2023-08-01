@@ -101,7 +101,7 @@ def main():
         progress_bar_messages = tqdm(
             total=num_of_message_rounds * num_completing_powers, desc="🙊 Messages"
         )
-        for message_round in range(num_of_message_rounds):
+        for message_round in range(1, num_of_message_rounds + 1):
             utils.log_info(
                 logger,
                 f"📨 Beginning message round {message_round}/{num_of_message_rounds}",
