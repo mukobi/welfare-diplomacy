@@ -153,7 +153,7 @@ def main():
                         utils.log_warning(
                             logger, "No messages are allowed during retreats, clearing."
                         )
-                        prompter_response.messages = []
+                        prompter_response.messages = {}
                 count_completions_one_round += 1
                 utils.log_info(
                     logger,
