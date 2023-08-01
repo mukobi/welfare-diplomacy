@@ -149,9 +149,11 @@ def main():
                     (power_name, message_round, prompter_response)
                 )
                 if game.phase_type == "R":
-                    assert (
-                        len(prompter_response.messages) == 0
-                    ), "No messages are allowed during retreats."
+                    if len(prompter_response.messages) > 0:
+                        utils.log_warning(
+                            logger, "No messages are allowed during retreats, clearing."
+                        )
+                        prompter_response.messages = []
                 count_completions_one_round += 1
                 utils.log_info(
                     logger,
