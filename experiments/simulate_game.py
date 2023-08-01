@@ -13,6 +13,7 @@ from diplomacy.utils.export import to_saved_game_format
 import numpy as np
 from tqdm import tqdm
 import wandb
+from wandb.integration.openai import autolog
 
 from backends import ModelResponse
 import constants
@@ -37,6 +38,8 @@ def main():
         settings=wandb.Settings(code_dir="experiments"),
     )
     assert wandb.run is not None
+    autolog()  # Logs OpenAI API calls to wandb
+
     game: Game = Game(map_name=args.map_name)
     logger = logging.getLogger(__name__)
     logging.basicConfig()
