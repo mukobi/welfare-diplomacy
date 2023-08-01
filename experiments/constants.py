@@ -17,7 +17,7 @@ def get_system_prompt(
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them on the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. For example, if you have already told another player that you are planning a particular move, you don't need to tell them again, unless there is some new reason for them to doubt you. Also, you don't need to communicate all your moves, use messaging instead to coordinate deals about specific territories or commitments."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. Do not just communicate your moves, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase this turn, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -183,7 +183,7 @@ def get_user_prompt(
 ### Current Supply Center Ownership ###
 {supply_center_ownership}
 
-### Current Unit State - With Reachable Destinations (VIA denotes convoy needed) ###
+### Current Unit Ownership State - With reachable destinations to help you choose valid orders (VIA denotes convoy needed) ###
 {unit_state}
 
 ### Current Supply, Unit, and WP Count (Supply Centers/Units/Welfare Points) ###
