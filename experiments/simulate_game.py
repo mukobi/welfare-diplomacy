@@ -99,6 +99,7 @@ def main():
         list_prompt_tokens = []
         list_completion_tokens = []
         list_total_tokens = []
+        message_history: list[tuple(str, int, str, str, str)] = []
 
         # During Retreats, only 1 round of completions without press
         num_of_message_rounds = args.max_message_rounds if game.phase_type != "R" else 1
@@ -196,6 +197,15 @@ def main():
                             phase=game.get_current_phase(),
                         )
                     )
+                    message_history.append(
+                        (
+                            game.get_current_phase(),
+                            message_round,
+                            power_name,
+                            recipient,
+                            message,
+                        )
+                    )
                     total_message_sent += 1
 
                 progress_bar_messages.update(1)
@@ -203,15 +213,10 @@ def main():
         # Render saved orders and current turn message history before processing
         rendered_with_orders = game.render(incl_abbrev=True)
         messages_table = wandb.Table(
-            columns=["phase", "sender", "recipient", "message"],
+            columns=["phase", "round", "sender", "recipient", "message"],
             data=[
-                [
-                    message.phase,
-                    message.sender,
-                    message.recipient,
-                    message.message,
-                ]
-                for message in game.messages.values()
+                [phase, round, sender, recipient, message]
+                for (phase, round, sender, recipient, message) in message_history
             ],
         )
 
