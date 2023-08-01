@@ -112,18 +112,18 @@ def main():
             total=num_of_message_rounds * num_completing_powers, desc="🙊 Messages"
         )
         for message_round in range(1, num_of_message_rounds + 1):
+            # Randomize order of powers
+            powers_items = list(game.powers.items())
+            np.random.shuffle(powers_items)
+
             utils.log_info(
                 logger,
-                f"📨 Beginning message round {message_round}/{num_of_message_rounds}",
+                f"📨 Beginning message round {message_round}/{num_of_message_rounds}. Completion ordering: {', '.join([name for name, _ in powers_items])}",
             )
-
-            # Randomize order of powers
-            power_names = list(game.powers.items())
-            np.random.shuffle(power_names)
 
             count_completions_one_round = 0
             power: Power
-            for power_name, power in power_names:
+            for power_name, power in powers_items:
                 # On retreat phases, skip powers that have no retreats to make
                 if game.phase_type == "R" and not power.retreats:
                     continue
