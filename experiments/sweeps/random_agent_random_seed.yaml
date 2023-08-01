@@ -1,4 +1,3 @@
-program: experiments/simulate_game.py
 method: grid
 metric:
   goal: maximize
@@ -7,8 +6,9 @@ parameters:
   max_message_rounds:
     value: 1
   model:
-    value: "random"
+    value: random
   seed:
     distribution: int_uniform
     min: 0
     max: 63
+program: experiments/simulate_game.py
