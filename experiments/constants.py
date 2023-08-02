@@ -1,6 +1,6 @@
 """Constant expressions."""
 
-from diplomacy import Game, Message, Power
+from welfare_diplomacy import Game, Message, Power
 
 import utils
 

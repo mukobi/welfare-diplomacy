@@ -28,8 +28,8 @@ The following script plays a game locally by submitting random valid orders unti
 
 ```python3
 import random
-from diplomacy import Game
-from diplomacy.utils.export import to_saved_game_format
+from welfare_diplomacy import Game
+from welfare_diplomacy.utils.export import to_saved_game_format
 
 # Creating a game
 # Alternatively, a map_name can be specified as an argument. e.g. Game(map_name='pure')
@@ -141,8 +141,8 @@ Note. The server must be started with `python -m diplomacy.server.run` for the s
 ```python3
 import asyncio
 import random
-from diplomacy.client.connection import connect
-from diplomacy.utils import exceptions
+from welfare_diplomacy.client.connection import connect
+from welfare_diplomacy.utils import exceptions
 
 POWERS = ['AUSTRIA', 'ENGLAND', 'FRANCE', 'GERMANY', 'ITALY', 'RUSSIA', 'TURKEY']
 

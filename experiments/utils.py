@@ -3,7 +3,7 @@
 import random
 import numpy as np
 
-from diplomacy import GamePhaseData
+from welfare_diplomacy import GamePhaseData
 from logging import Logger
 from tqdm.contrib.logging import logging_redirect_tqdm
 

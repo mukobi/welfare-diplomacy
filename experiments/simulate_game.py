@@ -8,8 +8,8 @@ import argparse
 import logging
 import os
 
-from diplomacy import Game, GamePhaseData, Message, Power
-from diplomacy.utils.export import to_saved_game_format
+from welfare_diplomacy import Game, GamePhaseData, Message, Power
+from welfare_diplomacy.utils.export import to_saved_game_format
 import numpy as np
 from tqdm import tqdm
 import wandb

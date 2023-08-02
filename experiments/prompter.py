@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 import random
 import time
 
-from diplomacy import Power, Game
+from welfare_diplomacy import Power, Game
 import wandb
 
 from backends import ModelResponse, OpenAIChatBackend
