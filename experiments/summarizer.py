@@ -4,7 +4,7 @@ from diplomacy import Game, Power
 
 from backends import OpenAIChatBackend
 
-import constants
+import prompts
 
 
 class OpenAISummarizer:

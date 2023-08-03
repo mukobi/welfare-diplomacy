@@ -16,9 +16,9 @@ import wandb
 from wandb.integration.openai import autolog
 
 from backends import ModelResponse
-import constants
+import prompts
 import utils
-from prompter import Prompter, model_name_to_prompter
+from agents import Prompter, model_name_to_prompter
 
 
 def main():
@@ -392,7 +392,7 @@ def parse_args():
     parser.add_argument(
         "--project",
         dest="project",
-        default=constants.WANDB_PROJECT,
+        default=prompts.WANDB_PROJECT,
         help="📝Weights & Biases project name.",
     )
     parser.add_argument(

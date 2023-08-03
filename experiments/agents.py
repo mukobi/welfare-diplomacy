@@ -13,7 +13,7 @@ from diplomacy import Power, Game
 import wandb
 
 from backends import ModelResponse, OpenAIChatBackend
-import constants
+import prompts
 
 
 class Prompter(ABC):
@@ -66,10 +66,10 @@ class RandomPrompter(Prompter):
                     power_orders.append(random.choice(possible_orders[loc]))
 
         # For debugging prompting
-        system_prompt = constants.get_system_prompt(
+        system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = constants.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
 
         # Randomly sending a message to another power
         other_powers = [p for p in game.powers if p != power.name]
@@ -124,10 +124,10 @@ class ForceRetreatPrompter(Prompter):
                 power_orders = ["A VEN TYR"]
 
         # For debugging prompting
-        system_prompt = constants.get_system_prompt(
+        system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = constants.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
 
         # Sleep to allow wandb to catch up
         sleep_time = (
@@ -169,10 +169,10 @@ class OpenAIChatPrompter(Prompter):
         final_game_year: int,
     ) -> ModelResponse:
         """Prompt the model for a response."""
-        system_prompt = constants.get_system_prompt(
+        system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = constants.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
         response = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
