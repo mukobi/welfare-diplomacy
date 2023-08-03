@@ -78,11 +78,11 @@ def initialize_plot_default() -> None:
     sns.set_palette(DEFAULT_COLOR_PALETTE)
 
 
-def intitialize_plot_bar() -> None:
+def initialize_plot_bar() -> None:
     """Set default plot styling for bar charts."""
     initialize_plot_default()
     # No markers
-    plt.rcParams["lines.marker"] = None
+    plt.rcParams["lines.marker"] = ""
 
 
 def _get_color_from_palette(index: int) -> Any:
@@ -96,3 +96,8 @@ def save_plot(file_path: str) -> None:
     """Save a plot to a file."""
     create_file_dir_if_not_exists(file_path)
     plt.savefig(file_path, bbox_inches="tight", dpi=300)
+
+
+def get_results_full_path(relative_path: str) -> str:
+    """Given a relative path from the charts directory, return the full path."""
+    return os.path.join(os.path.dirname(__file__), relative_path)
