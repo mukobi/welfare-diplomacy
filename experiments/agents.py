@@ -1,7 +1,7 @@
 """
-Represents different prompting systems (e.g. GPT, 🤗 Transformers, random).
+Represents different agent prompting systems (e.g. GPT, 🤗 Transformers, random).
 
-A given prompter should take in information about the game and a power, prompt
+A given agent should take in information about the game and a power, prompt
 an underlying model for a response, and return back the extracted response. 
 """
 
@@ -16,8 +16,8 @@ from backends import ModelResponse, OpenAIChatBackend
 import prompts
 
 
-class Prompter(ABC):
-    """Base prompter class."""
+class Agent(ABC):
+    """Base agent class."""
 
     @abstractmethod
     def respond(
@@ -32,7 +32,7 @@ class Prompter(ABC):
         """Prompt the model for a response."""
 
 
-class RandomPrompter(Prompter):
+class RandomAgent(Agent):
     """Takes random actions and sends 1 random message."""
 
     def respond(
@@ -85,7 +85,7 @@ class RandomPrompter(Prompter):
         time.sleep(sleep_time)
 
         return ModelResponse(
-            model_name="RandomPrompter",
+            model_name="RandomAgent",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
             messages={recipient: message},
@@ -98,7 +98,7 @@ class RandomPrompter(Prompter):
         )
 
 
-class ForceRetreatPrompter(Prompter):
+class ForceRetreatAgent(Agent):
     """Contrive a situation to put the game in a retreats phase."""
 
     def respond(
@@ -138,7 +138,7 @@ class ForceRetreatPrompter(Prompter):
         time.sleep(sleep_time)
 
         return ModelResponse(
-            model_name="ForceRetreatPrompter",
+            model_name="ForceRetreatAgent",
             reasoning="Forcing the game into a retreats phase.",
             orders=power_orders,
             messages={},
@@ -151,7 +151,7 @@ class ForceRetreatPrompter(Prompter):
         )
 
 
-class OpenAIChatPrompter(Prompter):
+class OpenAIChatAgent(Agent):
     """Uses OpenAI Chat to generate orders and messages."""
 
     def __init__(self, model_name: str, **kwargs):
@@ -179,14 +179,14 @@ class OpenAIChatPrompter(Prompter):
         return response
 
 
-def model_name_to_prompter(model_name: str, **kwargs) -> Prompter:
-    """Given a model name, return an instantiated corresponding prompter."""
+def model_name_to_agent(model_name: str, **kwargs) -> Agent:
+    """Given a model name, return an instantiated corresponding agent."""
     model_name = model_name.lower()
     if model_name == "random":
-        return RandomPrompter()
+        return RandomAgent()
     elif model_name == "retreats":
-        return ForceRetreatPrompter()
+        return ForceRetreatAgent()
     elif "gpt-4" in model_name or "gpt-3.5" in model_name:
-        return OpenAIChatPrompter(model_name, **kwargs)
+        return OpenAIChatAgent(model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
