@@ -94,7 +94,7 @@ def main():
         if wandb.config.early_stop_max_years > 0
         else wandb.config.max_years
     )
-    final_game_year = (wandb.config.max_years + 1900,)
+    final_game_year = wandb.config.max_years + 1900
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -287,6 +287,23 @@ def main():
                 for power_name, response_message_round, agent_response in agent_response_history
             ],
         )
+        message_summary_table = wandb.Table(
+            columns=[
+                "phase",
+                "power",
+                "original_messages",
+                "summary",
+            ],
+            data=[
+                [
+                    message_summaries[-1].phase,
+                    power_name,
+                    "\n".join(message_summaries[-1].original_messages),
+                    message_summaries[-1].summary,
+                ]
+                for power_name, message_summaries in message_summary_history.items()
+            ],
+        )
         valid_order_total_avg = 1.0
         if total_num_orders > 0:
             valid_order_total_avg = total_num_valid_orders / total_num_orders
@@ -302,6 +319,7 @@ def main():
                 list_valid_order_ratios
             ),
             "messages/messages_table": messages_table,
+            "messages/message_summary_table": message_summary_table,
             "messages/num_total": total_message_sent,
             "messages/num_avg": total_message_sent / count_completions_one_round,
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
