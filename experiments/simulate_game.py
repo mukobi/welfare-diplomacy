@@ -15,13 +15,13 @@ from tqdm import tqdm
 import wandb
 from wandb.integration.openai import autolog
 
-from agents import Agent, AgentResponse, model_name_to_agent
-import prompts
+from agents import Agent, model_name_to_agent
+from data_types import AgentResponse, MessageSummaryHistory
 from message_summarizers import (
     MessageSummarizer,
-    MessageSummaryHistory,
     model_name_to_message_summarizer,
 )
+import prompts
 import utils
 
 
@@ -146,6 +146,7 @@ def main():
                 agent_response = agent.respond(
                     power,
                     game,
+                    message_summary_history,
                     possible_orders,
                     message_round,
                     wandb.config.max_message_rounds,

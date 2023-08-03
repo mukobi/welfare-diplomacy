@@ -2,6 +2,7 @@
 
 from diplomacy import Game, Message, Power
 
+from data_types import PhaseMessageSummary, MessageSummaryHistory
 import utils
 
 WANDB_PROJECT = "welfare-diplomacy"
@@ -58,31 +59,21 @@ def get_welfare_rules(final_game_year: int) -> str:
 
 
 def get_user_prompt(
-    power: Power, game: Game, possible_orders: dict[str, list[str]]
+    power: Power,
+    game: Game,
+    message_summary_history: MessageSummaryHistory,
+    possible_orders: dict[str, list[str]],
 ) -> str:
     """Game state information to make decisions from."""
     # The entire message history between this power all other powers.
     message_history = ""
-    # game.message_history only contains the previous phases.
-    message: Message
-    for phase, message_dict in game.message_history.items():
-        message_history += f"{phase}\n"
-        phase_message_count = 0
-        for message in message_dict.values():
-            if (
-                message.sender != power.name
-                and message.recipient != power.name
-                and message.recipient != "GLOBAL"
-            ):
-                # Limit messages seen by this power
-                continue
-            message_history += f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
-            phase_message_count += 1
-        if phase_message_count == 0:
-            message_history += "None\n"
-        message_history += "\n"
+    # Add summaries of the previous phases messages
+    phase_message_summary: PhaseMessageSummary
+    for phase_message_summary in message_summary_history[power.name]:
+        message_history += str(phase_message_summary) + "\n\n"
+
     # Also add in the current message round.
-    message_history += f"{game.get_current_phase()} (current phase)\n"
+    message_history += f"{game.get_current_phase()} (current phase all messages)\n"
     phase_message_count = 0
     for message in game.messages.values():
         if (

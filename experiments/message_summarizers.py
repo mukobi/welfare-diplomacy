@@ -1,30 +1,14 @@
 """Summarize message history to condense prompts."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from logging import Logger
 
 from diplomacy import Game, Message, Power
 
 from backends import OpenAIChatBackend
+from data_types import PhaseMessageSummary, MessageSummaryHistory
 import prompts
 import utils
-
-
-@dataclass
-class PhaseMessageSummary:
-    """Represents the summary of a single phase's messages as visible to a single power."""
-
-    phase: str
-    original_messages: list[str]
-    summary: str
-
-    def __repr__(self) -> str:
-        return f"{self.phase} (Summary)\n{self.summary}"
-
-
-# Type to represent power names mapping to a list of summaries for each phase.
-MessageSummaryHistory = dict[str, list[PhaseMessageSummary]]
 
 
 class MessageSummarizer(ABC):

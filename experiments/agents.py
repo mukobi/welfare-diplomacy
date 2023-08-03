@@ -6,33 +6,16 @@ an underlying model for a response, and return back the extracted response.
 """
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 import json
 import random
 import time
-from typing import Optional
 
 from diplomacy import Power, Game
 import wandb
 
 from backends import OpenAIChatBackend
+from data_types import AgentResponse, MessageSummaryHistory
 import prompts
-
-
-@dataclass
-class AgentResponse:
-    """A response from an agent for a single turn of actions."""
-
-    model_name: str  # Name of the generating model.
-    reasoning: str  # Private reasoning to generate the response.
-    orders: list[str]  # Orders to execute.
-    messages: dict[str, str]  # Messages to send to other powers.
-    system_prompt: str  # System prompt
-    user_prompt: Optional[str]  # User prompt if available
-    prompt_tokens: int  # Number of tokens in prompt
-    completion_tokens: int  # Number of tokens in completion
-    total_tokens: int  # Total number of tokens in prompt and completion
-    completion_time_sec: float  # Time to generate completion in seconds
 
 
 class Agent(ABC):
@@ -43,6 +26,7 @@ class Agent(ABC):
         self,
         power: Power,
         game: Game,
+        message_summary_history: MessageSummaryHistory,
         possible_orders: dict[str, list[str]],
         current_message_round: int,
         max_message_rounds: int,
@@ -58,6 +42,7 @@ class RandomAgent(Agent):
         self,
         power: Power,
         game: Game,
+        message_summary_history: MessageSummaryHistory,
         possible_orders: dict[str, list[str]],
         current_message_round: int,
         max_message_rounds: int,
@@ -88,7 +73,9 @@ class RandomAgent(Agent):
         system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(
+            power, game, message_summary_history, possible_orders
+        )
 
         # Randomly sending a message to another power
         other_powers = [p for p in game.powers if p != power.name]
@@ -124,6 +111,7 @@ class ForceRetreatAgent(Agent):
         self,
         power: Power,
         game: Game,
+        message_summary_history: MessageSummaryHistory,
         possible_orders: dict[str, list[str]],
         current_message_round: int,
         max_message_rounds: int,
@@ -146,7 +134,9 @@ class ForceRetreatAgent(Agent):
         system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(
+            power, game, message_summary_history, possible_orders
+        )
 
         # Sleep to allow wandb to catch up
         sleep_time = (
@@ -182,6 +172,7 @@ class OpenAIChatAgent(Agent):
         self,
         power: Power,
         game: Game,
+        message_summary_history: MessageSummaryHistory,
         possible_orders: dict[str, list[str]],
         current_message_round: int,
         max_message_rounds: int,
@@ -191,7 +182,9 @@ class OpenAIChatAgent(Agent):
         system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
         )
-        user_prompt = prompts.get_user_prompt(power, game, possible_orders)
+        user_prompt = prompts.get_user_prompt(
+            power, game, message_summary_history, possible_orders
+        )
         response = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
