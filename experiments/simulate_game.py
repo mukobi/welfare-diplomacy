@@ -17,7 +17,7 @@ from wandb.integration.openai import autolog
 
 from agents import Agent, AgentResponse, model_name_to_agent
 import prompts
-from summarizer import OpenAIMessageSummarizer
+from message_summarizers import OpenAIMessageSummarizer
 import utils
 
 
