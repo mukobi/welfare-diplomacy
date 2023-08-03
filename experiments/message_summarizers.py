@@ -1,5 +1,6 @@
 """Summarize message history to condense prompts."""
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from logging import Logger
 
@@ -23,16 +24,10 @@ class PhaseMessageSummary:
 MessageSummaryHistory = dict[str, list[PhaseMessageSummary]]
 
 
-class OpenAIMessageSummarizer:
+class MessageSummarizer(ABC):
     """Summarize message history to condense prompts."""
 
-    def __init__(self, logger: Logger, model_name: str = "gpt-4-32k"):
-        self.backend = OpenAIChatBackend(model_name)
-        self.logger = logger
-
-    def __repr__(self) -> str:
-        return f"OpenAISummarizer(backend={self.backend})"
-
+    @abstractmethod
     def summarize(
         self,
         game: Game,
@@ -43,6 +38,23 @@ class OpenAIMessageSummarizer:
 
         Important: Must be called before game.process to get any messages!
         """
+
+
+class PassthroughMessageSummarizer(MessageSummarizer):
+    """Don't summarize, just copy over the messages."""
+
+    def __init__(self, logger: Logger):
+        self.logger = logger
+
+    def __repr__(self) -> str:
+        return f"PassthroughMessageSummarizer"
+
+    def summarize(
+        self,
+        game: Game,
+        power: Power,
+    ) -> PhaseMessageSummary:
+        """Generate a summary with an OpenAI model."""
         if len(game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
@@ -73,3 +85,33 @@ class OpenAIMessageSummarizer:
             original_messages=original_message_list,
             summary=message_history,
         )
+
+
+class OpenAIMessageSummarizer:
+    """Message summarizer using an OpenAI model backend."""
+
+    def __init__(self, model_name: str, logger: Logger):
+        self.backend = OpenAIChatBackend(model_name)
+        self.logger = logger
+
+    def __repr__(self) -> str:
+        return f"OpenAISummarizer(backend={self.backend})"
+
+    def summarize(
+        self,
+        game: Game,
+        power: Power,
+    ) -> PhaseMessageSummary:
+        """Generate a summary with an OpenAI model."""
+        raise NotImplementedError
+
+
+def model_name_to_message_summarizer(model_name: str, **kwargs) -> MessageSummarizer:
+    """Given a model name, return an instantiated corresponding agent."""
+    model_name = model_name.lower()
+    if model_name == "passthrough":
+        return PassthroughMessageSummarizer(**kwargs)
+    elif "gpt-4" in model_name or "gpt-3.5" in model_name:
+        return OpenAIMessageSummarizer(model_name=model_name, **kwargs)
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")

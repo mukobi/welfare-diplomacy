@@ -50,6 +50,8 @@
                 "random",
                 "--max_message_rounds",
                 "1",
+                "--summarizer_model",
+                "passthrough",
             ],
             "justMyCode": true
         },
@@ -62,6 +64,8 @@
             "args": [
                 "--agent_model",
                 "random",
+                "--summarizer_model",
+                "passthrough",
             ],
             "justMyCode": true
         },
@@ -75,6 +79,8 @@
                 "--disable_wandb",
                 "--agent_model",
                 "retreats",
+                "--summarizer_model",
+                "passthrough",
             ],
             "justMyCode": true
         },
