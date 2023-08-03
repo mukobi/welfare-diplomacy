@@ -15,9 +15,10 @@ from tqdm import tqdm
 import wandb
 from wandb.integration.openai import autolog
 
-import prompts
-import utils
 from agents import Agent, AgentResponse, model_name_to_agent
+import prompts
+from summarizer import OpenAIMessageSummarizer
+import utils
 
 
 def main():
@@ -25,7 +26,7 @@ def main():
     # Parse args
     args = parse_args()
 
-    # Initialize seed, wandb, game, logger, and agent
+    # Initialize seed, wandb, game, logger, agent, and summarizer
     wandb.init(
         entity=args.entity,
         project=args.project,
@@ -45,14 +46,17 @@ def main():
     logger.setLevel(wandb.config.log_level)
 
     agent: Agent = model_name_to_agent(
-        wandb.config.model,
+        wandb.config.agent_model,
         temperature=wandb.config.temperature,
         top_p=wandb.config.top_p,
+    )
+    message_summarizer: OpenAIMessageSummarizer = OpenAIMessageSummarizer(
+        logger, wandb.config.summarizer_model
     )
 
     utils.log_info(
         logger,
-        f"Starting game with map {wandb.config.map_name} and model {wandb.config.model} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds.",
+        f"Starting game with map {wandb.config.map_name} and model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds.",
     )
 
     # Log the initial state of the game
@@ -422,10 +426,16 @@ def parse_args():
         help="📨Max rounds of messaging per turn.",
     )
     parser.add_argument(
-        "--model",
-        dest="model",
+        "--agent_model",
+        dest="agent_model",
         default="gpt-4-32k-0613",
-        help="🤖Model name to use. Can be an OpenAI Chat model, 'random', or 'retreats' (contrive a retreat situation).",
+        help="🤖Model name to use for the agent. Can be an OpenAI Chat model, 'random', or 'retreats' (contrive a retreat situation).",
+    )
+    parser.add_argument(
+        "--summarizer_model",
+        dest="summarizer_model",
+        default="gpt-4-32k-0613",
+        help="✍️ Model name to use for the summarizer. Can be an OpenAI Chat model.",
     )
     parser.add_argument(
         "--temperature",

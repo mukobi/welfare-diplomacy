@@ -46,7 +46,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--disable_wandb",
-                "--model",
+                "--agent_model",
                 "random",
                 "--max_message_rounds",
                 "1",
@@ -60,7 +60,7 @@
             "program": "${workspaceFolder}/experiments/simulate_game.py",
             "console": "integratedTerminal",
             "args": [
-                "--model",
+                "--agent_model",
                 "random",
             ],
             "justMyCode": true
@@ -73,7 +73,7 @@
             "console": "integratedTerminal",
             "args": [
                 "--disable_wandb",
-                "--model",
+                "--agent_model",
                 "retreats",
             ],
             "justMyCode": true
