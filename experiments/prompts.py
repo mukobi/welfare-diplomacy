@@ -211,3 +211,11 @@ def find_this_powers_possible_orders(power: Power, possible_orders):
     )
 
     return this_powers_possible_orders
+
+
+def get_summarizer_system_prompt(game: Game, power: Power, final_game_year: int) -> str:
+    welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
+    return rf"""You will be helping out an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
+
+You will get the message history that this player saw for the most recent phase. Please respond with a brief summary of Tweet length that the player will use for remembering the dialogue from this phase in the future. Since it's intended for this player, write your summary from the first-person perspective of {power.name.title()}.
+"""

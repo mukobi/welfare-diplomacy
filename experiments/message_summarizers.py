@@ -19,6 +19,7 @@ class MessageSummarizer(ABC):
         self,
         game: Game,
         power: Power,
+        final_game_year: int,
     ) -> PhaseMessageSummary:
         """
         Summarize the most recent phase's messages as visible to the power.
@@ -40,6 +41,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         self,
         game: Game,
         power: Power,
+        final_game_year: int,
     ) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
         if len(game.messages) == 0:
@@ -69,9 +71,28 @@ class OpenAIMessageSummarizer:
         self,
         game: Game,
         power: Power,
+        final_game_year: int,
     ) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
-        raise NotImplementedError
+        if len(game.messages) == 0:
+            utils.log_warning(self.logger, "No messages to summarize!")
+
+        original_message_list = get_messages_list(game, power)
+        messages_string = combine_messages(original_message_list)
+
+        system_prompt = prompts.get_summarizer_system_prompt(
+            game, power, final_game_year
+        )
+        response = self.backend.complete(
+            system_prompt, messages_string, temperature=0.5, top_p=0.9
+        )
+        completion = response.choices[0].message.content  # type: ignore
+
+        return PhaseMessageSummary(
+            phase=game.get_current_phase(),
+            original_messages=original_message_list,
+            summary=completion,
+        )
 
 
 def model_name_to_message_summarizer(model_name: str, **kwargs) -> MessageSummarizer:

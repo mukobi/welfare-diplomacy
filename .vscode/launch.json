@@ -30,6 +30,20 @@
             "justMyCode": true
         },
         {
+            "name": "GPT-4 (Shortest)",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--max_message_rounds",
+                "1",
+                "--early_stop_max_years",
+                "2"
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "GPT-4",
             "type": "python",
             "request": "launch",

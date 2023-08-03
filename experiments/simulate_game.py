@@ -94,6 +94,7 @@ def main():
         if wandb.config.early_stop_max_years > 0
         else wandb.config.max_years
     )
+    final_game_year = (wandb.config.max_years + 1900,)
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -150,7 +151,7 @@ def main():
                     possible_orders,
                     message_round,
                     wandb.config.max_message_rounds,
-                    wandb.config.max_years + 1900,
+                    final_game_year,
                 )
                 list_completion_times_sec.append(agent_response.completion_time_sec)
                 list_prompt_tokens.append(agent_response.prompt_tokens)
@@ -241,7 +242,9 @@ def main():
         for power_name, power in tqdm(
             game.powers.items(), desc="✍️ Summarizing messages"
         ):
-            phase_message_summary = message_summarizer.summarize(game, power)
+            phase_message_summary = message_summarizer.summarize(
+                game, power, final_game_year
+            )
             message_summary_history[power_name].append(phase_message_summary)
 
         # Advance the game simulation to the next phase
