@@ -6,14 +6,33 @@ an underlying model for a response, and return back the extracted response.
 """
 
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+import json
 import random
 import time
+from typing import Optional
 
 from diplomacy import Power, Game
 import wandb
 
-from backends import ModelResponse, OpenAIChatBackend
+from backends import OpenAIChatBackend
 import prompts
+
+
+@dataclass
+class AgentResponse:
+    """A response from an agent for a single turn of actions."""
+
+    model_name: str  # Name of the generating model.
+    reasoning: str  # Private reasoning to generate the response.
+    orders: list[str]  # Orders to execute.
+    messages: dict[str, str]  # Messages to send to other powers.
+    system_prompt: str  # System prompt
+    user_prompt: Optional[str]  # User prompt if available
+    prompt_tokens: int  # Number of tokens in prompt
+    completion_tokens: int  # Number of tokens in completion
+    total_tokens: int  # Total number of tokens in prompt and completion
+    completion_time_sec: float  # Time to generate completion in seconds
 
 
 class Agent(ABC):
@@ -28,7 +47,7 @@ class Agent(ABC):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
-    ) -> ModelResponse:
+    ) -> AgentResponse:
         """Prompt the model for a response."""
 
 
@@ -43,7 +62,7 @@ class RandomAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
-    ) -> ModelResponse:
+    ) -> AgentResponse:
         """Randomly generate orders and messages."""
         # For each power, randomly sampling a valid order
         power_orders = []
@@ -84,7 +103,7 @@ class RandomAgent(Agent):
         )
         time.sleep(sleep_time)
 
-        return ModelResponse(
+        return AgentResponse(
             model_name="RandomAgent",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
@@ -109,7 +128,7 @@ class ForceRetreatAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
-    ) -> ModelResponse:
+    ) -> AgentResponse:
         """Get to a retreats phase."""
         # For each power, randomly sampling a valid order
         power_orders = []
@@ -137,7 +156,7 @@ class ForceRetreatAgent(Agent):
         )
         time.sleep(sleep_time)
 
-        return ModelResponse(
+        return AgentResponse(
             model_name="ForceRetreatAgent",
             reasoning="Forcing the game into a retreats phase.",
             orders=power_orders,
@@ -167,7 +186,7 @@ class OpenAIChatAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
-    ) -> ModelResponse:
+    ) -> AgentResponse:
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(
             power, game, current_message_round, max_message_rounds, final_game_year
@@ -176,7 +195,28 @@ class OpenAIChatAgent(Agent):
         response = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
-        return response
+        completion = response.choices[0].message.content  # type: ignore
+        completion = json.loads(completion, strict=False)
+        # Turn recipients in messages into ALLCAPS for the engine
+        completion["messages"] = {
+            recipient.upper(): message
+            for recipient, message in completion["messages"].items()
+        }
+        assert "usage" in response, "OpenAI response does not contain usage"
+        usage = response["usage"]  # type: ignore
+        completion_time_sec = response.response_ms / 1000.0  # type: ignore
+        return AgentResponse(
+            model_name=self.backend.model_name,
+            reasoning=completion["reasoning"],
+            orders=completion["orders"],
+            messages=completion["messages"],
+            system_prompt=system_prompt,
+            user_prompt=user_prompt,
+            prompt_tokens=usage.prompt_tokens,
+            completion_tokens=usage.completion_tokens,
+            total_tokens=usage.total_tokens,
+            completion_time_sec=completion_time_sec,
+        )
 
 
 def model_name_to_agent(model_name: str, **kwargs) -> Agent:

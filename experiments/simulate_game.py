@@ -15,10 +15,9 @@ from tqdm import tqdm
 import wandb
 from wandb.integration.openai import autolog
 
-from backends import ModelResponse
 import prompts
 import utils
-from agents import Agent, model_name_to_agent
+from agents import Agent, AgentResponse, model_name_to_agent
 
 
 def main():
@@ -96,7 +95,7 @@ def main():
         total_num_valid_orders = 0
         list_valid_order_ratios = []
         total_message_sent = 0
-        agent_response_history: list[tuple[str, int, ModelResponse]] = []
+        agent_response_history: list[tuple[str, int, AgentResponse]] = []
         list_completion_times_sec = []
         list_prompt_tokens = []
         list_completion_tokens = []
