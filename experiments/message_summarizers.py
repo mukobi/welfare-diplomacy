@@ -45,31 +45,13 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         if len(game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
-        message_history = ""
-        phase_message_count = 0
-        message: Message
-        original_message_list = []
-        for message in game.messages.values():
-            if (
-                message.sender != power.name
-                and message.recipient != power.name
-                and message.recipient != "GLOBAL"
-            ):
-                # Limit messages seen by this power
-                continue
-            message_repr = f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
-            message_history += message_repr
-            phase_message_count += 1
-            original_message_list.append(message_repr)
-        if phase_message_count == 0:
-            message_history += "None\n"
-
-        message_history = message_history.strip()  # Remove trailing newline
+        original_message_list = get_messages_list(game, power)
+        messages_string = combine_messages(original_message_list)
 
         return PhaseMessageSummary(
             phase=game.get_current_phase(),
             original_messages=original_message_list,
-            summary=message_history,
+            summary=messages_string,
         )
 
 
@@ -101,3 +83,31 @@ def model_name_to_message_summarizer(model_name: str, **kwargs) -> MessageSummar
         return OpenAIMessageSummarizer(model_name=model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
+
+
+def get_messages_list(game: Game, power: Power) -> list[str]:
+    """Get a list of messages to pass through to the summarizer."""
+    message: Message
+    original_message_list = []
+    for message in game.messages.values():
+        if (
+            message.sender != power.name
+            and message.recipient != power.name
+            and message.recipient != "GLOBAL"
+        ):
+            # Limit messages seen by this power
+            continue
+        message_repr = f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
+        original_message_list.append(message_repr)
+    return original_message_list
+
+
+def combine_messages(original_message_list: list[str]) -> str:
+    """Combine the messages into a single string."""
+    messages_string = ""
+    for message_repr in original_message_list:
+        messages_string += message_repr
+    if not messages_string:
+        messages_string = "None\n"
+    messages_string = messages_string.strip()  # Remove trailing newline
+    return messages_string
