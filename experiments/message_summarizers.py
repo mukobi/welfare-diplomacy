@@ -19,6 +19,9 @@ class PhaseMessageSummary:
     original_messages: list[str]
     summary: str
 
+    def __repr__(self) -> str:
+        return f"{self.phase} (Summary)\n{self.summary}"
+
 
 # Type to represent power names mapping to a list of summaries for each phase.
 MessageSummaryHistory = dict[str, list[PhaseMessageSummary]]
@@ -58,8 +61,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         if len(game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
-        message_history == ""
-        message_history += f"{game.get_current_phase()} (current phase)\n"
+        message_history = ""
         phase_message_count = 0
         message: Message
         original_message_list = []

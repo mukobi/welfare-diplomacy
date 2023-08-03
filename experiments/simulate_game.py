@@ -17,7 +17,11 @@ from wandb.integration.openai import autolog
 
 from agents import Agent, AgentResponse, model_name_to_agent
 import prompts
-from message_summarizers import MessageSummarizer, model_name_to_message_summarizer
+from message_summarizers import (
+    MessageSummarizer,
+    MessageSummaryHistory,
+    model_name_to_message_summarizer,
+)
 import utils
 
 
@@ -53,6 +57,9 @@ def main():
     message_summarizer: MessageSummarizer = model_name_to_message_summarizer(
         wandb.config.summarizer_model, logger=logger
     )
+    message_summary_history: MessageSummaryHistory = MessageSummaryHistory()
+    for power_name in game.powers.keys():
+        message_summary_history[power_name] = []
 
     utils.log_info(
         logger,
@@ -228,6 +235,13 @@ def main():
                 for (phase, round, sender, recipient, message) in message_history
             ],
         )
+
+        # Save summaries of the message history
+        for power_name, power in tqdm(
+            game.powers.items(), desc="✍️ Summarizing messages"
+        ):
+            phase_message_summary = message_summarizer.summarize(game, power)
+            message_summary_history[power_name].append(phase_message_summary)
 
         # Advance the game simulation to the next phase
         game.process()

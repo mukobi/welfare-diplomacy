@@ -1,7 +1,6 @@
 """Language model backends."""
 
 from abc import ABC, abstractmethod
-import logging
 from typing import Any
 
 import backoff
