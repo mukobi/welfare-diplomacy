@@ -25,8 +25,8 @@ def main() -> None:
 
     # Plot a bunch of different bar graphs for different metrics
     for metric_name, y_label in [
-        ("welfare", "Welfare Points →"),
-        ("centers", "Supply Centers →"),
+        ("welfare", "Welfare Points"),
+        ("centers", "Supply Centers"),
         ("units", "Unit Counts"),
     ]:
         # Plot the welfare scores for each power
@@ -54,13 +54,20 @@ def main() -> None:
         )
 
         # Create the plot
-        sns.barplot(
+        plot = sns.barplot(
             data=welfare_df,
             x="Power",
             y=y_label,
             capsize=0.1,
             errorbar="ci",
         )
+
+        # Print the mean and error of each bar
+        power_names = welfare_df["Power"].unique()
+        for bar_label, bar, line in zip(power_names, plot.patches, plot.lines[::3]):
+            error = (line.get_ydata()[1] - line.get_ydata()[0]) / 2
+            print(f"{y_label} ({bar_label}): {bar.get_height():.2f} ± {error:.2f}")
+        print()
 
         # Set labels and title
         plt.xlabel("Power")
@@ -90,24 +97,33 @@ def main() -> None:
     welfare_df = welfare_df.melt()
 
     # update the column names
-    x_label = "Aggregation Type"
+    bar_label = "Aggregation Type"
     y_label = "Welfare Points →"
-    welfare_df.columns = [x_label, y_label]
+    welfare_df.columns = [bar_label, y_label]
 
     # Rename the aggregation types
-    welfare_df[x_label] = welfare_df[x_label].str.replace("welfare/", "").str.title()
+    welfare_df[bar_label] = (
+        welfare_df[bar_label].str.replace("welfare/", "").str.title()
+    )
 
     # Create the plot
-    sns.barplot(
+    plot = sns.barplot(
         data=welfare_df,
-        x=x_label,
+        x=bar_label,
         y=y_label,
         capsize=0.1,
         errorbar="ci",
     )
 
+    # Print the mean and error of each bar
+    bar_labels = welfare_df[bar_label].unique()
+    for bar_label, bar, line in zip(bar_labels, plot.patches, plot.lines[::3]):
+        error = (line.get_ydata()[1] - line.get_ydata()[0]) / 2
+        print(f"{y_label} ({bar_label}): {bar.get_height():.2f} ± {error:.2f}")
+    print()
+
     # Set labels and title
-    plt.xlabel(x_label)
+    plt.xlabel(bar_label)
     plt.ylabel(y_label)
     title = "Aggregated Welfare Points - Random Agent Sweep ($N=64$)"
     plt.title(title)
