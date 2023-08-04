@@ -2,7 +2,6 @@
 Plot elo scores as for each model type.
 """
 
-import json
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -76,7 +75,7 @@ def main() -> None:
         plt.title(title)
 
         # Save the plot
-        output_file = OUTPUT_DIR + f"/{metric_name}.png"
+        output_file = get_results_full_path(OUTPUT_DIR + f"/{metric_name}.png")
         save_plot(output_file)
         print(f"Saved plot '{title}' to {output_file}")
 
@@ -129,7 +128,7 @@ def main() -> None:
     plt.title(title)
 
     # Save the plot
-    output_file = OUTPUT_DIR + "/aggregated_welfare.png"
+    output_file = get_results_full_path(OUTPUT_DIR + "/aggregated_welfare.png")
     save_plot(output_file)
     print(f"Saved plot '{title}' to {output_file}")
 
