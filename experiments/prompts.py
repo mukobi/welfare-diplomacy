@@ -23,7 +23,7 @@ def get_system_prompt(
         else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history. Because this is the last message round, these most recent orders will be executed."],"""
     )
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player would, and don't send repetitive or long messages. Do not just communicate your orders, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to). Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
