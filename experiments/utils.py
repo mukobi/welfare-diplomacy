@@ -1,7 +1,8 @@
 """Utility functions."""
 
-import random
 import numpy as np
+import random
+from typing import Any
 
 from diplomacy import GamePhaseData
 from logging import Logger
@@ -39,19 +40,25 @@ def get_game_fractional_year(game_phase_data: GamePhaseData) -> float:
     return year + fraction
 
 
-def log_info(logger: Logger, message: str):
+def log_info(logger: Logger, message: str) -> None:
     """Redirect logger to play nice with tqdm."""
     with logging_redirect_tqdm():
         logger.info(message)
 
 
-def log_warning(logger: Logger, message: str):
+def log_warning(logger: Logger, message: str) -> None:
     """Redirect logger to play nice with tqdm."""
     with logging_redirect_tqdm():
         logger.warning(message)
 
 
-def remove_duplicates_keep_order(lst):
+def log_error(logger: Logger, message: str) -> None:
+    """Redirect logger to play nice with tqdm."""
+    with logging_redirect_tqdm():
+        logger.error(message)
+
+
+def remove_duplicates_keep_order(lst: list[Any]) -> list[Any]:
     """Remove duplicates from a list while preserving order (keep last occurance)."""
     return list(dict.fromkeys(reversed(lst)))[::-1]
 

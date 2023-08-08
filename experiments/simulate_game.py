@@ -15,7 +15,7 @@ from tqdm import tqdm
 import wandb
 from wandb.integration.openai import autolog
 
-from agents import Agent, model_name_to_agent
+from agents import Agent, AgentCompletionError, model_name_to_agent
 from data_types import AgentResponse, MessageSummaryHistory
 from message_summarizers import (
     MessageSummarizer,
@@ -109,6 +109,7 @@ def main():
     all_ratio_builds: list[float] = []
     all_num_centers_lost: list[int] = []
     all_valid_ratio_averages: list[float] = []
+    all_num_completion_errors: list[int] = []
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -120,6 +121,7 @@ def main():
         total_num_orders = 0
         total_num_valid_orders = 0
         list_valid_order_ratios = []
+        phase_num_completion_errors = 0
         total_message_sent = 0
         # (power_name, message_round, agent_response, invalid orders)
         agent_response_history: list[tuple[str, int, AgentResponse, list[str]]] = []
@@ -159,15 +161,25 @@ def main():
                     continue
 
                 # Prompting the model for a response
-                agent_response = agent.respond(
-                    power,
-                    game,
-                    message_summary_history,
-                    possible_orders,
-                    message_round,
-                    wandb.config.max_message_rounds,
-                    final_game_year,
-                )
+                try:
+                    agent_response = agent.respond(
+                        power,
+                        game,
+                        message_summary_history,
+                        possible_orders,
+                        message_round,
+                        wandb.config.max_message_rounds,
+                        final_game_year,
+                    )
+                except AgentCompletionError as exc:
+                    # If the agent fails to complete, we need to log the error and continue
+                    phase_num_completion_errors += 1
+                    utils.log_error(
+                        logger,
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent.model_name} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                    )
+                    progress_bar_messages.update(1)
+                    continue
                 list_completion_times_sec.append(agent_response.completion_time_sec)
                 list_prompt_tokens.append(agent_response.prompt_tokens)
                 list_completion_tokens.append(agent_response.completion_tokens)
@@ -233,6 +245,9 @@ def main():
 
                 # Send messages
                 for recipient, message in agent_response.messages.items():
+                    if isinstance(message, list):
+                        # Handle weird model outputs
+                        message = " ".join(message)
                     game.add_message(
                         Message(
                             sender=power_name,
@@ -293,6 +308,12 @@ def main():
         avg_game_valid_ratio_avg = (
             np.mean(all_valid_ratio_averages)
             if len(all_valid_ratio_averages) > 0
+            else None
+        )
+        all_num_completion_errors.append(phase_num_completion_errors)
+        phase_avg_num_completions = (
+            total_message_sent / count_completions_one_round
+            if count_completions_one_round > 0
             else None
         )
         model_response_table = wandb.Table(
@@ -356,21 +377,47 @@ def main():
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
             "messages/num_total": total_message_sent,
-            "messages/num_avg": total_message_sent / count_completions_one_round,
+            "messages/num_avg": phase_avg_num_completions,
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
             "model/response_table": model_response_table,
-            "tokens/prompt_tokens_avg": np.mean(list_prompt_tokens),
-            "tokens/completion_tokens_avg": np.mean(list_completion_tokens),
-            "tokens/total_tokens_avg": np.mean(list_total_tokens),
-            "tokens/prompt_tokens_min": np.min(list_prompt_tokens),
-            "tokens/completion_tokens_min": np.min(list_completion_tokens),
-            "tokens/total_tokens_min": np.min(list_total_tokens),
-            "tokens/prompt_tokens_max": np.max(list_prompt_tokens),
-            "tokens/completion_tokens_max": np.max(list_completion_tokens),
-            "tokens/total_tokens_max": np.max(list_total_tokens),
-            "tokens/prompt_tokens_median": np.median(list_prompt_tokens),
-            "tokens/completion_tokens_median": np.median(list_completion_tokens),
-            "tokens/total_tokens_median": np.median(list_total_tokens),
+            "model/phase_num_completion_errors": phase_num_completion_errors,
+            "model/avg_num_completion_errors": np.mean(all_num_completion_errors),
+            "tokens/prompt_tokens_avg": np.mean(list_prompt_tokens)
+            if list_prompt_tokens
+            else None,
+            "tokens/completion_tokens_avg": np.mean(list_completion_tokens)
+            if list_completion_tokens
+            else None,
+            "tokens/total_tokens_avg": np.mean(list_total_tokens)
+            if list_total_tokens
+            else None,
+            "tokens/prompt_tokens_min": np.min(list_prompt_tokens)
+            if list_prompt_tokens
+            else None,
+            "tokens/completion_tokens_min": np.min(list_completion_tokens)
+            if list_completion_tokens
+            else None,
+            "tokens/total_tokens_min": np.min(list_total_tokens)
+            if list_total_tokens
+            else None,
+            "tokens/prompt_tokens_max": np.max(list_prompt_tokens)
+            if list_prompt_tokens
+            else None,
+            "tokens/completion_tokens_max": np.max(list_completion_tokens)
+            if list_completion_tokens
+            else None,
+            "tokens/total_tokens_max": np.max(list_total_tokens)
+            if list_total_tokens
+            else None,
+            "tokens/prompt_tokens_median": np.median(list_prompt_tokens)
+            if list_prompt_tokens
+            else None,
+            "tokens/completion_tokens_median": np.median(list_completion_tokens)
+            if list_completion_tokens
+            else None,
+            "tokens/total_tokens_median": np.median(list_total_tokens)
+            if list_total_tokens
+            else None,
             "tokens/prompt_tokens_hist": wandb.Histogram(list_prompt_tokens),
             "tokens/completion_tokens_hist": wandb.Histogram(list_completion_tokens),
             "tokens/total_tokens_hist": wandb.Histogram(list_total_tokens),

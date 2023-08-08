@@ -18,6 +18,10 @@ from data_types import AgentResponse, MessageSummaryHistory
 import prompts
 
 
+class AgentCompletionError(ValueError):
+    """Raised when an agent fails to complete a prompt."""
+
+
 class Agent(ABC):
     """Base agent class."""
 
@@ -179,6 +183,7 @@ class OpenAIAgent(Agent):
             self.backend = OpenAICompletionBackend(model_name)
         else:
             self.backend = OpenAIChatBackend(model_name)
+        self.model_name = model_name
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
 
@@ -209,7 +214,12 @@ class OpenAIAgent(Agent):
             completion = completion.split("**")[0].strip(" `\n")
         else:
             response.choices[0].message.content  # type: ignore
-        completion = json.loads(completion, strict=False)
+        try:
+            completion = json.loads(completion, strict=False)
+        except json.JSONDecodeError as exc:
+            raise AgentCompletionError(
+                f"Error: {exc}\n\nResponse: {response}\n\nCompletion: {completion}"
+            )
         # Turn recipients in messages into ALLCAPS for the engine
         completion["messages"] = {
             recipient.upper(): message

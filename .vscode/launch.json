@@ -29,6 +29,18 @@
             "justMyCode": true
         },
         {
+            "name": "GPT-4-base",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--agent_model",
+                "gpt-4-base",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "GPT-4 (Shorter)",
             "type": "python",
             "request": "launch",
