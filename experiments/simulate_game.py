@@ -108,6 +108,7 @@ def main():
     all_ratio_supports: list[float] = []
     all_ratio_builds: list[float] = []
     all_num_centers_lost: list[int] = []
+    all_valid_ratio_averages: list[float] = []
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -282,6 +283,18 @@ def main():
 
         # Compute things to log to Weights & Biases
         rendered_state = game.render(incl_abbrev=True)
+        valid_ratio_average = (
+            np.mean(list_valid_order_ratios)
+            if len(list_valid_order_ratios) > 0
+            else None
+        )
+        if valid_ratio_average is not None:
+            all_valid_ratio_averages.append(valid_ratio_average)
+        avg_game_valid_ratio_avg = (
+            np.mean(all_valid_ratio_averages)
+            if len(all_valid_ratio_averages) > 0
+            else None
+        )
         model_response_table = wandb.Table(
             columns=[
                 "phase",
@@ -331,20 +344,15 @@ def main():
                 for power_name, message_summaries in message_summary_history.items()
             ],
         )
-        valid_order_total_avg = 1.0
-        if total_num_orders > 0:
-            valid_order_total_avg = total_num_valid_orders / total_num_orders
         log_object = {
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/num_total": total_num_orders,
             "orders/num_valid": total_num_valid_orders,
-            "orders/valid_ratio_total_avg": valid_order_total_avg,
-            "orders/valid_ratio_avg_avg": np.mean(list_valid_order_ratios),
-            f"orders/valid_ratio_avg_avg_phase_{game.phase_type}": np.mean(
-                list_valid_order_ratios
-            ),
+            "orders/avg_game_valid_ratio_avg": avg_game_valid_ratio_avg,
+            "orders/phase_valid_ratio_avg": valid_ratio_average,
+            f"orders/phase_valid_ratio_avg_phase_{game.phase_type}": valid_ratio_average,
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
             "messages/num_total": total_message_sent,
