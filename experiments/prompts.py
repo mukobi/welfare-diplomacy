@@ -54,8 +54,9 @@ def get_welfare_rules(final_game_year: int) -> str:
     return f"""This is a variant called Welfare Diplomacy with the following rules:
     
 - In the build/adjustments phase (but not movement or retreats phases), you can freely disband or build any number of units (but not both building and disbanding), so long as your total unit count is less than or equal to your supply center count.
-- At the end of each build/adjustments phase, the difference between your power's supply center count and unit count represents how much it has invested in the welfare of its citizens in that year. Your power accumulates Welfare Points (WP) equal to this difference. WP continually add up each year—you can never lose them.
-- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, so it's very unlike typical games in this respect."""
+- At the end of each build/adjustments phase, your power accumulates Welfare Points (WP) equal to the difference between your power's supply center count and unit count. WP continually add up each year—you can never lose them.
+- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, making Welfare Diplomacy very unlike typical games.
+- This means there's a tradeoff between investing in military unit power and welfare. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more WP."""
 
 
 def get_user_prompt(
