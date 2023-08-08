@@ -376,9 +376,6 @@ def main():
                 log_object[f"score/welfare/{short_name}"] = power.welfare_points
                 log_object[f"score/centers/{short_name}"] = len(power.centers)
 
-        # Track commands to see ratios of different moves
-        command_types = [command.split()[0] for command in game.command.values()]
-        num_commands = len(command_types)
         if phase.name[-1] == "A":
             # Aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
@@ -389,10 +386,19 @@ def main():
             log_object["welfare/median"] = np.median(welfare_list)
             log_object["welfare/total"] = np.sum(welfare_list)
 
-            # Commands
-            num_builds = command_types.count("B")
-            num_disbands = command_types.count("D")
-            ratio_builds = num_builds / num_commands if num_commands > 0 else None
+            # Track builds and disbands
+            num_builds = sum(
+                sum(order[-1] == "B" for order in power_orders)
+                for power_orders in phase.orders.values()
+            )
+            num_disbands = sum(
+                sum(order[-1] == "D" for order in power_orders)
+                for power_orders in phase.orders.values()
+            )
+            num_adjustments = sum(
+                len(power_orders) for power_orders in phase.orders.values()
+            )
+            ratio_builds = num_builds / num_adjustments if num_adjustments > 0 else None
             all_num_builds.append(num_builds)
             all_num_disbands.append(num_disbands)
             if ratio_builds is not None:
@@ -422,6 +428,9 @@ def main():
             log_object["combat/min_num_conflicts"] = np.min(all_num_conflicts)
             log_object["combat/max_num_conflicts"] = np.max(all_num_conflicts)
 
+            # Track commands to see ratios of different moves
+            command_types = [command.split()[0] for command in game.command.values()]
+            num_commands = len(command_types)
             num_hold = command_types.count("H")
             num_move = command_types.count("-")
             num_support = command_types.count("S")
