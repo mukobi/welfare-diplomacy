@@ -132,6 +132,8 @@ class ForceRetreatAgent(Agent):
                 power_orders = ["A VIE S A VEN TYR"]
             elif power.name == "ITALY":
                 power_orders = ["A VEN TYR"]
+            elif power.name == "GERMANY":
+                power_orders = ["A TYR VEN"]
 
         # For debugging prompting
         system_prompt = prompts.get_system_prompt(

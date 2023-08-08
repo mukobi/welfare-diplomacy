@@ -371,9 +371,9 @@ def main():
             log_object["welfare/total"] = np.sum(welfare_list)
         if phase.name[-1] == "M":
             # Track combat as measured by number of tiles where multiple units moved or held
-            phase_num_conflicts = sum(
-                [len(moving_units) > 1 for moving_units in game.combat.values()]
-            )
+            combat_dicts = [moving_units for moving_units in game.combat.values()]
+            num_moving_units = [sum(len(v) for v in d.values()) for d in combat_dicts]
+            phase_num_conflicts = sum([count > 1 for count in num_moving_units])
             all_phase_num_conflicts.append(phase_num_conflicts)
             log_object["combat/phase_num_conflicts"] = phase_num_conflicts
             log_object["combat/total_num_conflicts"] = np.sum(all_phase_num_conflicts)
