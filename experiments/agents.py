@@ -13,7 +13,7 @@ import time
 from diplomacy import Power, Game
 import wandb
 
-from backends import OpenAIChatBackend
+from backends import OpenAIChatBackend, OpenAICompletionBackend
 from data_types import AgentResponse, MessageSummaryHistory
 import prompts
 
@@ -165,11 +165,20 @@ class ForceRetreatAgent(Agent):
         )
 
 
-class OpenAIChatAgent(Agent):
-    """Uses OpenAI Chat to generate orders and messages."""
+class OpenAIAgent(Agent):
+    """Uses OpenAI Chat/Completion to generate orders and messages."""
 
     def __init__(self, model_name: str, **kwargs):
-        self.backend = OpenAIChatBackend(model_name)
+        # Decide whether it's a chat or completion model
+        self.is_completion_backend = (
+            "gpt-4-base" in model_name
+            or "text-" in model_name
+            or "davinci" in model_name
+        )
+        if self.is_completion_backend:
+            self.backend = OpenAICompletionBackend(model_name)
+        else:
+            self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
 
@@ -193,7 +202,13 @@ class OpenAIChatAgent(Agent):
         response = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
-        completion = response.choices[0].message.content  # type: ignore
+        completion = None
+        if self.is_completion_backend:
+            completion = response.choices[0].text
+            # Strip away junk
+            completion = completion.split("**")[0].strip(" `\n")
+        else:
+            response.choices[0].message.content  # type: ignore
         completion = json.loads(completion, strict=False)
         # Turn recipients in messages into ALLCAPS for the engine
         completion["messages"] = {
@@ -224,7 +239,7 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         return RandomAgent()
     elif model_name == "retreats":
         return ForceRetreatAgent()
-    elif "gpt-4" in model_name or "gpt-3.5" in model_name:
-        return OpenAIChatAgent(model_name, **kwargs)
+    elif "gpt-" in model_name or "davinci-" in model_name or "text-" in model_name:
+        return OpenAIAgent(model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")

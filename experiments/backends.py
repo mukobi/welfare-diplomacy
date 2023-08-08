@@ -69,3 +69,48 @@ class OpenAIChatBackend(LanguageModelBackend):
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
         return response
+
+
+class OpenAICompletionBackend(LanguageModelBackend):
+    """OpenAI completion backend (for GPT-4-base, text-davinci-00X)."""
+
+    def __init__(self, model_name):
+        super().__init__()
+        self.model_name = model_name
+        self.max_tokens = 1000
+        self.frequency_penalty = 0.5 if "text-" not in self.model_name else 0.0
+
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+    ) -> OpenAIResponse:
+        try:
+            full_prompt = f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):"
+            response = self.completions_with_backoff(
+                model=self.model_name,
+                prompt=full_prompt,
+                temperature=temperature,
+                top_p=top_p,
+                max_tokens=self.max_tokens,
+                frequency_penalty=self.frequency_penalty,
+            )
+            return response
+
+        except Exception as exc:  # pylint: disable=broad-except
+            self.logger.error(
+                "Error completing prompt ending in\n%s\n\nException:\n%s",
+                user_prompt[-300:],
+                exc,
+            )
+            raise
+
+    @backoff.on_exception(backoff.expo, OpenAIError)
+    def completions_with_backoff(self, **kwargs):
+        """Exponential backoff for OpenAI API rate limit errors."""
+        response = openai.Completion.create(**kwargs)
+        assert response is not None, "OpenAI response is None"
+        assert "choices" in response, "OpenAI response does not contain choices"
+        return response
