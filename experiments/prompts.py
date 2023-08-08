@@ -41,6 +41,8 @@ You are in an interactive setting where, at each time step, you are given the ga
     {message_instructions}
 }}
 
+Respond with just this JSON object and nothing else.
+
 Here are examples showing the format for orders:
 A LON H
 A WAL - LVP

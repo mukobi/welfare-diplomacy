@@ -1,12 +1,16 @@
 """Language model backends."""
 
 from abc import ABC, abstractmethod
+from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+import time
 from typing import Any
 
 import backoff
 import openai
 from openai.error import OpenAIError
 from openai.openai_response import OpenAIResponse
+
+from data_types import BackendResponse
 
 
 class LanguageModelBackend(ABC):
@@ -19,7 +23,7 @@ class LanguageModelBackend(ABC):
         user_prompt: str,
         temperature: float = 1.0,
         top_p: float = 1.0,
-    ) -> Any:
+    ) -> BackendResponse:
         """
         Complete a prompt with the language model backend.
 
@@ -29,7 +33,7 @@ class LanguageModelBackend(ABC):
 
 
 class OpenAIChatBackend(LanguageModelBackend):
-    """OpenAI chat completion backend (for GPT-4, GPT-3.5-turbo)."""
+    """OpenAI chat completion backend (e.g. GPT-4, GPT-3.5-turbo)."""
 
     def __init__(self, model_name):
         super().__init__()
@@ -41,7 +45,7 @@ class OpenAIChatBackend(LanguageModelBackend):
         user_prompt: str,
         temperature: float = 1.0,
         top_p: float = 1.0,
-    ) -> OpenAIResponse:
+    ) -> BackendResponse:
         try:
             response = self.completions_with_backoff(
                 model=self.model_name,
@@ -72,7 +76,7 @@ class OpenAIChatBackend(LanguageModelBackend):
 
 
 class OpenAICompletionBackend(LanguageModelBackend):
-    """OpenAI completion backend (for GPT-4-base, text-davinci-00X)."""
+    """OpenAI completion backend (e.g. GPT-4-base, text-davinci-00X)."""
 
     def __init__(self, model_name):
         super().__init__()
@@ -86,7 +90,7 @@ class OpenAICompletionBackend(LanguageModelBackend):
         user_prompt: str,
         temperature: float = 1.0,
         top_p: float = 1.0,
-    ) -> OpenAIResponse:
+    ) -> BackendResponse:
         try:
             full_prompt = f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):"
             response = self.completions_with_backoff(
@@ -97,7 +101,19 @@ class OpenAICompletionBackend(LanguageModelBackend):
                 max_tokens=self.max_tokens,
                 frequency_penalty=self.frequency_penalty,
             )
-            return response
+            completion = response.choices[0].text
+            # Strip away junk
+            completion = completion.split("**")[0].strip(" `\n")
+            assert "usage" in response, "OpenAI response does not contain usage"
+            usage = response["usage"]  # type: ignore
+            completion_time_sec = response.response_ms / 1000.0  # type: ignore
+            return BackendResponse(
+                completion=completion,
+                completion_time_sec=completion_time_sec,
+                prompt_tokens=usage.prompt_tokens,
+                completion_tokens=usage.completion_tokens,
+                total_tokens=usage.total_tokens,
+            )
 
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error(
@@ -114,3 +130,41 @@ class OpenAICompletionBackend(LanguageModelBackend):
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
         return response
+
+
+class ClaudeCompletionBackend:
+    """Claude completion backend (e.g. claude-2)."""
+
+    def __init__(self, model_name):
+        # Remember to provide a ANTHROPIC_API_KEY environment variable
+        self.anthropic = Anthropic()
+        self.model_name = model_name
+        self.max_tokens = 1000
+
+    def complete(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        temperature: float = 1.0,
+        top_p: float = 1.0,
+    ) -> BackendResponse:
+        prompt = f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}"
+        estimated_tokens = self.anthropic.count_tokens(prompt)
+
+        start_time = time.time()
+        completion = self.anthropic.completions.create(
+            model=self.model_name,
+            max_tokens_to_sample=self.max_tokens,
+            prompt=prompt,
+            temperature=temperature,
+            top_p=top_p,
+        )
+        completion_time_sec = time.time() - start_time
+        print(completion.completion)
+        return BackendResponse(
+            completion=completion.completion,
+            completion_time_sec=completion_time_sec,
+            prompt_tokens=estimated_tokens,
+            completion_tokens=self.max_tokens,
+            total_tokens=estimated_tokens,
+        )

@@ -3,6 +3,17 @@ from typing import Optional
 
 
 @dataclass
+class BackendResponse:
+    """Response data returned from a model."""
+
+    completion: str
+    completion_time_sec: float
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+@dataclass
 class AgentResponse:
     """A response from an agent for a single turn of actions."""
 

@@ -13,8 +13,8 @@ import time
 from diplomacy import Power, Game
 import wandb
 
-from backends import OpenAIChatBackend, OpenAICompletionBackend
-from data_types import AgentResponse, MessageSummaryHistory
+from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
+from data_types import AgentResponse, BackendResponse, MessageSummaryHistory
 import prompts
 
 
@@ -169,18 +169,19 @@ class ForceRetreatAgent(Agent):
         )
 
 
-class OpenAIAgent(Agent):
-    """Uses OpenAI Chat/Completion to generate orders and messages."""
+class APIAgent(Agent):
+    """Uses OpenAI/Claude Chat/Completion to generate orders and messages."""
 
     def __init__(self, model_name: str, **kwargs):
         # Decide whether it's a chat or completion model
-        self.is_completion_backend = (
+        if (
             "gpt-4-base" in model_name
             or "text-" in model_name
             or "davinci" in model_name
-        )
-        if self.is_completion_backend:
+        ):
             self.backend = OpenAICompletionBackend(model_name)
+        elif "claude" in model_name:
+            self.backend = ClaudeCompletionBackend(model_name)
         else:
             self.backend = OpenAIChatBackend(model_name)
         self.model_name = model_name
@@ -204,30 +205,18 @@ class OpenAIAgent(Agent):
         user_prompt = prompts.get_user_prompt(
             power, game, message_summary_history, possible_orders
         )
-        response = self.backend.complete(
+        response: BackendResponse = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
-        completion = None
-        if self.is_completion_backend:
-            completion = response.choices[0].text
-            # Strip away junk
-            completion = completion.split("**")[0].strip(" `\n")
-        else:
-            response.choices[0].message.content  # type: ignore
         try:
-            completion = json.loads(completion, strict=False)
+            completion = json.loads(response.completion, strict=False)
         except json.JSONDecodeError as exc:
-            raise AgentCompletionError(
-                f"Error: {exc}\n\nResponse: {response}\n\nCompletion: {completion}"
-            )
+            raise AgentCompletionError(f"Error: {exc}\n\nResponse: {response}")
         # Turn recipients in messages into ALLCAPS for the engine
         completion["messages"] = {
             recipient.upper(): message
             for recipient, message in completion["messages"].items()
         }
-        assert "usage" in response, "OpenAI response does not contain usage"
-        usage = response["usage"]  # type: ignore
-        completion_time_sec = response.response_ms / 1000.0  # type: ignore
         return AgentResponse(
             model_name=self.backend.model_name,
             reasoning=completion["reasoning"],
@@ -235,10 +224,10 @@ class OpenAIAgent(Agent):
             messages=completion["messages"],
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            prompt_tokens=usage.prompt_tokens,
-            completion_tokens=usage.completion_tokens,
-            total_tokens=usage.total_tokens,
-            completion_time_sec=completion_time_sec,
+            prompt_tokens=response.prompt_tokens,
+            completion_tokens=response.completion_tokens,
+            total_tokens=response.total_tokens,
+            completion_time_sec=response.completion_time_sec,
         )
 
 
@@ -249,7 +238,12 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         return RandomAgent()
     elif model_name == "retreats":
         return ForceRetreatAgent()
-    elif "gpt-" in model_name or "davinci-" in model_name or "text-" in model_name:
-        return OpenAIAgent(model_name, **kwargs)
+    elif (
+        "gpt-" in model_name
+        or "davinci-" in model_name
+        or "text-" in model_name
+        or "claude" in model_name
+    ):
+        return APIAgent(model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")

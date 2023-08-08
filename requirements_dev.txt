@@ -7,5 +7,6 @@ sphinx
 sphinx_copybutton
 sphinx_rtd_theme
 openai
+anthropic
 backoff
 seaborn
