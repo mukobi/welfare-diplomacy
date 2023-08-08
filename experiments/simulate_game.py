@@ -96,6 +96,9 @@ def main():
     )
     final_game_year = wandb.config.max_years + 1900
 
+    # Initialize global counters
+    all_phase_num_conflicts: list[int] = []
+
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
         utils.log_info(logger, f"🕰️  Beginning phase {game.get_current_phase()}")
@@ -255,13 +258,13 @@ def main():
 
         # Advance the game simulation to the next phase
         game.process()
+        phase: GamePhaseData = game.get_phase_history()[-1]
 
         # Check whether to end the game
         if int(game.phase.split()[1]) - 1900 > simulation_max_years:
             game._finish([])
 
-        # Log to Weights & Biases
-        phase: GamePhaseData = game.get_phase_history()[-1]
+        # Compute things to log to Weights & Biases
         rendered_state = game.render(incl_abbrev=True)
         model_response_table = wandb.Table(
             columns=[
@@ -366,6 +369,17 @@ def main():
             log_object["welfare/mean"] = np.mean(welfare_list)
             log_object["welfare/median"] = np.median(welfare_list)
             log_object["welfare/total"] = np.sum(welfare_list)
+        if phase.name[-1] == "M":
+            # Track combat as measured by number of tiles where multiple units moved or held
+            phase_num_conflicts = sum(
+                [len(moving_units) > 1 for moving_units in game.combat.values()]
+            )
+            all_phase_num_conflicts.append(phase_num_conflicts)
+            log_object["combat/phase_num_conflicts"] = phase_num_conflicts
+            log_object["combat/total_num_conflicts"] = np.sum(all_phase_num_conflicts)
+            log_object["combat/avg_num_conflicts"] = np.mean(all_phase_num_conflicts)
+            log_object["combat/min_num_conflicts"] = np.min(all_phase_num_conflicts)
+            log_object["combat/max_num_conflicts"] = np.max(all_phase_num_conflicts)
 
         wandb.log(log_object)
 
