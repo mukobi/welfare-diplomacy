@@ -107,6 +107,7 @@ def main():
     all_ratio_moves: list[float] = []
     all_ratio_supports: list[float] = []
     all_ratio_builds: list[float] = []
+    all_num_centers_lost: list[int] = []
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -218,7 +219,8 @@ def main():
                 )
                 total_num_orders += num_orders
                 total_num_valid_orders += num_valid_orders
-                list_valid_order_ratios.append(valid_order_ratio)
+                if valid_order_ratio is not None:
+                    list_valid_order_ratios.append(valid_order_ratio)
 
                 agent_response_history.append(
                     (power_name, message_round, agent_response, invalid_orders)
@@ -378,7 +380,7 @@ def main():
         command_types = [command.split()[0] for command in game.command.values()]
         num_commands = len(command_types)
         if phase.name[-1] == "A":
-            # Track metrics of aggregated welfare
+            # Aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
             log_object["welfare/hist"] = wandb.Histogram(welfare_list)
             log_object["welfare/min"] = np.min(welfare_list)
@@ -387,17 +389,27 @@ def main():
             log_object["welfare/median"] = np.median(welfare_list)
             log_object["welfare/total"] = np.sum(welfare_list)
 
+            # Commands
             num_builds = command_types.count("B")
             num_disbands = command_types.count("D")
             ratio_builds = num_builds / num_commands if num_commands > 0 else None
             all_num_builds.append(num_builds)
             all_num_disbands.append(num_disbands)
-            all_ratio_builds.append(ratio_builds)
+            if ratio_builds is not None:
+                all_ratio_builds.append(ratio_builds)
             log_object["builds/phase_num_builds"] = num_builds
             log_object["builds/phase_num_disbands"] = num_disbands
             log_object["builds/avg_num_builds"] = np.mean(all_num_builds)
             log_object["builds/avg_num_disbands"] = np.mean(all_num_disbands)
             log_object["builds/avg_ratio_builds"] = np.mean(all_ratio_builds)
+
+            # Conquest: number of centers lost
+            num_centers_lost = len(game.lost)
+            all_num_centers_lost.append(num_centers_lost)
+            log_object["conquest/phase_num_centers_lost"] = num_centers_lost
+            log_object["conquest/total_num_centers_lost"] = np.sum(all_num_centers_lost)
+            log_object["conquest/avg_num_centers_lost"] = np.mean(all_num_centers_lost)
+
         if phase.name[-1] == "M":
             # Track combat as measured by number of tiles where multiple units moved or held
             combat_dicts = [moving_units for moving_units in game.combat.values()]
@@ -420,8 +432,10 @@ def main():
             all_num_moves.append(num_move)
             all_num_supports.append(num_support)
             all_num_convoys.append(num_convoy)
-            all_ratio_moves.append(ratio_move)
-            all_ratio_supports.append(ratio_support)
+            if ratio_move is not None:
+                all_ratio_moves.append(ratio_move)
+            if ratio_support is not None:
+                all_ratio_supports.append(ratio_support)
             log_object["commands/phase_num_hold"] = num_hold
             log_object["commands/phase_num_move"] = num_move
             log_object["commands/phase_num_support"] = num_support
