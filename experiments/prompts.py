@@ -17,8 +17,13 @@ def get_system_prompt(
 ) -> str:
     """Instructions for the setting, game, and response format."""
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
+    orders_instructions = (
+        rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
+        if current_message_round < max_message_rounds
+        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history. Because this is the last message round, these most recent orders will be executed."],"""
+    )
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player, and don't send repetitive or wordy messages. Do not just communicate your orders, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
+        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send. Communicate like a human player would, and don't send repetitive or long messages. Do not just communicate your orders, instead use messaging to ask for information from other powers, coordinate deals about specific territories (e.g. demilitarizing a particular territory), or make and enforce larger commitments. You should not repeat information unless there is some new reason for another to doubt you."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -28,11 +33,11 @@ def get_system_prompt(
     year_difference = final_game_year + 1 - current_year
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to submit orders and optionally exchange messages with other players:
+You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
 
 {{
-    "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared.",
-    "orders": ["List of strings of intended orders to your units in the same abbreviated format as the history. You will converse with the other powers for several steps, then your most recent orders will be executed."],
+    "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and what you might need to discuss to improve any of that. Do not romanticize things, be realistic.",
+    {orders_instructions}
     {message_instructions}
 }}
 

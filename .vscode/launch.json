@@ -63,7 +63,7 @@
                 "--agent_model",
                 "random",
                 "--max_message_rounds",
-                "1",
+                "2",
                 "--summarizer_model",
                 "passthrough",
             ],
