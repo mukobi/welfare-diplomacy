@@ -16,7 +16,7 @@
             "justMyCode": true
         },
         {
-            "name": "GPT-4-base NoWandb",
+            "name": "Claude-2 NoWandb",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
@@ -24,19 +24,19 @@
             "args": [
                 "--disable_wandb",
                 "--agent_model",
-                "gpt-4-base",
+                "claude-2",
             ],
             "justMyCode": true
         },
         {
-            "name": "GPT-4-base",
+            "name": "Claude-2",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/experiments/simulate_game.py",
             "console": "integratedTerminal",
             "args": [
                 "--agent_model",
-                "gpt-4-base",
+                "claude-2",
             ],
             "justMyCode": true
         },

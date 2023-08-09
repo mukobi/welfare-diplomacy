@@ -2,13 +2,14 @@
 
 from abc import ABC, abstractmethod
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+import re
 import time
 from typing import Any
+
 
 import backoff
 import openai
 from openai.error import OpenAIError
-from openai.openai_response import OpenAIResponse
 
 from data_types import BackendResponse
 
@@ -160,9 +161,14 @@ class ClaudeCompletionBackend:
             top_p=top_p,
         )
         completion_time_sec = time.time() - start_time
+        # Claude likes to add junk around the actual JSON, so find it manually
+        json_completion = completion.completion
+        start = json_completion.index("{")
+        end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
+        json_completion = json_completion[start:end]
         print(completion.completion)
         return BackendResponse(
-            completion=completion.completion,
+            completion=json_completion,
             completion_time_sec=completion_time_sec,
             prompt_tokens=estimated_tokens,
             completion_tokens=self.max_tokens,
