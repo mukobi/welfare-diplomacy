@@ -10,8 +10,8 @@ parameters:
   seed:
     distribution: int_uniform
     min: 0
-    max: 5
-  model:
+    max: 3
+  agent_model:
     values:
       - gpt-4-0613
       - claude-2

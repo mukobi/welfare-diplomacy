@@ -57,7 +57,17 @@ class OpenAIChatBackend(LanguageModelBackend):
                 temperature=temperature,
                 top_p=top_p,
             )
-            return response
+            completion = response.choices[0]["message"]["content"]  # type: ignore
+            assert "usage" in response, "OpenAI response does not contain usage"
+            usage = response["usage"]  # type: ignore
+            completion_time_sec = response.response_ms / 1000.0  # type: ignore
+            return BackendResponse(
+                completion=completion,
+                completion_time_sec=completion_time_sec,
+                prompt_tokens=usage.prompt_tokens,
+                completion_tokens=usage.completion_tokens,
+                total_tokens=usage.total_tokens,
+            )
 
         except Exception as exc:  # pylint: disable=broad-except
             self.logger.error(
