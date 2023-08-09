@@ -176,7 +176,6 @@ class ClaudeCompletionBackend:
         start = json_completion.index("{")
         end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
         json_completion = json_completion[start:end]
-        print(completion.completion)
         return BackendResponse(
             completion=json_completion,
             completion_time_sec=completion_time_sec,
