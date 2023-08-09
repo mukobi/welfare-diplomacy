@@ -101,7 +101,7 @@ class RandomAgent(Agent):
             model_name="RandomAgent",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
-            messages={recipient: message},
+            messages={recipient: message} if not game.no_press else {},
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             prompt_tokens=0,
@@ -213,6 +213,9 @@ class APIAgent(Agent):
         except json.JSONDecodeError as exc:
             raise AgentCompletionError(f"JSON Error: {exc}\n\nResponse: {response}")
         try:
+            # Enforce no messages in no_press
+            if game.no_press:
+                completion["messages"] = {}
             # Turn recipients in messages into ALLCAPS for the engine
             new_messages = {}
             for recipient, message in completion["messages"].items():

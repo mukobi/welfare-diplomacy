@@ -20,10 +20,12 @@ def get_system_prompt(
     orders_instructions = (
         rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
         if current_message_round < max_message_rounds
-        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history. Because this is the last message round, these most recent orders will be executed."],"""
+        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not game.no_press else ""}"],"""
     )
     message_instructions = (
-        rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to). Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you."""
+        "// This is a no-press game, so no messaging is allowed. Only output the above."
+        if game.no_press
+        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to). Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you."""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -33,10 +35,10 @@ def get_system_prompt(
     year_difference = final_game_year + 1 - current_year
     return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game history as text. You will then be able to exchange up to {max_message_rounds} rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round. It is currently the {game.get_current_phase()} phase and message round {current_message_round} of {max_message_rounds if game.phase_type != 'R' else 1} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
+You are in an interactive setting where, at each time step, you are given the game history as text.{" You will then be able to exchange up to " + str(max_message_rounds) + " rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round." if not game.no_press else ""} It is currently the {game.get_current_phase()} phase{(" and message round " + str(current_message_round) + " of " + str(max_message_rounds if game.phase_type != 'R' else 1)) if not game.no_press else ""} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
 
 {{
-    "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and what you might need to discuss to improve any of that. Do not romanticize things, be realistic.",
+    "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",
     {orders_instructions}
     {message_instructions}
 }}
@@ -73,30 +75,31 @@ def get_user_prompt(
     possible_orders: dict[str, list[str]],
 ) -> str:
     """Game state information to make decisions from."""
-    # The entire message history between this power all other powers.
-    message_history = ""
-    # Add summaries of the previous phases messages
-    phase_message_summary: PhaseMessageSummary
-    for phase_message_summary in message_summary_history[power.name]:
-        message_history += str(phase_message_summary) + "\n\n"
+    if not game.no_press:
+        # The entire message history between this power all other powers.
+        message_history = ""
+        # Add summaries of the previous phases messages
+        phase_message_summary: PhaseMessageSummary
+        for phase_message_summary in message_summary_history[power.name]:
+            message_history += str(phase_message_summary) + "\n\n"
 
-    # Also add in the current message round.
-    message_history += f"{game.get_current_phase()} (current phase all messages)\n"
-    phase_message_count = 0
-    for message in game.messages.values():
-        if (
-            message.sender != power.name
-            and message.recipient != power.name
-            and message.recipient != "GLOBAL"
-        ):
-            # Limit messages seen by this power
-            continue
-        message_history += f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
-        phase_message_count += 1
-    if phase_message_count == 0:
-        message_history += "None\n"
+        # Also add in the current message round.
+        message_history += f"{game.get_current_phase()} (current phase all messages)\n"
+        phase_message_count = 0
+        for message in game.messages.values():
+            if (
+                message.sender != power.name
+                and message.recipient != power.name
+                and message.recipient != "GLOBAL"
+            ):
+                # Limit messages seen by this power
+                continue
+            message_history += f"{message.sender.title()} -> {message.recipient.title()}: {message.message}\n"
+            phase_message_count += 1
+        if phase_message_count == 0:
+            message_history += "None\n"
 
-    message_history = message_history.strip()  # Remove trailing newline
+        message_history = message_history.strip()  # Remove trailing newline
 
     # A list of the last N previous phase orders (game actions) for all players up through the previous phase.
     order_history = "None" if len(game.order_history) == 0 else ""
@@ -178,10 +181,13 @@ def get_user_prompt(
     else:
         raise ValueError(f"Unknown phase type {phase_type}")
     phase_instructions = phase_instructions.strip()  # Remove trailing newline
-    return rf"""### Dialogue History ###
+    output = ""
+    if not game.no_press:
+        output += rf"""### Dialogue History ###
 {message_history}
 
-### Recent Order History ###
+"""
+    output += rf"""### Recent Order History ###
 {order_history}
 
 ### Current Supply Center Ownership ###
@@ -195,6 +201,8 @@ def get_user_prompt(
 
 ### Phase Order Instructions ###
 {phase_instructions}"""
+
+    return output
 
 
 def find_this_powers_possible_orders(power: Power, possible_orders):

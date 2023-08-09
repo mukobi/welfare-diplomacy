@@ -23,6 +23,8 @@
             "console": "integratedTerminal",
             "args": [
                 "--disable_wandb",
+                "--max_message_rounds",
+                "0",
                 "--agent_model",
                 "gpt-3.5-turbo-16k-0613",
             ],

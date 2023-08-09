@@ -45,6 +45,10 @@ def main():
     utils.set_seed(wandb.config.seed)
 
     game: Game = Game(map_name=wandb.config.map_name)
+    if wandb.config.max_message_rounds <= 0:
+        game.add_rule("NO_PRESS")
+    else:
+        game.remove_rule("NO_PRESS")
     logger = logging.getLogger(__name__)
     logging.basicConfig()
     logger.setLevel(wandb.config.log_level)
@@ -54,12 +58,15 @@ def main():
         temperature=wandb.config.temperature,
         top_p=wandb.config.top_p,
     )
-    message_summarizer: MessageSummarizer = model_name_to_message_summarizer(
-        wandb.config.summarizer_model, logger=logger
+    message_summarizer: MessageSummarizer = (
+        model_name_to_message_summarizer(wandb.config.summarizer_model, logger=logger)
+        if not game.no_press
+        else None
     )
     message_summary_history: MessageSummaryHistory = MessageSummaryHistory()
-    for power_name in game.powers.keys():
-        message_summary_history[power_name] = []
+    if not game.no_press:
+        for power_name in game.powers.keys():
+            message_summary_history[power_name] = []
 
     utils.log_info(
         logger,
@@ -133,7 +140,11 @@ def main():
 
         # During Retreats, only 1 round of completions without press
         num_of_message_rounds = (
-            wandb.config.max_message_rounds if game.phase_type != "R" else 1
+            1
+            if game.no_press
+            else wandb.config.max_message_rounds
+            if game.phase_type != "R"
+            else 1
         )
         num_completing_powers = (
             len(game.powers)
@@ -168,7 +179,7 @@ def main():
                         message_summary_history,
                         possible_orders,
                         message_round,
-                        wandb.config.max_message_rounds,
+                        num_of_message_rounds,
                         final_game_year,
                     )
                 except AgentCompletionError as exc:
@@ -180,6 +191,8 @@ def main():
                     )
                     progress_bar_messages.update(1)
                     continue
+                if game.no_press:
+                    assert not agent_response.messages, agent_response.messages
                 list_completion_times_sec.append(agent_response.completion_time_sec)
                 list_prompt_tokens.append(agent_response.prompt_tokens)
                 list_completion_tokens.append(agent_response.completion_tokens)
@@ -277,13 +290,14 @@ def main():
         )
 
         # Save summaries of the message history
-        for power_name, power in tqdm(
-            game.powers.items(), desc="✍️ Summarizing messages"
-        ):
-            phase_message_summary = message_summarizer.summarize(
-                game, power, final_game_year
-            )
-            message_summary_history[power_name].append(phase_message_summary)
+        if not game.no_press:
+            for power_name, power in tqdm(
+                game.powers.items(), desc="✍️ Summarizing messages"
+            ):
+                phase_message_summary = message_summarizer.summarize(
+                    game, power, final_game_year
+                )
+                message_summary_history[power_name].append(phase_message_summary)
 
         # Advance the game simulation to the next phase
         game.process()
@@ -610,7 +624,7 @@ def parse_args():
         dest="max_message_rounds",
         type=int,
         default=3,
-        help="📨Max rounds of messaging per turn.",
+        help="📨Max rounds of messaging per turn. 0 is no-press/gunboat diplomacy.",
     )
     parser.add_argument(
         "--agent_model",
