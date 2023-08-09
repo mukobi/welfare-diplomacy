@@ -135,3 +135,6 @@ wandb
 
 # Debug logs
 games/game-debug.json
+
+# SLURM outputs
+*.out
