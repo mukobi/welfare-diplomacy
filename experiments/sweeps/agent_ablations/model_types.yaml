@@ -10,7 +10,7 @@ parameters:
   seed:
     distribution: int_uniform
     min: 0
-    max: 3
+    max: 2
   agent_model:
     values:
       - gpt-4-0613
