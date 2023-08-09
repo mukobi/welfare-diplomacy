@@ -214,12 +214,21 @@ class APIAgent(Agent):
             raise AgentCompletionError(f"JSON Error: {exc}\n\nResponse: {response}")
         try:
             # Turn recipients in messages into ALLCAPS for the engine
-            completion["messages"] = {
-                recipient.upper(): message
-                for recipient, message in completion["messages"].items()
-            }
-        except KeyError as exc:
-            raise AgentCompletionError(f"KeyError: {exc}\n\nCompletion: {completion}")
+            new_messages = {}
+            for recipient, message in completion["messages"].items():
+                if isinstance(message, list):
+                    # Handle weird model outputs
+                    message = " ".join(message)
+                if not isinstance(message, str):
+                    # Force each message into a string
+                    message = str(message)
+                if not message:
+                    # Skip empty messages
+                    continue
+                new_messages[recipient.upper()] = message
+            completion["messages"] = new_messages
+        except Exception as exc:
+            raise AgentCompletionError(f"Exception: {exc}\n\nCompletion: {completion}")
         return AgentResponse(
             model_name=self.backend.model_name,
             reasoning=completion["reasoning"],

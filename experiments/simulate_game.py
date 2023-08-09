@@ -245,9 +245,6 @@ def main():
 
                 # Send messages
                 for recipient, message in agent_response.messages.items():
-                    if isinstance(message, list):
-                        # Handle weird model outputs
-                        message = " ".join(message)
                     game.add_message(
                         Message(
                             sender=power_name,
