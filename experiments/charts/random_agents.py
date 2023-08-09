@@ -8,8 +8,8 @@ import seaborn as sns
 
 from chart_utils import initialize_plot_bar, save_plot, get_results_full_path
 
-INPUT_FILE = "../results/sweeps/Random Agent Random Seed.csv"
-OUTPUT_DIR = "./environment/random_agents"
+INPUT_FILE = "../results/sweeps/Seed GPT-3.5.csv"
+OUTPUT_DIR = "./environment/seed/gpt-3.5"
 
 
 def main() -> None:
@@ -71,7 +71,7 @@ def main() -> None:
         # Set labels and title
         plt.xlabel("Power")
         plt.ylabel(y_label)
-        title = f"{y_label} by Power - Random Agent Sweep ($N=64$)"
+        title = f"{y_label} by Power - GPT-3.5 Agent Sweep ($N=64$)"
         plt.title(title)
 
         # Save the plot
@@ -124,7 +124,7 @@ def main() -> None:
     # Set labels and title
     plt.xlabel(bar_label)
     plt.ylabel(y_label)
-    title = "Aggregated Welfare Points - Random Agent Sweep ($N=64$)"
+    title = "Aggregated Welfare Points - GPT-3.5 Agent Sweep ($N=64$)"
     plt.title(title)
 
     # Save the plot
