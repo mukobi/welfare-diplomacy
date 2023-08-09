@@ -1,0 +1,16 @@
+method: grid
+metric:
+  goal: maximize
+  name: welfare/mean
+parameters:
+  max_message_rounds:
+    value: 3
+  max_years:
+    value: 5
+  model:
+    value: gpt-3.5-turbo-16k-0613
+  seed:
+    distribution: int_uniform
+    min: 0
+    max: 16
+program: experiments/simulate_game.py
