@@ -213,11 +213,14 @@ class APIAgent(Agent):
         except json.JSONDecodeError as exc:
             raise AgentCompletionError(f"JSON Error: {exc}\n\nResponse: {response}")
         try:
+            # Extract data from completion
+            reasoning = completion["reasoning"]
+            orders = completion["orders"]
             # Enforce no messages in no_press
             if game.no_press:
                 completion["messages"] = {}
             # Turn recipients in messages into ALLCAPS for the engine
-            new_messages = {}
+            messages = {}
             for recipient, message in completion["messages"].items():
                 if isinstance(message, list):
                     # Handle weird model outputs
@@ -228,15 +231,14 @@ class APIAgent(Agent):
                 if not message:
                     # Skip empty messages
                     continue
-                new_messages[recipient.upper()] = message
-            completion["messages"] = new_messages
+                messages[recipient.upper()] = message
         except Exception as exc:
             raise AgentCompletionError(f"Exception: {exc}\n\nCompletion: {completion}")
         return AgentResponse(
             model_name=self.backend.model_name,
-            reasoning=completion["reasoning"],
-            orders=completion["orders"],
-            messages=completion["messages"],
+            reasoning=reasoning,
+            orders=orders,
+            messages=messages,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             prompt_tokens=response.prompt_tokens,
