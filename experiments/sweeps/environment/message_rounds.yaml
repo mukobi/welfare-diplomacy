@@ -10,11 +10,9 @@ parameters:
       - gpt-3.5-turbo-16k-0613
       # - gpt-4-0613
   seed:
-    distribution: int_uniform
-    min: 0
-    max: 2
+    value: 0
   max_message_rounds:
     distribution: int_uniform
     min: 0
-    max: 4
+    max: 5
 program: experiments/simulate_game.py
