@@ -86,7 +86,7 @@ class OpenAIMessageSummarizer:
         response = self.backend.complete(
             system_prompt, messages_string, temperature=0.5, top_p=0.9
         )
-        completion = response.choices[0].message.content  # type: ignore
+        completion = response.completion
 
         return PhaseMessageSummary(
             phase=game.get_current_phase(),
