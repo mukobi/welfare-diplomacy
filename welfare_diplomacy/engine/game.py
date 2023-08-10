@@ -4856,6 +4856,7 @@ class Game(Jsonable):
                         elif where not in power.retreats[unit]:
                             power.retreats[unit] += [where]
 
+        # -- EDITED BY HANNAH --
         # List all possible retreats
         destroyed, self.popped = {}, []
         if self.dislodged:
@@ -4864,14 +4865,15 @@ class Game(Jsonable):
                     # Removing unit
                     self.update_hash(power.name, unit_type=unit[0], loc=unit[2:])
                     power.units.remove(unit)
-                    to_where = power.retreats.get(unit)
+                    # to_where = power.retreats.get(unit)
 
                     # Describing what it can do
-                    if to_where:
-                        pass
-                    else:
-                        destroyed[unit] = power
-                        self.popped += [unit]
+                    # if to_where:
+                    #     pass
+                    # else:
+                    #     destroyed[unit] = power
+                    #     self.popped += [unit]
+        # -- END OF EDITS ---
 
         # Now (finally) actually move the units that succeeded in moving
         for power in self.powers.values():
