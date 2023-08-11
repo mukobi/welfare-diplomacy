@@ -640,7 +640,7 @@ def parse_args():
     parser.add_argument(
         "--summarizer_model",
         dest="summarizer_model",
-        default="gpt-4-32k-0613",
+        default="gpt-4-0613",
         help="✍️ Model name to use for the message summarizer. Can be an OpenAI Chat model or 'passthrough'.",
     )
     parser.add_argument(
