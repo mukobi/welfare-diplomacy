@@ -16,7 +16,7 @@ import wandb
 from wandb.integration.openai import autolog
 
 from agents import Agent, AgentCompletionError, model_name_to_agent
-from data_types import AgentResponse, MessageSummaryHistory
+from data_types import AgentResponse, MessageSummaryHistory, PromptAblation
 from message_summarizers import (
     MessageSummarizer,
     model_name_to_message_summarizer,
@@ -181,6 +181,7 @@ def main():
                         message_round,
                         num_of_message_rounds,
                         final_game_year,
+                        wandb.config.prompt_ablations,
                     )
                 except AgentCompletionError as exc:
                     # If the agent fails to complete, we need to log the error and continue
@@ -652,8 +653,19 @@ def parse_args():
         default=0.9,
         help="⚛️ Top-p for nucleus sampling.",
     )
+    parser.add_argument(
+        "--prompt_ablations",
+        nargs="*",
+        type=str,
+        choices=[elem.name.lower() for elem in PromptAblation],
+        default=[],
+    )
 
     args = parser.parse_args()
+    # Convert the strings to Enum members
+    args.prompt_ablations = [
+        PromptAblation[ablation.upper()] for ablation in args.prompt_ablations
+    ]
     return args
 
 

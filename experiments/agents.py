@@ -14,7 +14,12 @@ from diplomacy import Power, Game
 import wandb
 
 from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
-from data_types import AgentResponse, BackendResponse, MessageSummaryHistory
+from data_types import (
+    AgentResponse,
+    BackendResponse,
+    MessageSummaryHistory,
+    PromptAblation,
+)
 import prompts
 
 
@@ -35,6 +40,7 @@ class Agent(ABC):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> AgentResponse:
         """Prompt the model for a response."""
 
@@ -51,6 +57,7 @@ class RandomAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> AgentResponse:
         """Randomly generate orders and messages."""
         # For each power, randomly sampling a valid order
@@ -78,10 +85,15 @@ class RandomAgent(Agent):
 
         # For debugging prompting
         system_prompt = prompts.get_system_prompt(
-            power, game, current_message_round, max_message_rounds, final_game_year
+            power,
+            game,
+            current_message_round,
+            max_message_rounds,
+            final_game_year,
+            prompt_ablations,
         )
         user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders
+            power, game, message_summary_history, possible_orders, prompt_ablations
         )
 
         # Randomly sending a message to another power
@@ -123,6 +135,7 @@ class ForceRetreatAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> AgentResponse:
         """Get to a retreats phase."""
         # For each power, randomly sampling a valid order
@@ -141,10 +154,15 @@ class ForceRetreatAgent(Agent):
 
         # For debugging prompting
         system_prompt = prompts.get_system_prompt(
-            power, game, current_message_round, max_message_rounds, final_game_year
+            power,
+            game,
+            current_message_round,
+            max_message_rounds,
+            final_game_year,
+            prompt_ablations,
         )
         user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders
+            power, game, message_summary_history, possible_orders, prompt_ablations
         )
 
         # Sleep to allow wandb to catch up
@@ -197,13 +215,19 @@ class APIAgent(Agent):
         current_message_round: int,
         max_message_rounds: int,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> AgentResponse:
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(
-            power, game, current_message_round, max_message_rounds, final_game_year
+            power,
+            game,
+            current_message_round,
+            max_message_rounds,
+            final_game_year,
+            prompt_ablations,
         )
         user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders
+            power, game, message_summary_history, possible_orders, prompt_ablations
         )
         response: BackendResponse = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p

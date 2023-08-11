@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Optional
 
 
@@ -43,3 +44,11 @@ class PhaseMessageSummary:
 
 # Type to represent power names mapping to a list of summaries for each phase.
 MessageSummaryHistory = dict[str, list[PhaseMessageSummary]]
+
+
+class PromptAblation(Enum):
+    """Ablations to agent prompts."""
+
+    OPPRESSION_POINTS = auto()
+    NO_PHASE_INSTRUCTIONS = auto()
+    NO_UNIT_ADJACENCIES = auto()

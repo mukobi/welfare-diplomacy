@@ -139,6 +139,25 @@
             "justMyCode": true
         },
         {
+            "name": "Test Prompt Ablations",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--agent_model",
+                "random",
+                "--max_message_rounds",
+                "1",
+                "--summarizer_model",
+                "passthrough",
+                "--prompt_ablations",
+                "oppression_points",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

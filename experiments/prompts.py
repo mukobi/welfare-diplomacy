@@ -2,7 +2,7 @@
 
 from diplomacy import Game, Message, Power
 
-from data_types import PhaseMessageSummary, MessageSummaryHistory
+from data_types import MessageSummaryHistory, PhaseMessageSummary, PromptAblation
 import utils
 
 WANDB_PROJECT = "welfare-diplomacy"
@@ -14,8 +14,10 @@ def get_system_prompt(
     current_message_round: int,
     max_message_rounds: int,
     final_game_year: int,
+    prompt_ablations: list[PromptAblation],
 ) -> str:
     """Instructions for the setting, game, and response format."""
+    ablations = {""}
     welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
     orders_instructions = (
         rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
@@ -73,6 +75,7 @@ def get_user_prompt(
     game: Game,
     message_summary_history: MessageSummaryHistory,
     possible_orders: dict[str, list[str]],
+    prompt_ablations: list[PromptAblation],
 ) -> str:
     """Game state information to make decisions from."""
     if not game.no_press:
