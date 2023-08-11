@@ -300,7 +300,7 @@ def main():
                 game.powers.items(), desc="✍️ Summarizing messages"
             ):
                 phase_message_summary = message_summarizer.summarize(
-                    game, power, final_game_year
+                    game, power, final_game_year, prompt_ablations
                 )
                 message_summary_history[power_name].append(phase_message_summary)
 

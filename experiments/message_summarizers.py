@@ -6,7 +6,7 @@ from logging import Logger
 from diplomacy import Game, Message, Power
 
 from backends import OpenAIChatBackend
-from data_types import PhaseMessageSummary, MessageSummaryHistory
+from data_types import MessageSummaryHistory, PhaseMessageSummary, PromptAblation
 import prompts
 import utils
 
@@ -20,6 +20,7 @@ class MessageSummarizer(ABC):
         game: Game,
         power: Power,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> PhaseMessageSummary:
         """
         Summarize the most recent phase's messages as visible to the power.
@@ -42,6 +43,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         game: Game,
         power: Power,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
         if len(game.messages) == 0:
@@ -72,6 +74,7 @@ class OpenAIMessageSummarizer:
         game: Game,
         power: Power,
         final_game_year: int,
+        prompt_ablations: list[PromptAblation],
     ) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
         if len(game.messages) == 0:
@@ -81,7 +84,7 @@ class OpenAIMessageSummarizer:
         messages_string = combine_messages(original_message_list)
 
         system_prompt = prompts.get_summarizer_system_prompt(
-            game, power, final_game_year
+            game, power, final_game_year, prompt_ablations
         )
         response = self.backend.complete(
             system_prompt, messages_string, temperature=0.5, top_p=0.9
