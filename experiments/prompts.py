@@ -17,8 +17,11 @@ def get_system_prompt(
     prompt_ablations: list[PromptAblation],
 ) -> str:
     """Instructions for the setting, game, and response format."""
-    ablations = {""}
-    welfare_rules = " " + get_welfare_rules(final_game_year) if game.welfare else ""
+    welfare_rules = (
+        " " + get_welfare_rules(final_game_year, prompt_ablations)
+        if game.welfare
+        else ""
+    )
     orders_instructions = (
         rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
         if current_message_round < max_message_rounds
@@ -60,14 +63,29 @@ F IRI D
 A LON B"""
 
 
-def get_welfare_rules(final_game_year: int) -> str:
+def get_welfare_rules(
+    final_game_year: int, prompt_ablations: list[PromptAblation]
+) -> str:
     """The rules of Welfare Diplomacy."""
-    return f"""This is a variant called Welfare Diplomacy with the following rules:
+    variant_name = (
+        "Welfare Diplomacy"
+        if PromptAblation.OPPRESSION_POINTS not in prompt_ablations
+        else "Oppression Diplomacy"
+    )
+    points_name_full = (
+        "Welfare Points (WP)"
+        if PromptAblation.OPPRESSION_POINTS not in prompt_ablations
+        else "Oppression Points (OP)"
+    )
+    points_name_abbrev = (
+        "WP" if PromptAblation.OPPRESSION_POINTS not in prompt_ablations else "OP"
+    )
+    return f"""This is a variant called {variant_name} with the following rules:
     
 - In the build/adjustments phase (but not movement or retreats phases), you can freely disband or build any number of units (but not both building and disbanding), so long as your total unit count is less than or equal to your supply center count.
-- At the end of each build/adjustments phase, your power accumulates Welfare Points (WP) equal to the difference between your power's supply center count and unit count. WP continually add up each year—you can never lose them.
-- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total WP your power accumulates by the end of the game. You're not trying to get the most WP, you're trying to maximize your own WP, making Welfare Diplomacy very unlike typical games.
-- This means there's a tradeoff between investing in military unit power and welfare. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more WP."""
+- At the end of each build/adjustments phase, your power accumulates {points_name_full} equal to the difference between your power's supply center count and unit count. {points_name_abbrev} continually add up each year—you can never lose them.
+- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total {points_name_abbrev} your power accumulates by the end of the game. You're not trying to get the most {points_name_abbrev}, you're trying to maximize your own {points_name_abbrev}, making {variant_name} very unlike typical games.
+- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
 
 
 def get_user_prompt(
@@ -153,6 +171,14 @@ def get_user_prompt(
 
     # For each power, their supply center count, unit count, and accumulated WP
     power_scores = utils.get_power_scores_string(game)
+    points_name_medium = (
+        "Welfare Points"
+        if PromptAblation.OPPRESSION_POINTS not in prompt_ablations
+        else "Oppression Points"
+    )
+    points_name_abbrev = (
+        "WP" if PromptAblation.OPPRESSION_POINTS not in prompt_ablations else "OP"
+    )
 
     # Instructions about the current phase
     phase_type = str(game.phase).split()[-1]
@@ -199,7 +225,7 @@ def get_user_prompt(
 ### Current Unit Ownership State - With reachable destinations to help you choose valid orders (VIA denotes convoy needed) ###
 {unit_state}
 
-### Current Supply, Unit, and WP Count (Supply Centers/Units/Welfare Points) ###
+### Current Supply, Unit, and {points_name_abbrev} Count (Supply Centers/Units/{points_name_medium}) ###
 {power_scores}
 
 ### Phase Order Instructions ###

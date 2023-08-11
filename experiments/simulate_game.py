@@ -70,7 +70,7 @@ def main():
 
     utils.log_info(
         logger,
-        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase.",
+        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {wandb.config.prompt_ablations}.",
     )
 
     # Log the initial state of the game
@@ -102,6 +102,10 @@ def main():
         else wandb.config.max_years
     )
     final_game_year = wandb.config.max_years + 1900
+    # Convert the strings to Enum members
+    prompt_ablations = [
+        PromptAblation[ablation.upper()] for ablation in wandb.config.prompt_ablations
+    ]
 
     # Initialize global counters
     all_num_conflicts: list[int] = []
@@ -181,7 +185,7 @@ def main():
                         message_round,
                         num_of_message_rounds,
                         final_game_year,
-                        wandb.config.prompt_ablations,
+                        prompt_ablations,
                     )
                 except AgentCompletionError as exc:
                     # If the agent fails to complete, we need to log the error and continue
@@ -662,10 +666,6 @@ def parse_args():
     )
 
     args = parser.parse_args()
-    # Convert the strings to Enum members
-    args.prompt_ablations = [
-        PromptAblation[ablation.upper()] for ablation in args.prompt_ablations
-    ]
     return args
 
 
