@@ -137,6 +137,7 @@ def main():
         total_num_orders = 0
         total_num_valid_orders = 0
         list_valid_order_ratios = []
+        phase_num_valid_completions = 0
         phase_num_completion_errors = 0
         total_message_sent = 0
         # (power_name, message_round, agent_response, invalid orders)
@@ -173,7 +174,6 @@ def main():
                 f"📨 Beginning message round {message_round}/{num_of_message_rounds}. Completion ordering: {', '.join([name for name, _ in powers_items])}",
             )
 
-            count_completions_one_round = 0
             power: Power
             for power_name, power in powers_items:
                 # On retreat phases, skip powers that have no retreats to make
@@ -215,7 +215,7 @@ def main():
                             logger, "No messages are allowed during retreats, clearing."
                         )
                         agent_response.messages = {}
-                count_completions_one_round += 1
+                phase_num_valid_completions += 1
                 utils.log_info(
                     logger,
                     f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent_response.model_name} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
@@ -355,12 +355,12 @@ def main():
             else None
         )
         phase_ratio_completion_errors = phase_num_completion_errors / (
-            count_completions_one_round + phase_num_completion_errors
+            phase_num_valid_completions + phase_num_completion_errors
         )
         all_ratio_completion_errors.append(phase_ratio_completion_errors)
-        phase_avg_num_completions = (
-            total_message_sent / count_completions_one_round
-            if count_completions_one_round > 0
+        phase_messages_per_completion_avg = (
+            total_message_sent / phase_num_valid_completions
+            if phase_num_valid_completions > 0
             else None
         )
         # Based on GPT-4-8K at https://openai.com/pricing
@@ -430,7 +430,7 @@ def main():
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
             "messages/num_total": total_message_sent,
-            "messages/num_avg": phase_avg_num_completions,
+            "messages/num_avg": phase_messages_per_completion_avg,
             "messages/phase_ratio_public": ratio_public_messages,
             "messages/avg_ratio_public": np.mean(all_ratio_public_messages),
             "messages/phase_similarity_avg": phase_message_similarities_avg,
