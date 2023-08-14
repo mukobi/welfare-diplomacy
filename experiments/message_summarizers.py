@@ -56,6 +56,8 @@ class PassthroughMessageSummarizer(MessageSummarizer):
             phase=game.get_current_phase(),
             original_messages=original_message_list,
             summary=messages_string,
+            prompt_tokens=len(messages_string.split()),
+            completion_tokens=100,
         )
 
 
@@ -95,6 +97,8 @@ class OpenAIMessageSummarizer:
             phase=game.get_current_phase(),
             original_messages=original_message_list,
             summary=completion,
+            prompt_tokens=response.prompt_tokens,
+            completion_tokens=response.completion_tokens,
         )
 
 

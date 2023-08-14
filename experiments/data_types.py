@@ -37,6 +37,8 @@ class PhaseMessageSummary:
     phase: str
     original_messages: list[str]
     summary: str
+    prompt_tokens: int
+    completion_tokens: int
 
     def __repr__(self) -> str:
         return f"{self.phase} (summary)\n{self.summary}"

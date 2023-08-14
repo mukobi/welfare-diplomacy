@@ -124,6 +124,8 @@ def main():
     all_message_similarities: list[float] = []
     all_valid_ratio_averages: list[float] = []
     all_num_completion_errors: list[int] = []
+    game_tokens_prompt_total: int = 0
+    game_tokens_completion_total: int = 0
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -205,6 +207,8 @@ def main():
                 list_prompt_tokens.append(agent_response.prompt_tokens)
                 list_completion_tokens.append(agent_response.completion_tokens)
                 list_total_tokens.append(agent_response.total_tokens)
+                game_tokens_prompt_total += agent_response.prompt_tokens
+                game_tokens_completion_total += agent_response.completion_tokens
                 if game.phase_type == "R":
                     if len(agent_response.messages) > 0:
                         utils.log_warning(
@@ -307,6 +311,8 @@ def main():
                     game, power, final_game_year, prompt_ablations
                 )
                 message_summary_history[power_name].append(phase_message_summary)
+                game_tokens_prompt_total += phase_message_summary.prompt_tokens
+                game_tokens_completion_total += phase_message_summary.completion_tokens
 
         ratio_public_messages = len(
             [
@@ -353,6 +359,11 @@ def main():
             total_message_sent / count_completions_one_round
             if count_completions_one_round > 0
             else None
+        )
+        # Based on GPT-4-8K at https://openai.com/pricing
+        game_cost_estimate = (
+            game_tokens_prompt_total / 1000 * 0.03
+            + game_tokens_completion_total / 1000 * 0.06
         )
         model_response_table = wandb.Table(
             columns=[
@@ -403,6 +414,7 @@ def main():
                 for power_name, message_summaries in message_summary_history.items()
             ],
         )
+
         log_object = {
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
@@ -466,6 +478,9 @@ def main():
             "tokens/prompt_tokens_hist": wandb.Histogram(list_prompt_tokens),
             "tokens/completion_tokens_hist": wandb.Histogram(list_completion_tokens),
             "tokens/total_tokens_hist": wandb.Histogram(list_total_tokens),
+            "cost/estimated_token_cost_gpt4-usd": game_cost_estimate,
+            "cost/prompt_tokens_total": game_tokens_prompt_total,
+            "cost/completion_tokens_total": game_tokens_completion_total,
         }
 
         for power in game.powers.values():
