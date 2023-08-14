@@ -108,46 +108,46 @@ def main():
     ]
 
     # Initialize global counters
-    all_num_conflicts: list[int] = []
-    all_num_holds: list[int] = []
-    all_num_moves: list[int] = []
-    all_num_supports: list[int] = []
-    all_num_convoys: list[int] = []
-    all_num_builds: list[int] = []
-    all_num_disbands: list[int] = []
-    all_ratio_moves: list[float] = []
-    all_ratio_supports: list[float] = []
-    all_ratio_builds: list[float] = []
-    all_num_centers_lost: list[int] = []
-    all_num_centers_gained: list[int] = []
-    all_messages_per_completion: list[float] = []
-    all_ratio_public_messages: list[float] = []
-    all_message_similarities: list[float] = []
-    all_valid_ratio_averages: list[float] = []
-    all_ratio_completion_errors: list[int] = []
-    game_tokens_prompt_total: int = 0
-    game_tokens_completion_total: int = 0
+    game_conflicts_num_list: list[int] = []
+    game_holds_num_list: list[int] = []
+    game_moves_num_list: list[int] = []
+    game_supports_num_list: list[int] = []
+    game_convoys_num_list: list[int] = []
+    game_builds_num_list: list[int] = []
+    game_disbands_num_list: list[int] = []
+    game_move_ratio_list: list[float] = []
+    game_support_ratio_list: list[float] = []
+    game_build_ratio_list: list[float] = []
+    game_centers_lost_num_list: list[int] = []
+    game_centers_gained_num_list: list[int] = []
+    game_messages_per_completion_list: list[float] = []
+    game_messages_public_ratio_list: list[float] = []
+    game_message_similarity_list: list[float] = []
+    game_order_valid_ratio_avg_list: list[float] = []
+    game_completion_error_ratio_list: list[int] = []
+    game_completion_time_avg_sec_list: list[float] = []
+    game_tokens_prompt_sum: int = 0
+    game_tokens_completion_sum: int = 0
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
         utils.log_info(logger, f"🕰️  Beginning phase {game.get_current_phase()}")
 
-        # Cache the list of possible orders for all locations
-        possible_orders = game.get_all_possible_orders()
-
         phase_orders_total_num = 0
         phase_orders_valid_num = 0
-        list_valid_order_ratios = []
+        valid_valid_order_ratios_list = []
         phase_num_valid_completions = 0
         phase_num_completion_errors = 0
         phase_message_total = 0
         # (power_name, message_round, agent_response, invalid orders)
-        agent_response_history: list[tuple[str, int, AgentResponse, list[str]]] = []
-        list_completion_times_sec = []
-        list_prompt_tokens = []
-        list_completion_tokens = []
-        list_total_tokens = []
-        message_history: list[tuple(str, int, str, str, str)] = []
+        phase_agent_response_history: list[
+            tuple[str, int, AgentResponse, list[str]]
+        ] = []
+        phase_completion_times_sec_list = []
+        phase_prompt_tokens_list = []
+        phase_completion_tokens_list = []
+        phase_total_tokens_list = []
+        phase_message_history: list[tuple(str, int, str, str, str)] = []
 
         # During Retreats, only 1 round of completions without press
         num_of_message_rounds = (
@@ -162,6 +162,10 @@ def main():
             if game.phase_type != "R"
             else len([power for power in game.powers.values() if power.retreats])
         )
+
+        # Cache the list of possible orders for all locations
+        possible_orders = game.get_all_possible_orders()
+
         progress_bar_messages = tqdm(
             total=num_of_message_rounds * num_completing_powers, desc="🙊 Messages"
         )
@@ -204,12 +208,14 @@ def main():
                     continue
                 if game.no_press:
                     assert not agent_response.messages, agent_response.messages
-                list_completion_times_sec.append(agent_response.completion_time_sec)
-                list_prompt_tokens.append(agent_response.prompt_tokens)
-                list_completion_tokens.append(agent_response.completion_tokens)
-                list_total_tokens.append(agent_response.total_tokens)
-                game_tokens_prompt_total += agent_response.prompt_tokens
-                game_tokens_completion_total += agent_response.completion_tokens
+                phase_completion_times_sec_list.append(
+                    agent_response.completion_time_sec
+                )
+                phase_prompt_tokens_list.append(agent_response.prompt_tokens)
+                phase_completion_tokens_list.append(agent_response.completion_tokens)
+                phase_total_tokens_list.append(agent_response.total_tokens)
+                game_tokens_prompt_sum += agent_response.prompt_tokens
+                game_tokens_completion_sum += agent_response.completion_tokens
                 if game.phase_type == "R":
                     if len(agent_response.messages) > 0:
                         utils.log_warning(
@@ -260,9 +266,9 @@ def main():
                 phase_orders_total_num += num_orders
                 phase_orders_valid_num += num_valid_orders
                 if valid_order_ratio is not None:
-                    list_valid_order_ratios.append(valid_order_ratio)
+                    valid_valid_order_ratios_list.append(valid_order_ratio)
 
-                agent_response_history.append(
+                phase_agent_response_history.append(
                     (power_name, message_round, agent_response, invalid_orders)
                 )
 
@@ -280,7 +286,7 @@ def main():
                             phase=game.get_current_phase(),
                         )
                     )
-                    message_history.append(
+                    phase_message_history.append(
                         (
                             game.get_current_phase(),
                             message_round,
@@ -299,7 +305,7 @@ def main():
             columns=["phase", "round", "sender", "recipient", "message"],
             data=[
                 [phase, round, sender, recipient, message]
-                for (phase, round, sender, recipient, message) in message_history
+                for (phase, round, sender, recipient, message) in phase_message_history
             ],
         )
 
@@ -312,26 +318,27 @@ def main():
                     game, power, final_game_year, prompt_ablations
                 )
                 message_summary_history[power_name].append(phase_message_summary)
-                game_tokens_prompt_total += phase_message_summary.prompt_tokens
-                game_tokens_completion_total += phase_message_summary.completion_tokens
+                game_tokens_prompt_sum += phase_message_summary.prompt_tokens
+                game_tokens_completion_sum += phase_message_summary.completion_tokens
 
-        ratio_public_messages = len(
+        phase_public_messages_ratio = len(
             [
                 message
                 for message in game.messages.values()
                 if message.recipient == "GLOBAL"
             ]
         ) / len(game.messages)
-        all_ratio_public_messages.append(ratio_public_messages)
+        game_messages_public_ratio_list.append(phase_public_messages_ratio)
         phase_message_similarities_list = utils.bootstrap_string_list_similarity(
             [message.message for message in game.messages.values()]
         )
         phase_message_similarities_avg = (
             np.mean(phase_message_similarities_list)
             if phase_message_similarities_list
-            else np.NaN
+            else None
         )
-        all_message_similarities.append(phase_message_similarities_avg)
+        if phase_message_similarities_avg is not None:
+            game_message_similarity_list.append(phase_message_similarities_avg)
 
         # Advance the game simulation to the next phase
         game.process()
@@ -343,32 +350,39 @@ def main():
 
         # Compute things to log to Weights & Biases
         rendered_state = game.render(incl_abbrev=True)
-        valid_ratio_average = (
-            np.mean(list_valid_order_ratios)
-            if len(list_valid_order_ratios) > 0
+        phase_order_valid_ratio_avg = (
+            np.mean(valid_valid_order_ratios_list)
+            if len(valid_valid_order_ratios_list) > 0
             else None
         )
-        if valid_ratio_average is not None:
-            all_valid_ratio_averages.append(valid_ratio_average)
-        avg_game_valid_ratio_avg = (
-            np.mean(all_valid_ratio_averages)
-            if len(all_valid_ratio_averages) > 0
+        if phase_order_valid_ratio_avg is not None:
+            game_order_valid_ratio_avg_list.append(phase_order_valid_ratio_avg)
+        game_order_valid_ratio_avg_avg = (
+            np.mean(game_order_valid_ratio_avg_list)
+            if len(game_order_valid_ratio_avg_list) > 0
             else None
         )
-        phase_ratio_completion_errors = phase_num_completion_errors / (
+        phase_completion_errors_ratio = phase_num_completion_errors / (
             phase_num_valid_completions + phase_num_completion_errors
         )
-        all_ratio_completion_errors.append(phase_ratio_completion_errors)
+        game_completion_error_ratio_list.append(phase_completion_errors_ratio)
         phase_messages_per_completion = (
             phase_message_total / phase_num_valid_completions
             if phase_num_valid_completions > 0
             else None
         )
-        all_messages_per_completion.append(phase_messages_per_completion)
-        # Based on GPT-4-8K at https://openai.com/pricing
-        game_cost_estimate = (
-            game_tokens_prompt_total / 1000 * 0.03
-            + game_tokens_completion_total / 1000 * 0.06
+        if phase_messages_per_completion is not None:
+            game_messages_per_completion_list.append(phase_messages_per_completion)
+        phase_completion_time_sec_avg = (
+            np.mean(phase_completion_times_sec_list)
+            if phase_completion_times_sec_list
+            else None
+        )
+        if phase_completion_time_sec_avg is not None:
+            game_completion_time_avg_sec_list.append(phase_completion_time_sec_avg)
+        game_cost_estimate = (  # Based on GPT-4-8K at https://openai.com/pricing
+            game_tokens_prompt_sum / 1000 * 0.03
+            + game_tokens_completion_sum / 1000 * 0.06
         )
         model_response_table = wandb.Table(
             columns=[
@@ -399,7 +413,7 @@ def main():
                     agent_response.system_prompt,
                     agent_response.user_prompt,
                 ]
-                for power_name, response_message_round, agent_response, invalid_orders in agent_response_history
+                for power_name, response_message_round, agent_response, invalid_orders in phase_agent_response_history
             ],
         )
         message_summary_table = wandb.Table(
@@ -424,71 +438,88 @@ def main():
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
-            "orders/phase_num_total": phase_orders_total_num,
-            "orders/phase_num_valid": phase_orders_valid_num,
-            "orders/avg_game_valid_ratio_avg": avg_game_valid_ratio_avg,
-            "orders/phase_valid_ratio_avg": valid_ratio_average,
-            f"orders/phase_valid_ratio_avg_phase_{phase.name[-1]}": valid_ratio_average,
+            "orders/phase_total_num": phase_orders_total_num,
+            "orders/phase_valid_num": phase_orders_valid_num,
+            "orders/game_valid_ratio": game_order_valid_ratio_avg_avg,
+            "orders/phase_valid_ratio": phase_order_valid_ratio_avg,
+            f"orders/phase_valid_ratio_type_{phase.name[-1]}": phase_order_valid_ratio_avg,
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
             "messages/phase_messages_total": phase_message_total,
             "messages/phase_message_per_completion": phase_messages_per_completion,
-            "messages/avg_messages_per_completion": np.mean(
-                all_messages_per_completion
-            ),
-            "messages/phase_ratio_public": ratio_public_messages,
-            "messages/avg_ratio_public": np.mean(all_ratio_public_messages),
+            "messages/game_messages_per_completion": np.mean(
+                game_messages_per_completion_list
+            )
+            if game_messages_per_completion_list
+            else None,
+            "messages/phase_public_ratio": phase_public_messages_ratio,
+            "messages/game_public_ratio": np.mean(game_messages_public_ratio_list)
+            if game_messages_public_ratio_list
+            else None,
             "messages/phase_similarity_avg": phase_message_similarities_avg,
             "messages/phase_similarity_hist": wandb.Histogram(
                 phase_message_similarities_list
             ),
-            "messages/game_avg_similarity_avg": np.mean(all_message_similarities),
-            "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
+            "messages/game_similarity_avg": np.mean(game_message_similarity_list)
+            if game_message_similarity_list
+            else None,
+            "model/phase_completion_time_sec_avg": phase_completion_time_sec_avg,
+            "model/game_completion_time_sec_avg": np.mean(
+                game_completion_time_avg_sec_list
+            )
+            if game_completion_time_avg_sec_list
+            else None,
             "model/response_table": model_response_table,
-            "model/phase_ratio_completion_errors": phase_ratio_completion_errors,
-            "model/avg_ratio_completion_errors": np.mean(all_ratio_completion_errors),
-            "tokens/prompt_tokens_avg": np.mean(list_prompt_tokens)
-            if list_prompt_tokens
+            "model/phase_completion_error_ratio": phase_completion_errors_ratio,
+            "model/game_completion_error_ratio": np.mean(
+                game_completion_error_ratio_list
+            )
+            if game_completion_error_ratio_list
             else None,
-            "tokens/completion_tokens_avg": np.mean(list_completion_tokens)
-            if list_completion_tokens
+            "tokens/prompt_tokens_avg": np.mean(phase_prompt_tokens_list)
+            if phase_prompt_tokens_list
             else None,
-            "tokens/total_tokens_avg": np.mean(list_total_tokens)
-            if list_total_tokens
+            "tokens/completion_tokens_avg": np.mean(phase_completion_tokens_list)
+            if phase_completion_tokens_list
             else None,
-            "tokens/prompt_tokens_min": np.min(list_prompt_tokens)
-            if list_prompt_tokens
+            "tokens/total_tokens_avg": np.mean(phase_total_tokens_list)
+            if phase_total_tokens_list
             else None,
-            "tokens/completion_tokens_min": np.min(list_completion_tokens)
-            if list_completion_tokens
+            "tokens/prompt_tokens_min": np.min(phase_prompt_tokens_list)
+            if phase_prompt_tokens_list
             else None,
-            "tokens/total_tokens_min": np.min(list_total_tokens)
-            if list_total_tokens
+            "tokens/completion_tokens_min": np.min(phase_completion_tokens_list)
+            if phase_completion_tokens_list
             else None,
-            "tokens/prompt_tokens_max": np.max(list_prompt_tokens)
-            if list_prompt_tokens
+            "tokens/total_tokens_min": np.min(phase_total_tokens_list)
+            if phase_total_tokens_list
             else None,
-            "tokens/completion_tokens_max": np.max(list_completion_tokens)
-            if list_completion_tokens
+            "tokens/prompt_tokens_max": np.max(phase_prompt_tokens_list)
+            if phase_prompt_tokens_list
             else None,
-            "tokens/total_tokens_max": np.max(list_total_tokens)
-            if list_total_tokens
+            "tokens/completion_tokens_max": np.max(phase_completion_tokens_list)
+            if phase_completion_tokens_list
             else None,
-            "tokens/prompt_tokens_median": np.median(list_prompt_tokens)
-            if list_prompt_tokens
+            "tokens/total_tokens_max": np.max(phase_total_tokens_list)
+            if phase_total_tokens_list
             else None,
-            "tokens/completion_tokens_median": np.median(list_completion_tokens)
-            if list_completion_tokens
+            "tokens/prompt_tokens_median": np.median(phase_prompt_tokens_list)
+            if phase_prompt_tokens_list
             else None,
-            "tokens/total_tokens_median": np.median(list_total_tokens)
-            if list_total_tokens
+            "tokens/completion_tokens_median": np.median(phase_completion_tokens_list)
+            if phase_completion_tokens_list
             else None,
-            "tokens/prompt_tokens_hist": wandb.Histogram(list_prompt_tokens),
-            "tokens/completion_tokens_hist": wandb.Histogram(list_completion_tokens),
-            "tokens/total_tokens_hist": wandb.Histogram(list_total_tokens),
+            "tokens/total_tokens_median": np.median(phase_total_tokens_list)
+            if phase_total_tokens_list
+            else None,
+            "tokens/prompt_tokens_hist": wandb.Histogram(phase_prompt_tokens_list),
+            "tokens/completion_tokens_hist": wandb.Histogram(
+                phase_completion_tokens_list
+            ),
+            "tokens/total_tokens_hist": wandb.Histogram(phase_total_tokens_list),
             "cost/estimated_token_cost_gpt4-usd": game_cost_estimate,
-            "cost/prompt_tokens_total": game_tokens_prompt_total,
-            "cost/completion_tokens_total": game_tokens_completion_total,
+            "cost/prompt_tokens_total": game_tokens_prompt_sum,
+            "cost/completion_tokens_total": game_tokens_completion_sum,
         }
 
         for power in game.powers.values():
@@ -502,42 +533,51 @@ def main():
         if phase.name[-1] == "A":
             # Aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
-            log_object["welfare/hist"] = wandb.Histogram(welfare_list)
-            log_object["welfare/min"] = np.min(welfare_list)
-            log_object["welfare/max"] = np.max(welfare_list)
-            log_object["welfare/mean"] = np.mean(welfare_list)
-            log_object["welfare/median"] = np.median(welfare_list)
-            log_object["welfare/total"] = np.sum(welfare_list)
+            log_object["welfare/global_hist"] = wandb.Histogram(welfare_list)
+            log_object["welfare/global_min"] = np.min(welfare_list)
+            log_object["welfare/global_max"] = np.max(welfare_list)
+            log_object["welfare/global_mean"] = np.mean(welfare_list)
+            log_object["welfare/global_median"] = np.median(welfare_list)
+            log_object["welfare/global_total"] = np.sum(welfare_list)
 
             # Track builds and disbands
-            num_builds = sum(
+            phase_builds_num = sum(
                 sum(order[-1] == "B" for order in power_orders)
                 for power_orders in phase.orders.values()
             )
-            num_disbands = sum(
+            phase_disbands_num = sum(
                 sum(order[-1] == "D" for order in power_orders)
                 for power_orders in phase.orders.values()
             )
-            num_adjustments = sum(
+            phase_adjustments_num = sum(
                 len(power_orders) for power_orders in phase.orders.values()
             )
-            ratio_builds = num_builds / num_adjustments if num_adjustments > 0 else None
-            all_num_builds.append(num_builds)
-            all_num_disbands.append(num_disbands)
-            if ratio_builds is not None:
-                all_ratio_builds.append(ratio_builds)
-            log_object["builds/phase_num_builds"] = num_builds
-            log_object["builds/phase_num_disbands"] = num_disbands
-            log_object["builds/avg_num_builds"] = np.mean(all_num_builds)
-            log_object["builds/avg_num_disbands"] = np.mean(all_num_disbands)
-            log_object["builds/avg_ratio_builds"] = np.mean(all_ratio_builds)
+            phase_build_ratio = (
+                phase_builds_num / phase_adjustments_num
+                if phase_adjustments_num > 0
+                else None
+            )
+            game_builds_num_list.append(phase_builds_num)
+            game_disbands_num_list.append(phase_disbands_num)
+            if phase_build_ratio is not None:
+                game_build_ratio_list.append(phase_build_ratio)
+            log_object["builds/phase_builds_num"] = phase_builds_num
+            log_object["builds/phase_disbands_num"] = phase_disbands_num
+            log_object["builds/phase_build_ratio"] = phase_build_ratio
+            log_object["builds/game_builds_avg"] = np.mean(game_builds_num_list)
+            log_object["builds/game_disbands_avg"] = np.mean(game_disbands_num_list)
+            log_object["builds/game_build_ratio"] = np.mean(game_build_ratio_list)
 
             # Conquest: number of centers lost and gained
-            num_centers_lost = len(game.lost)
-            all_num_centers_lost.append(num_centers_lost)
-            log_object["conquest/phase_num_centers_lost"] = num_centers_lost
-            log_object["conquest/total_num_centers_lost"] = np.sum(all_num_centers_lost)
-            log_object["conquest/avg_num_centers_lost"] = np.mean(all_num_centers_lost)
+            phase_centers_lost_num = len(game.lost)
+            game_centers_lost_num_list.append(phase_centers_lost_num)
+            log_object["conquest/phase_centers_lost_num"] = phase_centers_lost_num
+            log_object["conquest/game_centers_lost_sum"] = np.sum(
+                game_centers_lost_num_list
+            )
+            log_object["conquest/game_centers_lost_avg"] = np.mean(
+                game_centers_lost_num_list
+            )
             old_num_centers = sum(
                 len(centers)
                 for centers in game.get_phase_history()[-2].state["centers"].values()
@@ -545,17 +585,17 @@ def main():
             new_num_centers = sum(
                 len(centers) for centers in phase.state["centers"].values()
             )
-            num_centers_gained = new_num_centers - old_num_centers
-            all_num_centers_gained.append(num_centers_gained)
-            log_object["conquest/phase_num_centers_gained"] = num_centers_gained
-            log_object["conquest/total_num_centers_gained"] = np.sum(
-                all_num_centers_gained
+            phase_centers_gained_num = new_num_centers - old_num_centers
+            game_centers_gained_num_list.append(phase_centers_gained_num)
+            log_object["conquest/phase_centers_gained_num"] = phase_centers_gained_num
+            log_object["conquest/game_centers_gained_sum"] = np.sum(
+                game_centers_gained_num_list
             )
-            log_object["conquest/avg_num_centers_gained"] = np.mean(
-                all_num_centers_gained
+            log_object["conquest/game_centers_gained_avg"] = np.mean(
+                game_centers_gained_num_list
             )
-            log_object["conquest/num_centers_owned"] = new_num_centers
-            log_object["conquest/frac_centers_owned"] = new_num_centers / len(
+            log_object["conquest/centers_owned_num"] = new_num_centers
+            log_object["conquest/centers_owned_ratio"] = new_num_centers / len(
                 game.map.scs
             )
 
@@ -563,13 +603,13 @@ def main():
             # Track combat as measured by number of tiles where multiple units moved or held
             combat_dicts = [moving_units for moving_units in game.combat.values()]
             num_moving_units = [sum(len(v) for v in d.values()) for d in combat_dicts]
-            phase_num_conflicts = sum([count > 1 for count in num_moving_units])
-            all_num_conflicts.append(phase_num_conflicts)
-            log_object["combat/phase_num_conflicts"] = phase_num_conflicts
-            log_object["combat/total_num_conflicts"] = np.sum(all_num_conflicts)
-            log_object["combat/avg_num_conflicts"] = np.mean(all_num_conflicts)
-            log_object["combat/min_num_conflicts"] = np.min(all_num_conflicts)
-            log_object["combat/max_num_conflicts"] = np.max(all_num_conflicts)
+            phase_conflicts_num = sum([count > 1 for count in num_moving_units])
+            game_conflicts_num_list.append(phase_conflicts_num)
+            log_object["combat/phase_conflicts_num"] = phase_conflicts_num
+            log_object["combat/game_conflicts_sum"] = np.sum(game_conflicts_num_list)
+            log_object["combat/game_conflicts_avg"] = np.mean(game_conflicts_num_list)
+            log_object["combat/game_conflicts_min"] = np.min(game_conflicts_num_list)
+            log_object["combat/game_conflicts_max"] = np.max(game_conflicts_num_list)
 
             # Track commands to see ratios of different moves
             command_types = [command.split()[0] for command in game.command.values()]
@@ -580,26 +620,26 @@ def main():
             num_convoy = command_types.count("C")
             ratio_move = num_move / num_commands if num_commands > 0 else None
             ratio_support = num_support / num_commands if num_commands > 0 else None
-            all_num_holds.append(num_hold)
-            all_num_moves.append(num_move)
-            all_num_supports.append(num_support)
-            all_num_convoys.append(num_convoy)
+            game_holds_num_list.append(num_hold)
+            game_moves_num_list.append(num_move)
+            game_supports_num_list.append(num_support)
+            game_convoys_num_list.append(num_convoy)
             if ratio_move is not None:
-                all_ratio_moves.append(ratio_move)
+                game_move_ratio_list.append(ratio_move)
             if ratio_support is not None:
-                all_ratio_supports.append(ratio_support)
-            log_object["commands/phase_num_hold"] = num_hold
-            log_object["commands/phase_num_move"] = num_move
-            log_object["commands/phase_num_support"] = num_support
-            log_object["commands/phase_num_convoy"] = num_convoy
-            log_object["commands/phase_ratio_move"] = ratio_move
-            log_object["commands/phase_ratio_support"] = ratio_support
-            log_object["commands/avg_num_holds"] = np.mean(all_num_holds)
-            log_object["commands/avg_num_moves"] = np.mean(all_num_moves)
-            log_object["commands/avg_num_supports"] = np.mean(all_num_supports)
-            log_object["commands/avg_num_convoys"] = np.mean(all_num_convoys)
-            log_object["commands/avg_ratio_moves"] = np.mean(all_ratio_moves)
-            log_object["commands/avg_ratio_supports"] = np.mean(all_ratio_supports)
+                game_support_ratio_list.append(ratio_support)
+            log_object["commands/phase_hold_num"] = num_hold
+            log_object["commands/phase_move_num"] = num_move
+            log_object["commands/phase_support_num"] = num_support
+            log_object["commands/phase_convoy_num"] = num_convoy
+            log_object["commands/phase_move_ratio"] = ratio_move
+            log_object["commands/phase_support_ratio"] = ratio_support
+            log_object["commands/avg_holds_num"] = np.mean(game_holds_num_list)
+            log_object["commands/avg_moves_num"] = np.mean(game_moves_num_list)
+            log_object["commands/avg_supports_num"] = np.mean(game_supports_num_list)
+            log_object["commands/avg_convoys_num"] = np.mean(game_convoys_num_list)
+            log_object["commands/avg_moves_ratio"] = np.mean(game_move_ratio_list)
+            log_object["commands/avg_supports_ratio"] = np.mean(game_support_ratio_list)
 
         wandb.log(log_object)
 
