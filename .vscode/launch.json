@@ -134,6 +134,8 @@
                 "random",
                 "--summarizer_model",
                 "passthrough",
+                "--seed",
+                "0",
             ],
             "justMyCode": true
         },
