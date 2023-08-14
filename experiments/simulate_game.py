@@ -135,8 +135,8 @@ def main():
         # Cache the list of possible orders for all locations
         possible_orders = game.get_all_possible_orders()
 
-        total_num_orders = 0
-        total_num_valid_orders = 0
+        phase_orders_total_num = 0
+        phase_orders_valid_num = 0
         list_valid_order_ratios = []
         phase_num_valid_completions = 0
         phase_num_completion_errors = 0
@@ -257,8 +257,8 @@ def main():
                     f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
                     + (f". Invalid Orders: {invalid_orders}" if invalid_orders else ""),
                 )
-                total_num_orders += num_orders
-                total_num_valid_orders += num_valid_orders
+                phase_orders_total_num += num_orders
+                phase_orders_valid_num += num_valid_orders
                 if valid_order_ratio is not None:
                     list_valid_order_ratios.append(valid_order_ratio)
 
@@ -424,14 +424,14 @@ def main():
             "meta/year_fractional": utils.get_game_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
-            "orders/num_total": total_num_orders,
-            "orders/num_valid": total_num_valid_orders,
+            "orders/phase_num_total": phase_orders_total_num,
+            "orders/phase_num_valid": phase_orders_valid_num,
             "orders/avg_game_valid_ratio_avg": avg_game_valid_ratio_avg,
             "orders/phase_valid_ratio_avg": valid_ratio_average,
-            f"orders/phase_valid_ratio_avg_phase_{game.phase_type}": valid_ratio_average,
+            f"orders/phase_valid_ratio_avg_phase_{phase.name[-1]}": valid_ratio_average,
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
-            "messages/phase_messages_tital": phase_message_total,
+            "messages/phase_messages_total": phase_message_total,
             "messages/phase_message_per_completion": phase_messages_per_completion,
             "messages/avg_messages_per_completion": np.mean(
                 all_messages_per_completion
