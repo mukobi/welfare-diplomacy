@@ -1,11 +1,13 @@
 """Utility functions."""
 
+from itertools import permutations
 import numpy as np
 import random
-from typing import Any
+from typing import Any, Optional
 
 from diplomacy import GamePhaseData
 from logging import Logger
+from nltk.translate.bleu_score import sentence_bleu
 from tqdm.contrib.logging import logging_redirect_tqdm
 
 
@@ -79,3 +81,25 @@ def get_power_scores_string(game, abbrev=False):
                 for power in game.powers.values()
             ]
         )
+
+
+def bootstrap_string_list_similarity(
+    strings: list[str], num_bootstrap_comparisons: int = 1000
+) -> list[float]:
+    """Calculates the average BLEU similarity between all pairs of strings."""
+    if not isinstance(strings, list):
+        strings = list(strings)
+    similarities = []
+    for _ in range(num_bootstrap_comparisons):
+        # Sample 2 strings with replacement
+        sampled_strings = random.choices(strings, k=2)
+        # Split strings into words
+        split_1 = sampled_strings[0].split()
+        split_2 = sampled_strings[1].split()
+        # If too short, BLEU will divide by 0
+        if len(split_1) < 4 or len(split_2) < 4:
+            continue
+        # Calculate BLEU similarity
+        bleu_similarity = sentence_bleu([split_1], split_2)
+        similarities.append(bleu_similarity)
+    return similarities

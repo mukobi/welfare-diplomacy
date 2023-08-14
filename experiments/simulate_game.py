@@ -121,6 +121,7 @@ def main():
     all_num_centers_lost: list[int] = []
     all_num_centers_gained: list[int] = []
     all_ratio_public_messages: list[float] = []
+    all_message_similarities: list[float] = []
     all_valid_ratio_averages: list[float] = []
     all_num_completion_errors: list[int] = []
 
@@ -315,6 +316,15 @@ def main():
             ]
         ) / len(game.messages)
         all_ratio_public_messages.append(ratio_public_messages)
+        phase_message_similarities_list = utils.bootstrap_string_list_similarity(
+            [message.message for message in game.messages.values()]
+        )
+        phase_message_similarities_avg = (
+            np.mean(phase_message_similarities_list)
+            if phase_message_similarities_list
+            else np.NaN
+        )
+        all_message_similarities.append(phase_message_similarities_avg)
 
         # Advance the game simulation to the next phase
         game.process()
@@ -408,6 +418,11 @@ def main():
             "messages/num_avg": phase_avg_num_completions,
             "messages/phase_ratio_public": ratio_public_messages,
             "messages/avg_ratio_public": np.mean(all_ratio_public_messages),
+            "messages/phase_similarity_avg": phase_message_similarities_avg,
+            "messages/phase_similarity_hist": wandb.Histogram(
+                phase_message_similarities_list
+            ),
+            "messages/game_avg_similarity_avg": np.mean(all_message_similarities),
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
             "model/response_table": model_response_table,
             "model/phase_num_completion_errors": phase_num_completion_errors,
