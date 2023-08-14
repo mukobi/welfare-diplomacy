@@ -120,6 +120,7 @@ def main():
     all_ratio_builds: list[float] = []
     all_num_centers_lost: list[int] = []
     all_num_centers_gained: list[int] = []
+    all_messages_per_completion: list[float] = []
     all_ratio_public_messages: list[float] = []
     all_message_similarities: list[float] = []
     all_valid_ratio_averages: list[float] = []
@@ -139,7 +140,7 @@ def main():
         list_valid_order_ratios = []
         phase_num_valid_completions = 0
         phase_num_completion_errors = 0
-        total_message_sent = 0
+        phase_message_total = 0
         # (power_name, message_round, agent_response, invalid orders)
         agent_response_history: list[tuple[str, int, AgentResponse, list[str]]] = []
         list_completion_times_sec = []
@@ -288,7 +289,7 @@ def main():
                             message,
                         )
                     )
-                    total_message_sent += 1
+                    phase_message_total += 1
 
                 progress_bar_messages.update(1)
 
@@ -358,11 +359,12 @@ def main():
             phase_num_valid_completions + phase_num_completion_errors
         )
         all_ratio_completion_errors.append(phase_ratio_completion_errors)
-        phase_messages_per_completion_avg = (
-            total_message_sent / phase_num_valid_completions
+        phase_messages_per_completion = (
+            phase_message_total / phase_num_valid_completions
             if phase_num_valid_completions > 0
             else None
         )
+        all_messages_per_completion.append(phase_messages_per_completion)
         # Based on GPT-4-8K at https://openai.com/pricing
         game_cost_estimate = (
             game_tokens_prompt_total / 1000 * 0.03
@@ -429,8 +431,11 @@ def main():
             f"orders/phase_valid_ratio_avg_phase_{game.phase_type}": valid_ratio_average,
             "messages/messages_table": messages_table,
             "messages/message_summary_table": message_summary_table,
-            "messages/num_total": total_message_sent,
-            "messages/num_avg": phase_messages_per_completion_avg,
+            "messages/phase_messages_tital": phase_message_total,
+            "messages/phase_message_per_completion": phase_messages_per_completion,
+            "messages/avg_messages_per_completion": np.mean(
+                all_messages_per_completion
+            ),
             "messages/phase_ratio_public": ratio_public_messages,
             "messages/avg_ratio_public": np.mean(all_ratio_public_messages),
             "messages/phase_similarity_avg": phase_message_similarities_avg,
