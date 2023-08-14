@@ -123,7 +123,7 @@ def main():
     all_ratio_public_messages: list[float] = []
     all_message_similarities: list[float] = []
     all_valid_ratio_averages: list[float] = []
-    all_num_completion_errors: list[int] = []
+    all_ratio_completion_errors: list[int] = []
     game_tokens_prompt_total: int = 0
     game_tokens_completion_total: int = 0
 
@@ -197,7 +197,7 @@ def main():
                     phase_num_completion_errors += 1
                     utils.log_error(
                         logger,
-                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent.model_name} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
                     )
                     progress_bar_messages.update(1)
                     continue
@@ -354,7 +354,10 @@ def main():
             if len(all_valid_ratio_averages) > 0
             else None
         )
-        all_num_completion_errors.append(phase_num_completion_errors)
+        phase_ratio_completion_errors = phase_num_completion_errors / (
+            count_completions_one_round + phase_num_completion_errors
+        )
+        all_ratio_completion_errors.append(phase_ratio_completion_errors)
         phase_avg_num_completions = (
             total_message_sent / count_completions_one_round
             if count_completions_one_round > 0
@@ -437,8 +440,8 @@ def main():
             "messages/game_avg_similarity_avg": np.mean(all_message_similarities),
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
             "model/response_table": model_response_table,
-            "model/phase_num_completion_errors": phase_num_completion_errors,
-            "model/avg_num_completion_errors": np.mean(all_num_completion_errors),
+            "model/phase_ratio_completion_errors": phase_ratio_completion_errors,
+            "model/avg_ratio_completion_errors": np.mean(all_ratio_completion_errors),
             "tokens/prompt_tokens_avg": np.mean(list_prompt_tokens)
             if list_prompt_tokens
             else None,
