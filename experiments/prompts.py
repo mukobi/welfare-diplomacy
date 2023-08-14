@@ -5,7 +5,7 @@ from diplomacy import Game, Message, Power
 from data_types import MessageSummaryHistory, PhaseMessageSummary, PromptAblation
 import utils
 
-WANDB_PROJECT = "welfare-diplomacy"
+WANDB_PROJECT = "welfare-diplomacy-v2"
 
 
 def get_system_prompt(
