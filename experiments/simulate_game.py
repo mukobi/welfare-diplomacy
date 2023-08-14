@@ -119,6 +119,7 @@ def main():
     all_ratio_supports: list[float] = []
     all_ratio_builds: list[float] = []
     all_num_centers_lost: list[int] = []
+    all_num_centers_gained: list[int] = []
     all_valid_ratio_averages: list[float] = []
     all_num_completion_errors: list[int] = []
 
@@ -480,12 +481,32 @@ def main():
             log_object["builds/avg_num_disbands"] = np.mean(all_num_disbands)
             log_object["builds/avg_ratio_builds"] = np.mean(all_ratio_builds)
 
-            # Conquest: number of centers lost
+            # Conquest: number of centers lost and gained
             num_centers_lost = len(game.lost)
             all_num_centers_lost.append(num_centers_lost)
             log_object["conquest/phase_num_centers_lost"] = num_centers_lost
             log_object["conquest/total_num_centers_lost"] = np.sum(all_num_centers_lost)
             log_object["conquest/avg_num_centers_lost"] = np.mean(all_num_centers_lost)
+            old_num_centers = sum(
+                len(centers)
+                for centers in game.get_phase_history()[-2].state["centers"].values()
+            )
+            new_num_centers = sum(
+                len(centers) for centers in phase.state["centers"].values()
+            )
+            num_centers_gained = new_num_centers - old_num_centers
+            all_num_centers_gained.append(num_centers_gained)
+            log_object["conquest/phase_num_centers_gained"] = num_centers_gained
+            log_object["conquest/total_num_centers_gained"] = np.sum(
+                all_num_centers_gained
+            )
+            log_object["conquest/avg_num_centers_gained"] = np.mean(
+                all_num_centers_gained
+            )
+            log_object["conquest/num_centers_owned"] = new_num_centers
+            log_object["conquest/frac_centers_owned"] = new_num_centers / len(
+                game.map.scs
+            )
 
         if phase.name[-1] == "M":
             # Track combat as measured by number of tiles where multiple units moved or held
