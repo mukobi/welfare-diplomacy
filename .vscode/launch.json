@@ -31,6 +31,20 @@
             "justMyCode": true
         },
         {
+            "name": "GPT-3.5",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--max_message_rounds",
+                "2",
+                "--agent_model",
+                "gpt-3.5-turbo-16k-0613",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Claude-2 NoWandb",
             "type": "python",
             "request": "launch",

@@ -167,6 +167,8 @@ def get_user_prompt(
             else:
                 power_units += f"{unit} R {', R '.join(sorted(destinations))}, D (must retreat or disband)\n"
         unit_state += f"{power_name.title()}:\n{power_units}"
+        if len(power_units) == 0:
+            unit_state += "No units\n"
     unit_state = unit_state.strip()  # Remove trailing newline
 
     # For each power, their supply center count, unit count, and accumulated WP
@@ -186,7 +188,11 @@ def get_user_prompt(
     if phase_type == "MOVEMENT":
         phase_instructions += (
             "Hold (H), Move (-), Support (S), Convoy (C). For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
-            + "\n".join([unit for unit in power.units])
+            + (
+                "\n".join([unit for unit in power.units])
+                if len(power.units) > 0
+                else "None (you have no units, so submit an empty list for your orders)"
+            )
         )
     elif phase_type == "RETREATS":
         phase_instructions += "Retreat (R), Disband (D). Here are the possible retreats you must choose from this year:\n"
@@ -204,7 +210,9 @@ def get_user_prompt(
             power, possible_orders
         )
         if len(this_powers_possible_orders) == 0:
-            phase_instructions += "None"
+            phase_instructions += (
+                "None (you have no possible adjustment orders to make)"
+            )
         else:
             phase_instructions += "\n".join(this_powers_possible_orders)
     else:
