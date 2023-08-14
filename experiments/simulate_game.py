@@ -247,7 +247,8 @@ def main():
                 )
                 utils.log_info(
                     logger,
-                    f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%",
+                    f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
+                    + (f". Invalid Orders: {invalid_orders}" if invalid_orders else ""),
                 )
                 total_num_orders += num_orders
                 total_num_valid_orders += num_valid_orders
