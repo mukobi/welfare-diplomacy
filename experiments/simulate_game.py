@@ -120,6 +120,7 @@ def main():
     all_ratio_builds: list[float] = []
     all_num_centers_lost: list[int] = []
     all_num_centers_gained: list[int] = []
+    all_ratio_public_messages: list[float] = []
     all_valid_ratio_averages: list[float] = []
     all_num_completion_errors: list[int] = []
 
@@ -306,6 +307,15 @@ def main():
                 )
                 message_summary_history[power_name].append(phase_message_summary)
 
+        ratio_public_messages = len(
+            [
+                message
+                for message in game.messages.values()
+                if message.recipient == "GLOBAL"
+            ]
+        ) / len(game.messages)
+        all_ratio_public_messages.append(ratio_public_messages)
+
         # Advance the game simulation to the next phase
         game.process()
         phase: GamePhaseData = game.get_phase_history()[-1]
@@ -396,6 +406,8 @@ def main():
             "messages/message_summary_table": message_summary_table,
             "messages/num_total": total_message_sent,
             "messages/num_avg": phase_avg_num_completions,
+            "messages/phase_ratio_public": ratio_public_messages,
+            "messages/avg_ratio_public": np.mean(all_ratio_public_messages),
             "model/completion_time_sec_avg": np.mean(list_completion_times_sec),
             "model/response_table": model_response_table,
             "model/phase_num_completion_errors": phase_num_completion_errors,

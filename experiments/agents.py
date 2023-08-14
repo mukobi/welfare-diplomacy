@@ -97,7 +97,7 @@ class RandomAgent(Agent):
         )
 
         # Randomly sending a message to another power
-        other_powers = [p for p in game.powers if p != power.name]
+        other_powers = [p for p in game.powers if p != power.name] + ["GLOBAL"]
         recipient = random.choice(other_powers)
         message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
 
