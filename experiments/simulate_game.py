@@ -128,6 +128,10 @@ def main():
     game_completion_time_avg_sec_list: list[float] = []
     game_tokens_prompt_sum: int = 0
     game_tokens_completion_sum: int = 0
+    game_welfare_gain_min_list: list[int] = []
+    game_welfare_gain_max_list: list[int] = []
+    game_welfare_gain_avg_list: list[float] = []
+    game_welfare_gain_median_list: list[float] = []
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
@@ -533,12 +537,43 @@ def main():
         if phase.name[-1] == "A":
             # Aggregated welfare
             welfare_list = [power.welfare_points for power in game.powers.values()]
-            log_object["welfare/global_hist"] = wandb.Histogram(welfare_list)
-            log_object["welfare/global_min"] = np.min(welfare_list)
-            log_object["welfare/global_max"] = np.max(welfare_list)
-            log_object["welfare/global_mean"] = np.mean(welfare_list)
-            log_object["welfare/global_median"] = np.median(welfare_list)
-            log_object["welfare/global_total"] = np.sum(welfare_list)
+            log_object["welfare_aggregation/hist"] = wandb.Histogram(welfare_list)
+            log_object["welfare_aggregation/min"] = np.min(welfare_list)
+            log_object["welfare_aggregation/max"] = np.max(welfare_list)
+            log_object["welfare_aggregation/mean"] = np.mean(welfare_list)
+            log_object["welfare_aggregation/median"] = np.median(welfare_list)
+            log_object["welfare_aggregation/total"] = np.sum(welfare_list)
+
+            # Welfare gain
+            welfare_gains = [
+                power.welfare_points - phase.state["welfare_points"][power_name]
+                for power_name, power in game.powers.items()
+            ]
+            phase_welfare_gain_min = np.min(welfare_gains)
+            phase_welfare_gain_max = np.max(welfare_gains)
+            phase_welfare_gain_avg = np.mean(welfare_gains)
+            phase_welfare_gain_median = np.median(welfare_gains)
+            game_welfare_gain_min_list.append(phase_welfare_gain_min)
+            game_welfare_gain_max_list.append(phase_welfare_gain_max)
+            game_welfare_gain_avg_list.append(phase_welfare_gain_avg)
+            game_welfare_gain_median_list.append(phase_welfare_gain_median)
+            log_object["welfare_gain/phase_hist"] = wandb.Histogram(welfare_gains)
+            log_object["welfare_gain/phase_min"] = phase_welfare_gain_min
+            log_object["welfare_gain/phase_max"] = phase_welfare_gain_max
+            log_object["welfare_gain/phase_avg"] = phase_welfare_gain_avg
+            log_object["welfare_gain/phase_median"] = phase_welfare_gain_median
+            log_object["welfare_gain/game_min_avg"] = np.mean(
+                game_welfare_gain_min_list
+            )
+            log_object["welfare_gain/game_max_avg"] = np.mean(
+                game_welfare_gain_max_list
+            )
+            log_object["welfare_gain/game_avg_avg"] = np.mean(
+                game_welfare_gain_avg_list
+            )
+            log_object["welfare_gain/game_median_avg"] = np.mean(
+                game_welfare_gain_median_list
+            )
 
             # Track builds and disbands
             phase_builds_num = sum(
@@ -708,7 +743,7 @@ def parse_args():
         "--entity",
         dest="entity",
         default=None,
-        help="👤Weights & Biases entity name (can be your username). Note you can also use the WANDB_ENTITY env var.",
+        help="👤Weights & Biases entity name (defaults to your username). Note you can also use the WANDB_ENTITY env var.",
     )
     parser.add_argument(
         "--project",
