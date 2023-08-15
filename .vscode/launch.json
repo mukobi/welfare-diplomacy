@@ -159,6 +159,44 @@
             "justMyCode": true
         },
         {
+            "name": "Optimal Prosocial NoWandb",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--agent_model",
+                "manual",
+                "--summarizer_model",
+                "passthrough",
+                "--max_message_rounds",
+                "0",
+                "--manual_orders_path",
+                "./experiments/manual_orders/optimal_prosocial.yaml",
+            ],
+            "justMyCode": true
+        },
+        {
+            "name": "Optimal Prosocial",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                // "--disable_wandb",
+                "--agent_model",
+                "manual",
+                "--summarizer_model",
+                "passthrough",
+                "--max_message_rounds",
+                "0",
+                "--manual_orders_path",
+                "./experiments/manual_orders/optimal_prosocial.yaml",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Test Prompt Ablations",
             "type": "python",
             "request": "launch",

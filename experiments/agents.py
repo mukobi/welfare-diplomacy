@@ -140,6 +140,18 @@ class ManualAgent(Agent):
         self.manual_orders_path = manual_orders_path
         with open(manual_orders_path, "r") as file:
             self.manual_orders: dict[str, list[str]] = yaml.safe_load(file)
+        # Validate the file
+        for phase, orders_list in self.manual_orders.items():
+            assert isinstance(phase, str)
+            assert len(phase) == 6  # e.g. "F1905M"
+            assert phase[0] in "SFW"
+            assert phase[1:5].isdigit()
+            assert phase[-1] in "MRA"
+            assert isinstance(orders_list, list)
+            for order in orders_list:
+                assert isinstance(order, str)
+                assert len(order.split()) >= 3
+                assert order.split()[0] in "AF"
 
     def respond(
         self,

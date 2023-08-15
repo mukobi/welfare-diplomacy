@@ -1,0 +1,90 @@
+S1901M:
+  # AUSTRIA:  
+  - A BUD - RUM 
+  - F TRI H 
+  - A VIE - BUD 
+  # ENGLAND:  
+  - F EDI - NWG 
+  - A LVP H 
+  - F LON - NTH 
+  # FRANCE:  
+  - F BRE - MAO 
+  - A MAR - SPA 
+  - A PAR H 
+  # GERMANY:  
+  - A BER - KIE 
+  - F KIE - DEN 
+  - A MUN H 
+  # ITALY:  
+  - F NAP - ION 
+  - A ROM H 
+  - A VEN H 
+  # RUSSIA:  
+  - A MOS H 
+  - F SEV H 
+  - F STP/SC - BOT 
+  - A WAR H 
+  # TURKEY:  
+  - F ANK H 
+  - A CON - BUL 
+  - A SMY - CON 
+F1901M:
+  # AUSTRIA:  
+  - A BUD - SER 
+  - A RUM H 
+  - F TRI H 
+  # ENGLAND:  
+  - A LVP H 
+  - F NTH - BEL 
+  - F NWG - NWY
+  # FRANCE:  
+  - F MAO - POR 
+  - A PAR H 
+  - A SPA H 
+  # GERMANY:  
+  - F DEN H 
+  - A KIE - HOL 
+  - A MUN H 
+  # ITALY:  
+  - F ION - TUN 
+  - A ROM H 
+  - A VEN H 
+  # RUSSIA:  
+  - F BOT - SWE 
+  - A MOS H 
+  - F SEV H 
+  - A WAR H 
+  # TURKEY:  
+  - F ANK H 
+  - A BUL - GRE 
+  - A CON - BUL 
+W1901A:
+  # AUSTRIA
+  - F TRI D
+  - A RUM D
+  - A SER D
+  # ENGLAND
+  - A LVP D
+  - F NWY D
+  - F BEL D
+  # FRANCE
+  - A PAR D
+  - A SPA D
+  - F POR D
+  # GERMANY
+  - A MUN D
+  - F DEN D
+  - A HOL D
+  # ITALY
+  - A ROM D
+  - A VEN D
+  - F TUN D
+  # RUSSIA
+  - A WAR D
+  - A MOS D
+  - F SEV D
+  - F SWE D
+  # TURKEY
+  - F ANK D
+  - A GRE D
+  - A BUL D
