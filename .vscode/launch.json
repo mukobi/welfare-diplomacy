@@ -151,6 +151,8 @@
                 "manual",
                 "--summarizer_model",
                 "passthrough",
+                "--max_message_rounds",
+                "0",
                 "--manual_orders_path",
                 "./experiments/manual_orders/retreats.yaml",
             ],

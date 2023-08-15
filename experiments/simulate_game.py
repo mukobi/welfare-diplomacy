@@ -7,7 +7,6 @@ Language model scaffolding to play Diplomacy.
 import argparse
 import logging
 import os
-import yaml
 
 from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
@@ -56,15 +55,11 @@ def main():
 
     utils.validate_config(wandb.config, game)
 
-    manual_orders = ""
-    if wandb.config.manual_orders_path:
-        with open(wandb.config.manual_orders_path, "r") as file:
-            manual_orders = yaml.safe_load(file)
-
     agent: Agent = model_name_to_agent(
         wandb.config.agent_model,
         temperature=wandb.config.temperature,
         top_p=wandb.config.top_p,
+        manual_orders_path=wandb.config.manual_orders_path,
     )
     message_summarizer: MessageSummarizer = (
         model_name_to_message_summarizer(wandb.config.summarizer_model, logger=logger)
@@ -333,14 +328,20 @@ def main():
                 game_tokens_prompt_sum += phase_message_summary.prompt_tokens
                 game_tokens_completion_sum += phase_message_summary.completion_tokens
 
-        phase_public_messages_ratio = len(
-            [
-                message
-                for message in game.messages.values()
-                if message.recipient == "GLOBAL"
-            ]
-        ) / len(game.messages)
-        game_messages_public_ratio_list.append(phase_public_messages_ratio)
+        phase_public_messages_ratio = (
+            len(
+                [
+                    message
+                    for message in game.messages.values()
+                    if message.recipient == "GLOBAL"
+                ]
+            )
+            / len(game.messages)
+            if len(game.messages) > 0
+            else None
+        )
+        if phase_public_messages_ratio is not None:
+            game_messages_public_ratio_list.append(phase_public_messages_ratio)
         phase_message_similarities_list = utils.bootstrap_string_list_similarity(
             [message.message for message in game.messages.values()]
         )

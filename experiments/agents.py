@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 import json
 import random
 import time
+import yaml
 
 from diplomacy import Power, Game
 import wandb
@@ -29,6 +30,9 @@ class AgentCompletionError(ValueError):
 
 class Agent(ABC):
     """Base agent class."""
+
+    def __init__(self, **_):
+        """Base init to ignore unused kwargs."""
 
     @abstractmethod
     def respond(
@@ -127,8 +131,15 @@ class RandomAgent(Agent):
         )
 
 
-class ForceRetreatAgent(Agent):
-    """Contrive a situation to put the game in a retreats phase."""
+class ManualAgent(Agent):
+    """Manually specify orders with --manual_orders_path."""
+
+    def __init__(self, manual_orders_path: str, **_):
+        """Load the manual orders."""
+        assert manual_orders_path
+        self.manual_orders_path = manual_orders_path
+        with open(manual_orders_path, "r") as file:
+            self.manual_orders: dict[str, list[str]] = yaml.safe_load(file)
 
     def respond(
         self,
@@ -141,20 +152,20 @@ class ForceRetreatAgent(Agent):
         final_game_year: int,
         prompt_ablations: list[PromptAblation],
     ) -> AgentResponse:
-        """Get to a retreats phase."""
-        # For each power, randomly sampling a valid order
+        """Submit the specified orders if available."""
         power_orders = []
 
-        if game.get_current_phase() == "S1901M":
-            if power.name == "GERMANY":
-                power_orders = ["A MUN TYR"]
-        elif game.get_current_phase() == "F1901M":
-            if power.name == "AUSTRIA":
-                power_orders = ["A VIE S A VEN TYR"]
-            elif power.name == "ITALY":
-                power_orders = ["A VEN TYR"]
-            elif power.name == "GERMANY":
-                power_orders = ["A TYR VEN"]
+        current_phase = game.get_current_phase()
+        if current_phase in self.manual_orders:
+            orders_list = self.manual_orders[current_phase]
+            for order in orders_list:
+                unit_type = order.split()[0]
+                loc = order.split()[1]
+                if unit_type + " " + loc in power.units:
+                    assert (
+                        order in possible_orders[loc]
+                    ), f"Manual order {order} not in possible orders for power {power.name}:\n{possible_orders[loc]}"
+                    power_orders.append(order)
 
         # For debugging prompting
         system_prompt = prompts.get_system_prompt(
@@ -178,8 +189,8 @@ class ForceRetreatAgent(Agent):
         time.sleep(sleep_time)
 
         return AgentResponse(
-            model_name="ForceRetreatAgent",
-            reasoning="Forcing the game into a retreats phase.",
+            model_name=f"ManualAgent ({self.manual_orders_path})",
+            reasoning="Specifying.",
             orders=power_orders,
             messages={},
             system_prompt=system_prompt,
@@ -282,7 +293,7 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
     if model_name == "random":
         return RandomAgent()
     elif model_name == "manual":
-        return ForceRetreatAgent(**kwargs)
+        return ManualAgent(**kwargs)
     elif (
         "gpt-" in model_name
         or "davinci-" in model_name

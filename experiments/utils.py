@@ -90,6 +90,8 @@ def bootstrap_string_list_similarity(
     """Calculates the average BLEU similarity between all pairs of strings."""
     if not isinstance(strings, list):
         strings = list(strings)
+    if not strings:
+        return []
     similarities = []
     for _ in range(num_bootstrap_comparisons):
         # Sample 2 strings with replacement
