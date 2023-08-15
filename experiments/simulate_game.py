@@ -54,7 +54,8 @@ def main():
     logging.basicConfig()
     logger.setLevel(wandb.config.log_level)
 
-    # Load wandb.config.manual_orders_path as yaml if it is specified
+    utils.validate_config(wandb.config, game)
+
     manual_orders = ""
     if wandb.config.manual_orders_path:
         with open(wandb.config.manual_orders_path, "r") as file:

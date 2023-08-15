@@ -1,14 +1,15 @@
 """Utility functions."""
 
-from itertools import permutations
+import argparse
 import numpy as np
 import random
-from typing import Any, Optional
+from typing import Any
 
-from diplomacy import GamePhaseData
+from diplomacy import Game, GamePhaseData
 from logging import Logger
 from nltk.translate.bleu_score import sentence_bleu
 from tqdm.contrib.logging import logging_redirect_tqdm
+import wandb
 
 
 def set_seed(seed: int) -> None:
@@ -103,3 +104,25 @@ def bootstrap_string_list_similarity(
         bleu_similarity = sentence_bleu([split_1], split_2)
         similarities.append(bleu_similarity)
     return similarities
+
+
+def validate_config(config: wandb.Config, game: Game):
+    """Further validate the config of a run. Raises exceptions for invalid values."""
+    # Check game params
+    assert config.max_years > 0
+    assert config.early_stop_max_years >= 0
+    assert config.max_message_rounds >= 0
+
+    # Check that manual orders file exists
+    if config.manual_orders_path:
+        with open(config.manual_orders_path, "r") as f:
+            pass
+        assert (
+            config.agent_model == "manual"
+        ), "Manual orders file specified but agent model is not manual."
+
+    # Check sampling params take valid ranges
+    assert config.temperature >= 0.0
+    assert config.temperature <= 5.0
+    assert config.top_p > 0.0
+    assert config.top_p <= 1.0
