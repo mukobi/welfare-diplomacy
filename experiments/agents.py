@@ -281,8 +281,8 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
     model_name = model_name.lower()
     if model_name == "random":
         return RandomAgent()
-    elif model_name == "retreats":
-        return ForceRetreatAgent()
+    elif model_name == "manual":
+        return ForceRetreatAgent(**kwargs)
     elif (
         "gpt-" in model_name
         or "davinci-" in model_name

@@ -148,9 +148,11 @@
             "args": [
                 "--disable_wandb",
                 "--agent_model",
-                "retreats",
+                "manual",
                 "--summarizer_model",
                 "passthrough",
+                "--manual_orders_path",
+                "./experiments/manual_orders/retreats.yaml",
             ],
             "justMyCode": true
         },

@@ -7,6 +7,7 @@ Language model scaffolding to play Diplomacy.
 import argparse
 import logging
 import os
+import yaml
 
 from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
@@ -52,6 +53,12 @@ def main():
     logger = logging.getLogger(__name__)
     logging.basicConfig()
     logger.setLevel(wandb.config.log_level)
+
+    # Load wandb.config.manual_orders_path as yaml if it is specified
+    manual_orders = ""
+    if wandb.config.manual_orders_path:
+        with open(wandb.config.manual_orders_path, "r") as file:
+            manual_orders = yaml.safe_load(file)
 
     agent: Agent = model_name_to_agent(
         wandb.config.agent_model,
@@ -812,13 +819,13 @@ def parse_args():
         "--project",
         dest="project",
         default=prompts.WANDB_PROJECT,
-        help="📝Weights & Biases project name.",
+        help="🏗️ Weights & Biases project name.",
     )
     parser.add_argument(
         "--disable_wandb",
         dest="disable_wandb",
         action="store_true",
-        help="⚖️ Disable logging to wandb.",
+        help="🚫Disable Weights & Biases logging.",
     )
     parser.add_argument(
         "--max_years",
@@ -845,7 +852,13 @@ def parse_args():
         "--agent_model",
         dest="agent_model",
         default="gpt-4-32k-0613",
-        help="🤖Model name to use for the agent. Can be an OpenAI Chat model, 'random', or 'retreats' (contrive a retreat situation).",
+        help="🤖Model name to use for the agent. Can be an OpenAI Chat model, 'random', or 'manual' (see --manual_orders_path).",
+    )
+    parser.add_argument(
+        "--manual_orders_path",
+        dest="manual_orders_path",
+        type=str,
+        help="📝YAML file path to manually enter orders for all powers (see ./manual_orders).",
     )
     parser.add_argument(
         "--summarizer_model",
