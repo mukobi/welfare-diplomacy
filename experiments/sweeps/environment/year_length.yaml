@@ -1,7 +1,7 @@
 method: grid
 metric:
   goal: maximize
-  name: welfare/mean
+  name: welfare_aggregation/mean
 parameters:
   agent_model:
     values:
