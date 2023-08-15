@@ -704,9 +704,10 @@ def main():
             "move_validity": np.mean(game_order_valid_ratio_avg_list)
             if game_order_valid_ratio_avg_list
             else 0.0,
-            "centers_owned_ratio": np.mean(game_centers_gained_num_list)
-            if game_centers_gained_num_list
-            else 0.0,
+            "centers_owned_ratio": sum(
+                len(centers) for centers in phase.state["centers"].values()
+            )
+            / len(game.map.scs),
             "avg_mean_welfare_gain": benchmark_disposition_factors[
                 "avg_mean_welfare_gain"
             ],
