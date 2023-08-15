@@ -854,7 +854,7 @@ def parse_args():
     parser.add_argument(
         "--agent_model",
         dest="agent_model",
-        default="gpt-4-32k-0613",
+        default="gpt-4-0613",
         help="🤖Model name to use for the agent. Can be an OpenAI Chat model, 'random', or 'manual' (see --manual_orders_path).",
     )
     parser.add_argument(
