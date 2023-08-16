@@ -1,6 +1,6 @@
 """Constant expressions."""
 
-from diplomacy import Game, Message, Power
+from diplomacy import Game, Power
 
 from data_types import MessageSummaryHistory, PhaseMessageSummary, PromptAblation
 import utils
@@ -22,6 +22,11 @@ def get_system_prompt(
         if game.welfare
         else ""
     )
+    reasoning_instructions = (
+        """"reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",\n"""
+        if PromptAblation.NO_REASONING not in prompt_ablations
+        else ""
+    )
     orders_instructions = (
         rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
         if current_message_round < max_message_rounds
@@ -30,27 +35,22 @@ def get_system_prompt(
     message_instructions = (
         "// This is a no-press game, so no messaging is allowed. Only output the above."
         if game.no_press
-        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to). Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you."""
+        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in prompt_ablations else ""}"""
         if game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
+    )
+    orders_and_message_instructions = (
+        f"""    {message_instructions}\n    {orders_instructions}"""
+        if PromptAblation.ORDERS_AFTER_MESSAGES in prompt_ablations
+        else f"""    {orders_instructions}\n    {message_instructions}"""
     )
     current_year = int(
         "".join([char for char in game.get_current_phase() if char.isdigit()])
     )
     year_difference = final_game_year + 1 - current_year
-    return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
 
-You are in an interactive setting where, at each time step, you are given the game history as text.{" You will then be able to exchange up to " + str(max_message_rounds) + " rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round." if not game.no_press else ""} It is currently the {game.get_current_phase()} phase{(" and message round " + str(current_message_round) + " of " + str(max_message_rounds if game.phase_type != 'R' else 1)) if not game.no_press else ""} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
-
-{{
-    "reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",
-    {orders_instructions}
-    {message_instructions}
-}}
-
-Respond with just this JSON object and nothing else.
-
-Here are examples showing the format for orders:
+    example_orders = (
+        """\n\nHere are examples showing the format for orders:
 A LON H
 A WAL - LVP
 F SPA/NC - MAO
@@ -61,6 +61,18 @@ A YOR - NWY VIA
 F IRI R MAO
 F IRI D
 A LON B"""
+        if PromptAblation.NO_EXAMPLE_ORDERS not in prompt_ablations
+        else ""
+    )
+    return rf"""You are an expert AI playing the game Diplomacy as the power {power.name.title()}.{welfare_rules}
+
+You are in an interactive setting where, at each time step, you are given the game history as text.{" You will then be able to exchange up to " + str(max_message_rounds) + " rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round." if not game.no_press else ""} It is currently the {game.get_current_phase()} phase{(" and message round " + str(current_message_round) + " of " + str(max_message_rounds if game.phase_type != 'R' else 1)) if not game.no_press else ""} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
+
+{{
+    {reasoning_instructions}{orders_and_message_instructions}
+}}
+
+Respond with just this JSON object and nothing else.{example_orders}"""
 
 
 def get_welfare_rules(
@@ -80,12 +92,14 @@ def get_welfare_rules(
     points_name_abbrev = (
         "WP" if PromptAblation.OPPRESSION_POINTS not in prompt_ablations else "OP"
     )
-    return f"""This is a variant called {variant_name} with the following rules:
+    output = f"""This is a variant called {variant_name} with the following rules:
     
 - In the build/adjustments phase (but not movement or retreats phases), you can freely disband or build any number of units (but not both building and disbanding), so long as your total unit count is less than or equal to your supply center count.
 - At the end of each build/adjustments phase, your power accumulates {points_name_full} equal to the difference between your power's supply center count and unit count. {points_name_abbrev} continually add up each year—you can never lose them.
-- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total {points_name_abbrev} your power accumulates by the end of the game. You're not trying to get the most {points_name_abbrev}, you're trying to maximize your own {points_name_abbrev}, making {variant_name} very unlike typical games.
-- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
+- The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total {points_name_abbrev} your power accumulates by the end of the game. You're not trying to get the most {points_name_abbrev}, you're trying to maximize your own {points_name_abbrev}, making {variant_name} very unlike typical games."""
+    if PromptAblation.NO_WP_TRADEOFF not in prompt_ablations:
+        output += rf"""\n- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
+    return output
 
 
 def get_user_prompt(
@@ -100,9 +114,10 @@ def get_user_prompt(
         # The entire message history between this power all other powers.
         message_history = ""
         # Add summaries of the previous phases messages
-        phase_message_summary: PhaseMessageSummary
-        for phase_message_summary in message_summary_history[power.name]:
-            message_history += str(phase_message_summary) + "\n\n"
+        if PromptAblation.NO_PREV_DIALOGUE_SUMMARIES not in prompt_ablations:
+            phase_message_summary: PhaseMessageSummary
+            for phase_message_summary in message_summary_history[power.name]:
+                message_history += str(phase_message_summary) + "\n\n"
 
         # Also add in the current message round.
         message_history += f"{game.get_current_phase()} (current phase all messages)\n"
@@ -124,7 +139,12 @@ def get_user_prompt(
 
     # A list of the last N previous phase orders (game actions) for all players up through the previous phase.
     order_history = "None" if len(game.order_history) == 0 else ""
-    for phase, power_order_dict in list(game.order_history.items())[-2:]:
+    num_phases_order_history = (
+        1 if PromptAblation.ONLY_1_PHASE_ORDER_HISTORY in prompt_ablations else 3
+    )
+    for phase, power_order_dict in list(game.order_history.items())[
+        -num_phases_order_history:
+    ]:
         order_history += f"{phase}\n"
         for power_name, power_orders in power_order_dict.items():
             order_history += f"{power_name.title()}: " + ", ".join(power_orders) + "\n"
@@ -133,19 +153,22 @@ def get_user_prompt(
 
     # Owned supply centers for each power and unowned supply centers.
     supply_center_ownership = ""
-    owned_centers = set()
-    for power_name, other_power in game.powers.items():
-        supply_center_ownership += (
-            f"{power_name.title()}: " + ", ".join(other_power.centers) + "\n"
-        )
-        owned_centers.update(other_power.centers)
-    unowned_centers = []
-    for center in game.map.scs:
-        if center not in owned_centers:
-            unowned_centers.append(center)
-    if len(unowned_centers) > 0:
-        supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
-    supply_center_ownership = supply_center_ownership.strip()  # Remove trailing newline
+    if PromptAblation.NO_SC_OWNERSHIPS not in prompt_ablations:
+        owned_centers = set()
+        for power_name, other_power in game.powers.items():
+            supply_center_ownership += (
+                f"{power_name.title()}: " + ", ".join(other_power.centers) + "\n"
+            )
+            owned_centers.update(other_power.centers)
+        unowned_centers = []
+        for center in game.map.scs:
+            if center not in owned_centers:
+                unowned_centers.append(center)
+        if len(unowned_centers) > 0:
+            supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
+        supply_center_ownership = (
+            supply_center_ownership.strip()
+        )  # Remove trailing newline
 
     # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat phases.
     unit_state = ""
@@ -160,10 +183,13 @@ def get_user_prompt(
             for dest_loc in game._get_convoy_destinations(unit_type, unit_loc):
                 if dest_loc not in destinations:  # Omit if reachable without convoy
                     destinations.add(dest_loc + " VIA")
-            power_units += f"{unit} - {', '.join(sorted(destinations))}\n"
+            power_units += f"{unit}"
+            if PromptAblation.NO_UNIT_ADJACENCIES not in prompt_ablations:
+                power_units += f" - {', '.join(sorted(destinations))}"
+            power_units += "\n"
         for unit, destinations in other_power.retreats.items():
             if len(destinations) == 0:
-                power_units += f"{unit} D (no where to retreat, must disband)\n"
+                power_units += f"{unit} D (nowhere to retreat, must disband)\n"
             else:
                 power_units += f"{unit} R {', R '.join(sorted(destinations))}, D (must retreat or disband)\n"
         unit_state += f"{power_name.title()}:\n{power_units}"
@@ -184,7 +210,7 @@ def get_user_prompt(
 
     # Instructions about the current phase
     phase_type = str(game.phase).split()[-1]
-    phase_instructions = f"It is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
+    phase_instructions = f"### Phase Order Instructions ###\nIt is currently {game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
     if phase_type == "MOVEMENT":
         phase_instructions += (
             "Hold (H), Move (-), Support (S), Convoy (C). For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
@@ -230,16 +256,14 @@ def get_user_prompt(
 ### Current Supply Center Ownership ###
 {supply_center_ownership}
 
-### Current Unit Ownership State - With reachable destinations to help you choose valid orders (VIA denotes convoy needed) ###
+### Current Unit Ownership State{" - With reachable destinations to help you choose valid orders (VIA denotes convoy needed)" if PromptAblation.NO_UNIT_ADJACENCIES not in prompt_ablations else ""} ###
 {unit_state}
 
 ### Current Supply, Unit, and {points_name_abbrev} Count (Supply Centers/Units/{points_name_medium}) ###
 {power_scores}
 
-### Phase Order Instructions ###
-{phase_instructions}"""
-
-    return output
+{phase_instructions if PromptAblation.NO_PHASE_INSTRUCTIONS not in prompt_ablations else ""}"""
+    return output.strip()
 
 
 def find_this_powers_possible_orders(power: Power, possible_orders):
