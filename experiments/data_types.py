@@ -57,8 +57,8 @@ class PromptAblation(Enum):
     NO_MESSAGE_INSTRUCTIONS = auto()
     NO_EXAMPLE_ORDERS = auto()
     OPPRESSION_POINTS = auto()
-    NO_PREV_DIALOGUE_SUMMARIES = auto()
-    ONLY_1_PHASE_ORDER_HISTORY = auto()
-    NO_SC_OWNERSHIPS = auto()
-    NO_UNIT_ADJACENCIES = auto()
-    NO_PHASE_INSTRUCTIONS = auto()
+    NO_PREV_DIALOGUE_SUMMARIES = auto()  # todo
+    ONLY_1_PHASE_ORDER_HISTORY = auto()  # todo
+    NO_SC_OWNERSHIPS = auto()  # todo
+    NO_UNIT_ADJACENCIES = auto()  # todo
+    NO_PHASE_INSTRUCTIONS = auto()  # todo

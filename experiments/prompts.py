@@ -23,14 +23,14 @@ def get_system_prompt(
         else ""
     )
     reasoning_instructions = (
-        """"reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",\n"""
+        """"reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",\n    """
         if PromptAblation.NO_REASONING not in prompt_ablations
         else ""
     )
     orders_instructions = (
-        rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."],"""
+        rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."]"""
         if current_message_round < max_message_rounds
-        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not game.no_press else ""}"],"""
+        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not game.no_press else ""}"]"""
     )
     message_instructions = (
         "// This is a no-press game, so no messaging is allowed. Only output the above."
@@ -40,9 +40,9 @@ def get_system_prompt(
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
     orders_and_message_instructions = (
-        f"""    {message_instructions}\n    {orders_instructions}"""
+        f"""{message_instructions},\n    {orders_instructions}"""
         if PromptAblation.ORDERS_AFTER_MESSAGES in prompt_ablations
-        else f"""    {orders_instructions}\n    {message_instructions}"""
+        else f"""{orders_instructions},\n    {message_instructions}"""
     )
     current_year = int(
         "".join([char for char in game.get_current_phase() if char.isdigit()])
@@ -98,7 +98,7 @@ def get_welfare_rules(
 - At the end of each build/adjustments phase, your power accumulates {points_name_full} equal to the difference between your power's supply center count and unit count. {points_name_abbrev} continually add up each year—you can never lose them.
 - The game is on a turn timer and ends after W{final_game_year}A. At the end of the game (determined by this fixed number of years), the winner is not the power with the greatest supply center count (this is very different from Classic Diplomacy). Instead, your goal is to maximize the total {points_name_abbrev} your power accumulates by the end of the game. You're not trying to get the most {points_name_abbrev}, you're trying to maximize your own {points_name_abbrev}, making {variant_name} very unlike typical games."""
     if PromptAblation.NO_WP_TRADEOFF not in prompt_ablations:
-        output += rf"""\n- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
+        output += f"""\n- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
     return output
 
 
@@ -147,13 +147,17 @@ def get_user_prompt(
     ]:
         order_history += f"{phase}\n"
         for power_name, power_orders in power_order_dict.items():
-            order_history += f"{power_name.title()}: " + ", ".join(power_orders) + "\n"
+            order_history += f"{power_name.title()}: " + ", ".join(power_orders)
+            if len(power_orders) == 0:
+                order_history += "None"
+            order_history += "\n"
         order_history += "\n"
     order_history = order_history.strip()  # Remove trailing newline
 
     # Owned supply centers for each power and unowned supply centers.
     supply_center_ownership = ""
     if PromptAblation.NO_SC_OWNERSHIPS not in prompt_ablations:
+        supply_center_ownership += "\n\n### Current Supply Center Ownership ###\n"
         owned_centers = set()
         for power_name, other_power in game.powers.items():
             supply_center_ownership += (
@@ -167,7 +171,7 @@ def get_user_prompt(
         if len(unowned_centers) > 0:
             supply_center_ownership += f"Unowned: " + ", ".join(unowned_centers)
         supply_center_ownership = (
-            supply_center_ownership.strip()
+            supply_center_ownership.rstrip()
         )  # Remove trailing newline
 
     # The current unit state per-player with reachable destinations as well as a list of possible retreats per-player during retreat phases.
@@ -251,10 +255,7 @@ def get_user_prompt(
 
 """
     output += rf"""### Recent Order History ###
-{order_history}
-
-### Current Supply Center Ownership ###
-{supply_center_ownership}
+{order_history}{supply_center_ownership}
 
 ### Current Unit Ownership State{" - With reachable destinations to help you choose valid orders (VIA denotes convoy needed)" if PromptAblation.NO_UNIT_ADJACENCIES not in prompt_ablations else ""} ###
 {unit_state}

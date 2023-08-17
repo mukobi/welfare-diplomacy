@@ -265,7 +265,11 @@ class APIAgent(Agent):
             raise AgentCompletionError(f"JSON Error: {exc}\n\nResponse: {response}")
         try:
             # Extract data from completion
-            reasoning = completion["reasoning"]
+            reasoning = (
+                completion["reasoning"]
+                if "reasoning" in completion
+                else "*model outputted no reasoning*"
+            )
             orders = completion["orders"]
             # Enforce no messages in no_press
             if game.no_press:
