@@ -211,7 +211,7 @@ def get_user_prompt(params: AgentParams) -> str:
     phase_instructions = f"### Phase Order Instructions ###\nIt is currently {params.game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
     if phase_type == "MOVEMENT":
         phase_instructions += (
-            "Hold (H), Move (-), Support (S), Convoy (C). For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
+            "Hold (H), Move (-), Support (S), Convoy (C). You can not build or disband units during this phase, only during each WINTER ADJUSTMENTS phase. For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
             + (
                 "\n".join([unit for unit in params.power.units])
                 if len(params.power.units) > 0
@@ -229,7 +229,7 @@ def get_user_prompt(params: AgentParams) -> str:
             )
             phase_instructions += f"\n{unit} D\n"
     elif phase_type == "ADJUSTMENTS":
-        phase_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). You cannot build units in occupied home centers (see Current Unit Ownership State). Your valid possible orders for this phase are thus:\n"
+        phase_instructions += "Build (B), Disband (D) (note you must choose one type or issue no orders, you cannot both build and disband). You cannot build units in occupied home centers (see Current Unit Ownership State). If you don't want to change your number of units, submit and empty list for your orders. The only possible orders you can make for this phase are thus:\n"
         this_powers_possible_orders = find_this_powers_possible_orders(
             params.power, params.possible_orders
         )
