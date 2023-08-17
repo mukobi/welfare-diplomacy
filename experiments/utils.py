@@ -7,7 +7,7 @@ from typing import Any
 
 from diplomacy import Game, GamePhaseData
 from logging import Logger
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from tqdm.contrib.logging import logging_redirect_tqdm
 import wandb
 
@@ -92,6 +92,7 @@ def bootstrap_string_list_similarity(
         strings = list(strings)
     if not strings:
         return []
+    smoothing_function = SmoothingFunction().method1
     similarities = []
     for _ in range(num_bootstrap_comparisons):
         # Sample 2 strings with replacement
@@ -103,7 +104,9 @@ def bootstrap_string_list_similarity(
         if len(split_1) < 4 or len(split_2) < 4:
             continue
         # Calculate BLEU similarity
-        bleu_similarity = sentence_bleu([split_1], split_2)
+        bleu_similarity = sentence_bleu(
+            [split_1], split_2, smoothing_function=smoothing_function
+        )
         similarities.append(bleu_similarity)
     return similarities
 
