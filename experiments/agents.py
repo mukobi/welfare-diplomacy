@@ -17,6 +17,7 @@ import wandb
 from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
 from data_types import (
     AgentResponse,
+    AgentParams,
     BackendResponse,
     MessageSummaryHistory,
     PromptAblation,
@@ -52,37 +53,27 @@ class Agent(ABC):
 class RandomAgent(Agent):
     """Takes random actions and sends 1 random message."""
 
-    def respond(
-        self,
-        power: Power,
-        game: Game,
-        message_summary_history: MessageSummaryHistory,
-        possible_orders: dict[str, list[str]],
-        current_message_round: int,
-        max_message_rounds: int,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> AgentResponse:
+    def respond(self, params: AgentParams) -> AgentResponse:
         """Randomly generate orders and messages."""
         # For each power, randomly sampling a valid order
         power_orders = []
-        for loc in game.get_orderable_locations(power.name):
-            if possible_orders[loc]:
+        for loc in params.game.get_orderable_locations(params.power.name):
+            if params.possible_orders[loc]:
                 # Sort for determinism
-                possible_orders[loc].sort()
+                params.possible_orders[loc].sort()
 
                 # If this is a disbandable unit in an adjustment phase in welfare,
                 # then randomly choose whether to disband or not
                 if (
-                    "ADJUSTMENTS" in str(game.phase)
-                    and " D" in possible_orders[loc][0][-2:]
-                    and game.welfare
+                    "ADJUSTMENTS" in str(params.game.phase)
+                    and " D" in params.possible_orders[loc][0][-2:]
+                    and params.game.welfare
                 ):
                     power_orders.append(
-                        random.choice(["WAIVE", possible_orders[loc][0]])
+                        random.choice(["WAIVE", params.possible_orders[loc][0]])
                     )
                 else:
-                    power_orders.append(random.choice(possible_orders[loc]))
+                    power_orders.append(random.choice(params.possible_orders[loc]))
         # Randomly add an invalid order
         if random.random() < 0.1:
             power_orders.append("Random invalid order")
@@ -92,22 +83,15 @@ class RandomAgent(Agent):
             raise AgentCompletionError("Randomly raised completion error")
 
         # For debugging prompting
-        system_prompt = prompts.get_system_prompt(
-            power,
-            game,
-            current_message_round,
-            max_message_rounds,
-            final_game_year,
-            prompt_ablations,
-        )
-        user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders, prompt_ablations
-        )
+        system_prompt = prompts.get_system_prompt(params)
+        user_prompt = prompts.get_user_prompt(params)
 
         # Randomly sending a message to another power
-        other_powers = [p for p in game.powers if p != power.name] + ["GLOBAL"]
+        other_powers = [p for p in params.game.powers if p != params.power.name] + [
+            "GLOBAL"
+        ]
         recipient = random.choice(other_powers)
-        message = f"Hello {recipient}! I'm {power.name} contacting you on turn {game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
+        message = f"Hello {recipient}! I'm {params.power.name} contacting you on turn {params.game.get_current_phase()}. Here's a random number: {random.randint(0, 100)}."
 
         # Sleep to allow wandb to catch up
         sleep_time = (
@@ -121,7 +105,7 @@ class RandomAgent(Agent):
             model_name="RandomAgent",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
-            messages={recipient: message} if not game.no_press else {},
+            messages={recipient: message} if not params.game.no_press else {},
             system_prompt=system_prompt,
             user_prompt=user_prompt,
             prompt_tokens=0,
@@ -153,44 +137,25 @@ class ManualAgent(Agent):
                 assert len(order.split()) >= 3
                 assert order.split()[0] in "AF"
 
-    def respond(
-        self,
-        power: Power,
-        game: Game,
-        message_summary_history: MessageSummaryHistory,
-        possible_orders: dict[str, list[str]],
-        current_message_round: int,
-        max_message_rounds: int,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> AgentResponse:
+    def respond(self, params: AgentParams) -> AgentResponse:
         """Submit the specified orders if available."""
         power_orders = []
 
-        current_phase = game.get_current_phase()
+        current_phase = params.game.get_current_phase()
         if current_phase in self.manual_orders:
             orders_list = self.manual_orders[current_phase]
             for order in orders_list:
                 unit_type = order.split()[0]
                 loc = order.split()[1]
-                if unit_type + " " + loc in power.units:
+                if unit_type + " " + loc in params.power.units:
                     assert (
-                        order in possible_orders[loc]
-                    ), f"Manual order {order} not in possible orders for power {power.name}:\n{possible_orders[loc]}"
+                        order in params.possible_orders[loc]
+                    ), f"Manual order {order} not in possible orders for power {params.power.name}:\n{params.possible_orders[loc]}"
                     power_orders.append(order)
 
         # For debugging prompting
-        system_prompt = prompts.get_system_prompt(
-            power,
-            game,
-            current_message_round,
-            max_message_rounds,
-            final_game_year,
-            prompt_ablations,
-        )
-        user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders, prompt_ablations
-        )
+        system_prompt = prompts.get_system_prompt(params)
+        user_prompt = prompts.get_user_prompt(params)
 
         # Sleep to allow wandb to catch up
         sleep_time = (
@@ -233,29 +198,10 @@ class APIAgent(Agent):
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
 
-    def respond(
-        self,
-        power: Power,
-        game: Game,
-        message_summary_history: MessageSummaryHistory,
-        possible_orders: dict[str, list[str]],
-        current_message_round: int,
-        max_message_rounds: int,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> AgentResponse:
+    def respond(self, params: AgentParams) -> AgentResponse:
         """Prompt the model for a response."""
-        system_prompt = prompts.get_system_prompt(
-            power,
-            game,
-            current_message_round,
-            max_message_rounds,
-            final_game_year,
-            prompt_ablations,
-        )
-        user_prompt = prompts.get_user_prompt(
-            power, game, message_summary_history, possible_orders, prompt_ablations
-        )
+        system_prompt = prompts.get_system_prompt(params)
+        user_prompt = prompts.get_user_prompt(params)
         response: BackendResponse = self.backend.complete(
             system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
         )
@@ -272,7 +218,7 @@ class APIAgent(Agent):
             )
             orders = completion["orders"]
             # Enforce no messages in no_press
-            if game.no_press:
+            if params.game.no_press:
                 completion["messages"] = {}
             # Turn recipients in messages into ALLCAPS for the engine
             messages = {}

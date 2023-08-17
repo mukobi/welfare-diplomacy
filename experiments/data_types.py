@@ -2,6 +2,8 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Optional
 
+from diplomacy import Game, Power
+
 
 @dataclass
 class BackendResponse:
@@ -62,3 +64,17 @@ class PromptAblation(Enum):
     NO_SC_OWNERSHIPS = auto()  # todo
     NO_UNIT_ADJACENCIES = auto()  # todo
     NO_PHASE_INSTRUCTIONS = auto()  # todo
+
+
+@dataclass
+class AgentParams:
+    """Parameters for generating an agent response."""
+
+    power: Power
+    game: Game
+    message_summary_history: MessageSummaryHistory
+    possible_orders: dict[str, list[str]]
+    current_message_round: int
+    max_message_rounds: int
+    final_game_year: int
+    prompt_ablations: list[PromptAblation]

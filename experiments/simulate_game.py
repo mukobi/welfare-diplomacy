@@ -16,7 +16,12 @@ import wandb
 from wandb.integration.openai import autolog
 
 from agents import Agent, AgentCompletionError, model_name_to_agent
-from data_types import AgentResponse, MessageSummaryHistory, PromptAblation
+from data_types import (
+    AgentResponse,
+    AgentParams,
+    MessageSummaryHistory,
+    PromptAblation,
+)
 from message_summarizers import (
     MessageSummarizer,
     model_name_to_message_summarizer,
@@ -195,14 +200,16 @@ def main():
                 # Prompting the model for a response
                 try:
                     agent_response = agent.respond(
-                        power,
-                        game,
-                        message_summary_history,
-                        possible_orders,
-                        message_round,
-                        num_of_message_rounds,
-                        final_game_year,
-                        prompt_ablations,
+                        AgentParams(
+                            power,
+                            game,
+                            message_summary_history,
+                            possible_orders,
+                            message_round,
+                            num_of_message_rounds,
+                            final_game_year,
+                            prompt_ablations,
+                        )
                     )
                 except AgentCompletionError as exc:
                     # If the agent fails to complete, we need to log the error and continue
@@ -322,7 +329,17 @@ def main():
                 game.powers.items(), desc="✍️ Summarizing messages"
             ):
                 phase_message_summary = message_summarizer.summarize(
-                    game, power, final_game_year, prompt_ablations
+                    AgentParams(
+                        game=game,
+                        power=power,
+                        final_game_year=final_game_year,
+                        prompt_ablations=prompt_ablations,
+                        # Unused params
+                        message_summary_history={},
+                        possible_orders={},
+                        current_message_round=-1,
+                        max_message_rounds=-1,
+                    )
                 )
                 message_summary_history[power_name].append(phase_message_summary)
                 game_tokens_prompt_sum += phase_message_summary.prompt_tokens

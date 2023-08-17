@@ -6,7 +6,7 @@ from logging import Logger
 from diplomacy import Game, Message, Power
 
 from backends import OpenAIChatBackend
-from data_types import MessageSummaryHistory, PhaseMessageSummary, PromptAblation
+from data_types import AgentParams, PhaseMessageSummary, PromptAblation
 import prompts
 import utils
 
@@ -15,13 +15,7 @@ class MessageSummarizer(ABC):
     """Summarize message history to condense prompts."""
 
     @abstractmethod
-    def summarize(
-        self,
-        game: Game,
-        power: Power,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> PhaseMessageSummary:
+    def summarize(self, params: AgentParams) -> PhaseMessageSummary:
         """
         Summarize the most recent phase's messages as visible to the power.
 
@@ -38,22 +32,16 @@ class PassthroughMessageSummarizer(MessageSummarizer):
     def __repr__(self) -> str:
         return f"PassthroughMessageSummarizer"
 
-    def summarize(
-        self,
-        game: Game,
-        power: Power,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> PhaseMessageSummary:
+    def summarize(self, params: AgentParams) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
-        if len(game.messages) == 0:
+        if len(params.game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
-        original_message_list = get_messages_list(game, power)
+        original_message_list = get_messages_list(params.game, params.power)
         messages_string = combine_messages(original_message_list)
 
         return PhaseMessageSummary(
-            phase=game.get_current_phase(),
+            phase=params.game.get_current_phase(),
             original_messages=original_message_list,
             summary=messages_string,
             prompt_tokens=len(messages_string.split()),
@@ -71,30 +59,22 @@ class OpenAIMessageSummarizer:
     def __repr__(self) -> str:
         return f"OpenAISummarizer(backend={self.backend})"
 
-    def summarize(
-        self,
-        game: Game,
-        power: Power,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
-    ) -> PhaseMessageSummary:
+    def summarize(self, params: AgentParams) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
-        if len(game.messages) == 0:
+        if len(params.game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
-        original_message_list = get_messages_list(game, power)
+        original_message_list = get_messages_list(params.game, params.power)
         messages_string = combine_messages(original_message_list)
 
-        system_prompt = prompts.get_summarizer_system_prompt(
-            game, power, final_game_year, prompt_ablations
-        )
+        system_prompt = prompts.get_summarizer_system_prompt(params)
         response = self.backend.complete(
             system_prompt, messages_string, temperature=0.5, top_p=0.9
         )
         completion = response.completion
 
         return PhaseMessageSummary(
-            phase=game.get_current_phase(),
+            phase=params.game.get_current_phase(),
             original_messages=original_message_list,
             summary=completion,
             prompt_tokens=response.prompt_tokens,
