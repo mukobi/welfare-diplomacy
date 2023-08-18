@@ -918,7 +918,7 @@ def parse_args():
         "--coalition_prompt",
         dest="coalition_prompt",
         type=str,
-        default=None,
+        default="",
         help="🙊 If specified along with --coalition_powers, adds this into the system prompt of each coalition power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(coalition_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
     )
     parser.add_argument(
