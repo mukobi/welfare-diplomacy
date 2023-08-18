@@ -77,11 +77,6 @@ def main():
         for power_name in game.powers.keys():
             message_summary_history[power_name] = []
 
-    utils.log_info(
-        logger,
-        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {prompt_ablations}.",
-    )
-
     # Log the initial state of the game
     rendered_with_orders = game.render(incl_abbrev=True)
     log_object = {
@@ -147,6 +142,11 @@ def main():
     game_welfare_gain_max_list: list[int] = []
     game_welfare_gain_avg_list: list[float] = []
     game_welfare_gain_median_list: list[float] = []
+
+    utils.log_info(
+        logger,
+        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {prompt_ablations}.",
+    )
 
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
