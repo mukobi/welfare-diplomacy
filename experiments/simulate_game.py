@@ -114,6 +114,8 @@ def main():
     prompt_ablations = [
         PromptAblation[ablation.upper()] for ablation in wandb.config.prompt_ablations
     ]
+    # Uppercase the coalition powers
+    coalition_powers = [power.upper() for power in wandb.config.coalition_powers]
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -210,7 +212,7 @@ def main():
                             final_game_year=final_game_year,
                             prompt_ablations=prompt_ablations,
                             coalition_prompt=wandb.config.coalition_prompt,
-                            coalition_powers=wandb.config.coalition_powers,
+                            coalition_powers=coalition_powers,
                         )
                     )
                 except AgentCompletionError as exc:

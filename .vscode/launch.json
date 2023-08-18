@@ -244,6 +244,8 @@
                 "--coalition_powers",
                 "russia",
                 "turkey",
+                "italy",
+                "austria",
             ],
             "justMyCode": true
         },
