@@ -896,7 +896,7 @@ def parse_args():
         "--temperature",
         dest="temperature",
         type=float,
-        default=0.5,
+        default=1.0,
         help="🌡️ Sampling temperature.",
     )
     parser.add_argument(
