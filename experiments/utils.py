@@ -126,6 +126,11 @@ def validate_config(config: wandb.Config, game: Game):
             config.agent_model == "manual"
         ), "Manual orders file specified but agent model is not manual."
 
+    # Check that prompt ablations are a list, not a str
+    assert isinstance(
+        config.prompt_ablations, list
+    ), f"Prompt ablations must be a list. Found {config.prompt_ablations} of type {type(config.prompt_ablations)}."
+
     # Check sampling params take valid ranges
     assert config.temperature >= 0.0
     assert config.temperature <= 5.0
