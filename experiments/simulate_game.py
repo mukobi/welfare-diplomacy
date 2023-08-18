@@ -201,14 +201,16 @@ def main():
                 try:
                     agent_response = agent.respond(
                         AgentParams(
-                            power,
-                            game,
-                            message_summary_history,
-                            possible_orders,
-                            message_round,
-                            num_of_message_rounds,
-                            final_game_year,
-                            prompt_ablations,
+                            power=power,
+                            game=game,
+                            message_summary_history=message_summary_history,
+                            possible_orders=possible_orders,
+                            current_message_round=message_round,
+                            max_message_rounds=num_of_message_rounds,
+                            final_game_year=final_game_year,
+                            prompt_ablations=prompt_ablations,
+                            coalition_prompt=wandb.config.coalition_prompt,
+                            coalition_powers=wandb.config.coalition_powers,
                         )
                     )
                 except AgentCompletionError as exc:
@@ -334,6 +336,8 @@ def main():
                         power=power,
                         final_game_year=final_game_year,
                         prompt_ablations=prompt_ablations,
+                        coalition_prompt=wandb.config.coalition_prompt,
+                        coalition_powers=wandb.config.coalition_powers,
                         # Unused params
                         message_summary_history={},
                         possible_orders={},
@@ -906,6 +910,21 @@ def parse_args():
         type=str,
         choices=[elem.name.lower() for elem in PromptAblation],
         default=[],
+        help="🧪Ablations to apply to the agent prompts.",
+    )
+    parser.add_argument(
+        "--coalition_prompt",
+        dest="coalition_prompt",
+        type=str,
+        default=None,
+        help="🙊 If specified along with --coalition_powers, adds this into the system prompt of each coalition power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(coalition_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
+    )
+    parser.add_argument(
+        "--coalition_powers",
+        nargs="*",
+        type=str,
+        default=[],
+        help="👥 If specified along with --coalition_prompt, determines which powers get the instructions. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
     )
 
     args = parser.parse_args()

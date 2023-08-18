@@ -131,3 +131,24 @@ def validate_config(config: wandb.Config, game: Game):
     assert config.temperature <= 5.0
     assert config.top_p > 0.0
     assert config.top_p <= 1.0
+
+    # Check coalition powers are valid powers in the game
+    for power_name in config.coalition_powers:
+        assert (
+            power_name.upper() in game.powers
+        ), f"Invalid coalition power. Found {power_name}. Expected one of {list(game.powers.keys())}"
+
+    # Check coalition prompt only uses valid special keys
+    special_keys = ["{MY_POWER_NAME}", "{MY_TEAM_NAMES}"]
+    temp = config.coalition_prompt
+    for key in special_keys:
+        temp = temp.replace(key, "")
+    assert (
+        "{" not in temp and "}" not in temp
+    ), f"Invalid coalition prompt: {config.coalition_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
+
+    # Check that team names only used if at least 2 powers in the coalition
+    if len(config.coalition_powers) < 2:
+        assert (
+            "{MY_TEAM_NAMES}" not in config.coalition_prompt
+        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.coalition_powers} has less than 2 powers."

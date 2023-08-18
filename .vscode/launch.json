@@ -226,6 +226,28 @@
             "justMyCode": true
         },
         {
+            "name": "Test Coalition Prompt",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--agent_model",
+                "random",
+                "--max_message_rounds",
+                "1",
+                "--summarizer_model",
+                "passthrough",
+                "--coalition_prompt",
+                "This is a test of coalition prompting. You are {MY_POWER_NAME} and together with your teammates {MY_TEAM_NAMES}, you will take over the world!",
+                "--coalition_powers",
+                "russia",
+                "turkey",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

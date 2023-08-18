@@ -78,3 +78,5 @@ class AgentParams:
     max_message_rounds: int
     final_game_year: int
     prompt_ablations: list[PromptAblation]
+    coalition_prompt: str
+    coalition_powers: list[str]
