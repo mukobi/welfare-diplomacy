@@ -138,6 +138,11 @@ def validate_config(config: wandb.Config, game: Game):
             power_name.upper() in game.powers
         ), f"Invalid coalition power. Found {power_name}. Expected one of {list(game.powers.keys())}"
 
+    # Check coalition powers are unique
+    assert len(config.coalition_powers) == len(
+        set(config.coalition_powers)
+    ), f"Coalition powers must be unique. Found {config.coalition_powers}"
+
     # Check coalition prompt only uses valid special keys
     special_keys = ["{MY_POWER_NAME}", "{MY_TEAM_NAMES}"]
     temp = config.coalition_prompt
