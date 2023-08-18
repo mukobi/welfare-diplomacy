@@ -79,7 +79,7 @@ def main():
 
     utils.log_info(
         logger,
-        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {wandb.config.prompt_ablations}.",
+        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {prompt_ablations}.",
     )
 
     # Log the initial state of the game
@@ -112,8 +112,12 @@ def main():
     )
     final_game_year = wandb.config.max_years + 1900
     # Convert the strings to Enum members
+    prompt_ablations = wandb.config.prompt_ablations
+    if isinstance(prompt_ablations, str):
+        # For wandb sweeps, use comma-separated strings as a workaround
+        prompt_ablations = prompt_ablations.split(",")
     prompt_ablations = [
-        PromptAblation[ablation.upper()] for ablation in wandb.config.prompt_ablations
+        PromptAblation[ablation.upper()] for ablation in prompt_ablations
     ]
     # Uppercase the coalition powers
     coalition_powers = [power.upper() for power in wandb.config.coalition_powers]
@@ -931,7 +935,7 @@ def parse_args():
         nargs="*",
         type=str,
         default=[],
-        help="👥 If specified along with --coalition_prompt, determines which powers get the instructions. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
+        help="👥 If scified along with --cocoalition_prompt, determines which powers get the instructionf. Usul for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
     )
 
     args = parser.parse_args()

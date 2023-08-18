@@ -228,7 +228,7 @@
                 "2",
                 "--summarizer_model",
                 "passthrough",
-                "--prompt_ablations",
+                "--prompt_ablations=no_wp_tradeoff",
                 // "no_wp_tradeoff",
                 // "no_reasoning",
                 // "orders_after_messages",
