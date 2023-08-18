@@ -5,6 +5,7 @@ Language model scaffolding to play Diplomacy.
 """
 
 import argparse
+import json
 import logging
 import os
 
@@ -420,6 +421,7 @@ def main():
             game_tokens_prompt_sum / 1000 * 0.03
             + game_tokens_completion_sum / 1000 * 0.06
         )
+        saved_game_data = to_saved_game_format(game)
         model_response_table = wandb.Table(
             columns=[
                 "phase",
@@ -556,6 +558,9 @@ def main():
             "cost/estimated_token_cost_gpt4-usd": game_cost_estimate,
             "cost/prompt_tokens_total": game_tokens_prompt_sum,
             "cost/completion_tokens_total": game_tokens_completion_sum,
+            "save/saved_game_data": wandb.Table(
+                columns=["json_data"], data=[[json.dumps(saved_game_data, indent=4)]]
+            ),
         }
 
         for power in game.powers.values():
