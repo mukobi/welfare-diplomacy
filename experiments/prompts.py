@@ -275,7 +275,7 @@ def get_user_prompt(params: AgentParams) -> str:
     phase_instructions = phase_instructions.strip()  # Remove trailing newline
     output = ""
     if not params.game.no_press:
-        output += rf"""### Dialogue History ###
+        output += rf"""### Your Dialogue History ###
 {message_history}
 
 """
