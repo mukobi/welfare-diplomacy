@@ -250,6 +250,25 @@
             "justMyCode": true
         },
         {
+            "name": "Test Classic Random Nowandb",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--agent_model",
+                "random",
+                "--max_message_rounds",
+                "2",
+                "--summarizer_model",
+                "passthrough",
+                "--map",
+                "standard",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",

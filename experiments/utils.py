@@ -66,19 +66,19 @@ def remove_duplicates_keep_order(lst: list[Any]) -> list[Any]:
     return list(dict.fromkeys(reversed(lst)))[::-1]
 
 
-def get_power_scores_string(game, abbrev=False):
+def get_power_scores_string(game: Game, abbrev: bool = False):
     """Get a string of power scores"""
     if abbrev:
-        return "SC/UN/WP: " + " ".join(
+        return f"SC/UN{'/WP' if game.welfare else ''}: " + " ".join(
             [
-                f"{power.abbrev}: {len(power.centers)}/{len(power.units) + len(power.retreats)}/{power.welfare_points}"
+                f"{power.abbrev}: {len(power.centers)}/{len(power.units) + len(power.retreats)}{'/' + str(power.welfare_points) if game.welfare else ''}"
                 for power in game.powers.values()
             ]
         )
     else:
         return "\n".join(
             [
-                f"{power.name.title()}: {len(power.centers)}/{len(power.units) + len(power.retreats)}/{power.welfare_points}"
+                f"{power.name.title()}: {len(power.centers)}/{len(power.units) + len(power.retreats)}{'/' + str(power.welfare_points) if game.welfare else ''}"
                 for power in game.powers.values()
             ]
         )
@@ -131,6 +131,13 @@ def validate_config(config: wandb.Config, game: Game):
     assert config.temperature <= 5.0
     assert config.top_p > 0.0
     assert config.top_p <= 1.0
+
+    # Check random and manual agent_models use the passthrough summarizer
+    if config.agent_model in ["random", "manual"]:
+        assert config.summarizer_model == "passthrough", (
+            f'Agent model "{config.agent_model}" should use the "passthrough" summarizer. '
+            f'Found "{config.summarizer_model}".'
+        )
 
     # Check coalition powers are valid powers in the game
     for power_name in config.coalition_powers:

@@ -37,6 +37,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         if len(params.game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
+        system_prompt = prompts.get_summarizer_system_prompt(params)  # For debugging
         original_message_list = get_messages_list(params.game, params.power)
         messages_string = combine_messages(original_message_list)
 
