@@ -209,15 +209,15 @@ class APIAgent(Agent):
             json_completion = response.completion
             # Remove repeated **system** from parroty completion models
             json_completion = json_completion.split("**")[0].strip(" `\n")
+
             # Claude likes to add junk around the actual JSON object, so find it manually
             start = json_completion.index("{")
             end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
             json_completion = json_completion[start:end]
+
             # Load the JSON
             completion = json.loads(json_completion, strict=False)
-        except json.JSONDecodeError as exc:
-            raise AgentCompletionError(f"JSON Error: {exc}\n\nResponse: {response}")
-        try:
+
             # Extract data from completion
             reasoning = (
                 completion["reasoning"]
