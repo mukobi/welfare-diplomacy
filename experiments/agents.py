@@ -242,7 +242,7 @@ class APIAgent(Agent):
                     continue
                 messages[recipient.upper()] = message
         except Exception as exc:
-            raise AgentCompletionError(f"Exception: {exc}\n\nCompletion: {completion}")
+            raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
         return AgentResponse(
             model_name=self.backend.model_name,
             reasoning=reasoning,
