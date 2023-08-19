@@ -1,6 +1,5 @@
 """Utility functions."""
 
-import argparse
 import numpy as np
 import random
 from typing import Any
@@ -10,6 +9,8 @@ from logging import Logger
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from tqdm.contrib.logging import logging_redirect_tqdm
 import wandb
+
+from data_types import PromptAblation
 
 
 def set_seed(seed: int) -> None:
@@ -139,16 +140,22 @@ def validate_config(config: wandb.Config, game: Game):
             f'Found "{config.summarizer_model}".'
         )
 
+    # Check that prompt ablations are valid
+    assert_comma_separated_string(
+        "prompt_ablations",
+        config.prompt_ablations,
+        [elem.name.lower() for elem in PromptAblation],
+    )
+
     # Check coalition powers are valid powers in the game
-    for power_name in config.coalition_powers:
-        assert (
-            power_name.upper() in game.powers
-        ), f"Invalid coalition power. Found {power_name}. Expected one of {list(game.powers.keys())}"
+    assert_comma_separated_string(
+        "coalition_powers", config.coalition_powers, list(game.powers.keys())
+    )
 
     # Check coalition powers are unique
-    assert len(config.coalition_powers) == len(
-        set(config.coalition_powers)
-    ), f"Coalition powers must be unique. Found {config.coalition_powers}"
+    assert len(config.coalition_powers.split(",")) == len(
+        set(config.coalition_powers.split(","))
+    ), f"Coalition powers must be unique. Found {config.coalition_powers.split(',')}"
 
     # Check coalition prompt only uses valid special keys
     special_keys = ["{MY_POWER_NAME}", "{MY_TEAM_NAMES}"]
@@ -160,7 +167,29 @@ def validate_config(config: wandb.Config, game: Game):
     ), f"Invalid coalition prompt: {config.coalition_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
 
     # Check that team names only used if at least 2 powers in the coalition
-    if len(config.coalition_powers) < 2:
+    if len(config.coalition_powers.split(",")) < 2:
         assert (
             "{MY_TEAM_NAMES}" not in config.coalition_prompt
-        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.coalition_powers} has less than 2 powers."
+        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.coalition_powers.split(',')} has less than 2 powers."
+
+
+def assert_comma_separated_string(
+    param_name: str, input_string: str, valid_values: list[str]
+):
+    """Assert that a comma-separated string is valid."""
+    assert isinstance(input_string, str), (
+        f"{param_name} must be a comma-separated string. "
+        f"Found {type(input_string)}: {input_string}"
+    )
+    assert " " not in input_string, (
+        f"{param_name} must be a comma-separated string. "
+        f"Found {input_string} with spaces."
+    )
+    if not input_string:
+        # Empty string is valid
+        return
+    for value in input_string.split(","):
+        assert value.upper() in [elem.name for elem in PromptAblation], (
+            f'Invalid {param_name} value "{value}" extracted from your comma-separated string. '
+            f"Expected one of {valid_values}"
+        )

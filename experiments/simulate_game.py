@@ -106,16 +106,14 @@ def main():
         else wandb.config.max_years
     )
     final_game_year = wandb.config.max_years + 1900
-    # Convert the strings to Enum members
-    prompt_ablations = wandb.config.prompt_ablations
-    if isinstance(prompt_ablations, str):
-        # For wandb sweeps, use comma-separated strings as a workaround
-        prompt_ablations = prompt_ablations.split(",")
+    # Convert the comma-separated strings to Enum members
+    prompt_ablations = wandb.config.prompt_ablations.split(",")
     prompt_ablations = [
         PromptAblation[ablation.upper()] for ablation in prompt_ablations
     ]
     # Uppercase the coalition powers
-    coalition_powers = [power.upper() for power in wandb.config.coalition_powers]
+    coalition_powers = wandb.config.coalition_powers.split(",")
+    coalition_powers = [power.upper() for power in coalition_powers]
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -917,25 +915,22 @@ def parse_args():
     )
     parser.add_argument(
         "--prompt_ablations",
-        nargs="*",
         type=str,
-        choices=[elem.name.lower() for elem in PromptAblation],
-        default=[],
-        help="🧪Ablations to apply to the agent prompts.",
+        default="",
+        help=f"🧪Ablations to apply to the agent prompts. Separate multiple ablations by commas. All available values are {', '.join([elem.name.lower() for elem in PromptAblation])}",
     )
     parser.add_argument(
         "--coalition_prompt",
         dest="coalition_prompt",
         type=str,
         default="",
-        help="🙊 If specified along with --coalition_powers, adds this into the system prompt of each coalition power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(coalition_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
+        help="🙊If specified along with --coalition_powers, adds this into the system prompt of each coalition power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(coalition_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
     )
     parser.add_argument(
         "--coalition_powers",
-        nargs="*",
         type=str,
-        default=[],
-        help="👥 If scified along with --cocoalition_prompt, determines which powers get the instructionf. Usul for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
+        default="",
+        help="👥Comma-separated list of power names for a coalition. If spefied along with --cocoalition_prompt, determines which powers get the instructions. Usef for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
     )
 
     args = parser.parse_args()
