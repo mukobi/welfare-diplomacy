@@ -47,10 +47,10 @@ def get_system_prompt(params: AgentParams) -> str:
 
     exploiter_prompt = ""
     if params.power.name in params.exploiter_powers:
-        # Check coalition powers are uppercase by this point
+        # Check exploiter powers are uppercase by this point
         assert all(
             [power_name.isupper() for power_name in params.exploiter_powers]
-        ), f"Coalition powers must be uppercase. Found {params.exploiter_powers}. This is probably a bug in the code, not your CLI args Make sure the code upper()s all the powers before this point."
+        ), f"Exploiter powers must be uppercase. Found {params.exploiter_powers}. This is probably a bug in the code, not your CLI args. Make sure the code upper()s all the powers before this point."
 
         exploiter_prompt = params.exploiter_prompt
         # Replace special sequences with appropriate power names

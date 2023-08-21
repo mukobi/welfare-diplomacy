@@ -21,12 +21,12 @@ def set_seed(seed: int) -> None:
     # torch.cuda.manual_seed_all(seed)
 
 
-def get_phase_year(phase: GamePhaseData) -> int:
+def get_phase_years_passed(phase: GamePhaseData) -> int:
     """Get integer year of phase after 1900."""
-    return int(get_phase_fractional_year(phase))
+    return int(get_phase_fractional_years_passed(phase))
 
 
-def get_phase_fractional_year(game_phase_data: GamePhaseData) -> float:
+def get_phase_fractional_years_passed(game_phase_data: GamePhaseData) -> float:
     """Get year after 1900 with fractional part indicating season."""
     phase = game_phase_data.name
     year = int("".join([char for char in phase if char.isdigit()])) - 1900
@@ -152,25 +152,25 @@ def validate_config(config: wandb.Config, game: Game):
         "exploiter_powers", config.exploiter_powers, list(game.powers.keys())
     )
 
-    # Check coalition powers are unique
+    # Check exploiter powers are unique
     assert len(config.exploiter_powers.split(",")) == len(
         set(config.exploiter_powers.split(","))
-    ), f"Coalition powers must be unique. Found {config.exploiter_powers.split(',')}"
+    ), f"Exploiter powers must be unique. Found {config.exploiter_powers.split(',')}"
 
-    # Check coalition prompt only uses valid special keys
+    # Check exploiter prompt only uses valid special keys
     special_keys = ["{MY_POWER_NAME}", "{MY_TEAM_NAMES}"]
     temp = config.exploiter_prompt
     for key in special_keys:
         temp = temp.replace(key, "")
     assert (
         "{" not in temp and "}" not in temp
-    ), f"Invalid coalition prompt: {config.exploiter_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
+    ), f"Invalid exploiter prompt: {config.exploiter_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
 
-    # Check that team names only used if at least 2 powers in the coalition
+    # Check that team names only used if at least 2 powers in the exploiter
     if len(config.exploiter_powers.split(",")) < 2:
         assert (
             "{MY_TEAM_NAMES}" not in config.exploiter_prompt
-        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.exploiter_powers.split(',')} has less than 2 powers."
+        ), f"Cannot use {{MY_TEAM_NAMES}} in exploiter prompt if exploiter {config.exploiter_powers.split(',')} has less than 2 powers."
 
 
 def assert_comma_separated_string(
@@ -189,7 +189,7 @@ def assert_comma_separated_string(
         # Empty string is valid
         return
     for value in input_string.split(","):
-        assert value.upper() in [elem.name for elem in PromptAblation], (
+        assert value.upper() in valid_values, (
             f'Invalid {param_name} value "{value}" extracted from your comma-separated string. '
             f"Expected one of {valid_values}"
         )
@@ -201,4 +201,7 @@ def geometric_mean(values: list[float]) -> float:
 
     Equivalent to the Nash social welfare function for a list of welfare values.
     """
+    if any([value <= 0.0 for value in values]):
+        # Avoid log(0)
+        return 0.0
     return np.exp(np.mean(np.log(values)))
