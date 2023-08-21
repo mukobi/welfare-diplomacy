@@ -113,9 +113,9 @@ def main():
         for ablation in prompt_ablations
         if ablation != ""
     ]
-    # Uppercase the coalition powers
-    coalition_powers = wandb.config.coalition_powers.split(",")
-    coalition_powers = [power.upper() for power in coalition_powers if power != ""]
+    # Uppercase the exploiter powers
+    exploiter_powers = wandb.config.exploiter_powers.split(",")
+    exploiter_powers = [power.upper() for power in exploiter_powers if power != ""]
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -216,8 +216,8 @@ def main():
                             max_message_rounds=num_of_message_rounds,
                             final_game_year=final_game_year,
                             prompt_ablations=prompt_ablations,
-                            coalition_prompt=wandb.config.coalition_prompt,
-                            coalition_powers=coalition_powers,
+                            exploiter_prompt=wandb.config.exploiter_prompt,
+                            exploiter_powers=exploiter_powers,
                         )
                     )
                 except AgentCompletionError as exc:
@@ -343,8 +343,8 @@ def main():
                         power=power,
                         final_game_year=final_game_year,
                         prompt_ablations=prompt_ablations,
-                        coalition_prompt=wandb.config.coalition_prompt,
-                        coalition_powers=wandb.config.coalition_powers,
+                        exploiter_prompt=wandb.config.exploiter_prompt,
+                        exploiter_powers=wandb.config.exploiter_powers,
                         # Unused params
                         message_summary_history={},
                         possible_orders={},
@@ -914,17 +914,18 @@ def parse_args():
         help=f"🧪Ablations to apply to the agent prompts. Separate multiple ablations by commas. All available values are {', '.join([elem.name.lower() for elem in PromptAblation])}",
     )
     parser.add_argument(
-        "--coalition_prompt",
-        dest="coalition_prompt",
+        "--exploiter_prompt",
+        dest="exploiter_prompt",
         type=str,
         default="",
-        help="🙊If specified along with --coalition_powers, adds this into the system prompt of each coalition power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(coalition_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
+        help="🤫If specified along with --exploiter_powers, adds this into the system prompt of each exploiter power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(exploiter_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
     )
     parser.add_argument(
-        "--coalition_powers",
+        "--exploiter_powers",
+        dest="exploiter_powers",
         type=str,
         default="",
-        help="👥Comma-separated list of power names for a coalition. If spefied along with --cocoalition_prompt, determines which powers get the instructions. Usef for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
+        help="😈Comma-separated list of case-insensitive power names for a exploiter. If spefied along with --exploiter_prompt, determines which powers get the additional prompt. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
     )
 
     args = parser.parse_args()

@@ -147,30 +147,30 @@ def validate_config(config: wandb.Config, game: Game):
         [elem.name.lower() for elem in PromptAblation],
     )
 
-    # Check coalition powers are valid powers in the game
+    # Check exploiter powers are valid powers in the game
     assert_comma_separated_string(
-        "coalition_powers", config.coalition_powers, list(game.powers.keys())
+        "exploiter_powers", config.exploiter_powers, list(game.powers.keys())
     )
 
     # Check coalition powers are unique
-    assert len(config.coalition_powers.split(",")) == len(
-        set(config.coalition_powers.split(","))
-    ), f"Coalition powers must be unique. Found {config.coalition_powers.split(',')}"
+    assert len(config.exploiter_powers.split(",")) == len(
+        set(config.exploiter_powers.split(","))
+    ), f"Coalition powers must be unique. Found {config.exploiter_powers.split(',')}"
 
     # Check coalition prompt only uses valid special keys
     special_keys = ["{MY_POWER_NAME}", "{MY_TEAM_NAMES}"]
-    temp = config.coalition_prompt
+    temp = config.exploiter_prompt
     for key in special_keys:
         temp = temp.replace(key, "")
     assert (
         "{" not in temp and "}" not in temp
-    ), f"Invalid coalition prompt: {config.coalition_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
+    ), f"Invalid coalition prompt: {config.exploiter_prompt}.\n\nAfter replacing special keys {special_keys} with empty strings, the following characters remain (should have no more curly braces):\n\n{temp}"
 
     # Check that team names only used if at least 2 powers in the coalition
-    if len(config.coalition_powers.split(",")) < 2:
+    if len(config.exploiter_powers.split(",")) < 2:
         assert (
-            "{MY_TEAM_NAMES}" not in config.coalition_prompt
-        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.coalition_powers.split(',')} has less than 2 powers."
+            "{MY_TEAM_NAMES}" not in config.exploiter_prompt
+        ), f"Cannot use {{MY_TEAM_NAMES}} in coalition prompt if coalition {config.exploiter_powers.split(',')} has less than 2 powers."
 
 
 def assert_comma_separated_string(

@@ -45,19 +45,19 @@ def get_system_prompt(params: AgentParams) -> str:
     )
     year_difference = params.final_game_year + 1 - current_year
 
-    coalition_prompt = ""
-    if params.power.name in params.coalition_powers:
+    exploiter_prompt = ""
+    if params.power.name in params.exploiter_powers:
         # Check coalition powers are uppercase by this point
         assert all(
-            [power_name.isupper() for power_name in params.coalition_powers]
-        ), f"Coalition powers must be uppercase. Found {params.coalition_powers}. This is probably a bug in the code, not your CLI args Make sure the code upper()s all the powers before this point."
+            [power_name.isupper() for power_name in params.exploiter_powers]
+        ), f"Coalition powers must be uppercase. Found {params.exploiter_powers}. This is probably a bug in the code, not your CLI args Make sure the code upper()s all the powers before this point."
 
-        coalition_prompt = params.coalition_prompt
+        exploiter_prompt = params.exploiter_prompt
         # Replace special sequences with appropriate power names
-        coalition_prompt = coalition_prompt.replace(
+        exploiter_prompt = exploiter_prompt.replace(
             "{MY_POWER_NAME}", params.power.name.title()
         )
-        teammates_names = [name.title() for name in params.coalition_powers]
+        teammates_names = [name.title() for name in params.exploiter_powers]
         teammates_names.remove(params.power.name.title())
         teammates_names_str = ", ".join(teammates_names[:-1])
         if len(teammates_names) > 2:
@@ -66,11 +66,11 @@ def get_system_prompt(params: AgentParams) -> str:
         if len(teammates_names) > 1:
             teammates_names_str += " and "
         teammates_names_str += teammates_names[-1]
-        coalition_prompt = coalition_prompt.replace(
+        exploiter_prompt = exploiter_prompt.replace(
             "{MY_TEAM_NAMES}", teammates_names_str
         )
-        coalition_prompt = coalition_prompt.strip()  # Remove trailing newline
-        coalition_prompt = "\n\n" + coalition_prompt
+        exploiter_prompt = exploiter_prompt.strip()  # Remove trailing newline
+        exploiter_prompt = "\n\n" + exploiter_prompt
 
     example_orders = (
         """\n\nHere are examples showing the format for orders:
@@ -87,7 +87,7 @@ A LON B"""
         if PromptAblation.NO_EXAMPLE_ORDERS not in params.prompt_ablations
         else ""
     )
-    return rf"""You are an expert AI playing the game Diplomacy as the power {params.power.name.title()}.{welfare_rules}{coalition_prompt}
+    return rf"""You are an expert AI playing the game Diplomacy as the power {params.power.name.title()}.{welfare_rules}{exploiter_prompt}
 
 You are in an interactive setting where, at each time step, you are given the game history as text.{" You will then be able to exchange up to " + str(params.max_message_rounds) + " rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round." if not params.game.no_press else ""} It is currently the {params.game.get_current_phase()} phase{(" and message round " + str(params.current_message_round) + " of " + str(params.max_message_rounds if params.game.phase_type != 'R' else 1)) if not params.game.no_press else ""} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
 
