@@ -35,6 +35,10 @@ class Agent(ABC):
     def __init__(self, **_):
         """Base init to ignore unused kwargs."""
 
+    def __repr__(self) -> str:
+        """Return a string representation of the agent."""
+        raise NotImplementedError
+
     @abstractmethod
     def respond(
         self,
@@ -52,6 +56,9 @@ class Agent(ABC):
 
 class RandomAgent(Agent):
     """Takes random actions and sends 1 random message."""
+
+    def __repr__(self) -> str:
+        return r"RandomAgent()"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         """Randomly generate orders and messages."""
@@ -102,7 +109,6 @@ class RandomAgent(Agent):
         time.sleep(sleep_time)
 
         return AgentResponse(
-            model_name="RandomAgent",
             reasoning="Randomly generated orders and messages.",
             orders=power_orders,
             messages={recipient: message} if not params.game.no_press else {},
@@ -137,6 +143,9 @@ class ManualAgent(Agent):
                 assert len(order.split()) >= 3
                 assert order.split()[0] in "AF"
 
+    def __repr__(self) -> str:
+        return f"ManualAgent({self.manual_orders_path})"
+
     def respond(self, params: AgentParams) -> AgentResponse:
         """Submit the specified orders if available."""
         power_orders = []
@@ -166,8 +175,7 @@ class ManualAgent(Agent):
         time.sleep(sleep_time)
 
         return AgentResponse(
-            model_name=f"ManualAgent ({self.manual_orders_path})",
-            reasoning="Specifying.",
+            reasoning="Manually specified orders and messages.",
             orders=power_orders,
             messages={},
             system_prompt=system_prompt,
@@ -194,9 +202,11 @@ class APIAgent(Agent):
             self.backend = ClaudeCompletionBackend(model_name)
         else:
             self.backend = OpenAIChatBackend(model_name)
-        self.model_name = model_name
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
+
+    def __repr__(self) -> str:
+        return f"APIAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         """Prompt the model for a response."""
@@ -244,7 +254,6 @@ class APIAgent(Agent):
         except Exception as exc:
             raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
         return AgentResponse(
-            model_name=self.backend.model_name,
             reasoning=reasoning,
             orders=orders,
             messages=messages,

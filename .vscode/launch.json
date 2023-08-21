@@ -263,6 +263,10 @@
                 "This is a test of exploiter prompting. You are {MY_POWER_NAME} and together with your teammates {MY_TEAM_NAMES}, you will take over the world!",
                 "--exploiter_powers",
                 "russia,turkey,italy,austria",
+                "--exploiter_model",
+                "manual",
+                "--manual_orders_path",
+                "./experiments/manual_orders/retreats.yaml",
             ],
             "justMyCode": true
         },

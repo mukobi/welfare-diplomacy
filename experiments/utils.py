@@ -124,8 +124,8 @@ def validate_config(config: wandb.Config, game: Game):
         with open(config.manual_orders_path, "r") as f:
             pass
         assert (
-            config.agent_model == "manual"
-        ), "Manual orders file specified but agent model is not manual."
+            config.agent_model == "manual" or config.exploiter_model == "manual"
+        ), "Manual orders file specified but agent model and exploiter model are not manual."
 
     # Check sampling params take valid ranges
     assert config.temperature >= 0.0
@@ -146,6 +146,13 @@ def validate_config(config: wandb.Config, game: Game):
         config.prompt_ablations,
         [elem.name.lower() for elem in PromptAblation],
     )
+
+    # Check that exploiter prompt and powers are both blank or both non-blank
+    if config.exploiter_prompt or config.exploiter_powers:
+        assert config.exploiter_prompt and config.exploiter_powers, (
+            f"Exploiter prompt and exploiter powers must both be blank or both non-blank."
+            f'Found exploiter prompt: "{config.exploiter_prompt}" and exploiter powers: {config.exploiter_powers}'
+        )
 
     # Check exploiter powers are valid powers in the game
     assert_comma_separated_string(

@@ -20,7 +20,6 @@ class BackendResponse:
 class AgentResponse:
     """A response from an agent for a single turn of actions."""
 
-    model_name: str  # Name of the generating model.
     reasoning: str  # Private reasoning to generate the response.
     orders: list[str]  # Orders to execute.
     messages: dict[str, str]  # Messages to send to other powers.
