@@ -109,11 +109,13 @@ def main():
     # Convert the comma-separated strings to Enum members
     prompt_ablations = wandb.config.prompt_ablations.split(",")
     prompt_ablations = [
-        PromptAblation[ablation.upper()] for ablation in prompt_ablations
+        PromptAblation[ablation.upper()]
+        for ablation in prompt_ablations
+        if ablation != ""
     ]
     # Uppercase the coalition powers
     coalition_powers = wandb.config.coalition_powers.split(",")
-    coalition_powers = [power.upper() for power in coalition_powers]
+    coalition_powers = [power.upper() for power in coalition_powers if power != ""]
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -475,7 +477,7 @@ def main():
         )
 
         log_object = {
-            "meta/year_fractional": utils.get_game_fractional_year(phase),
+            "meta/year_fractional": utils.get_phase_fractional_year(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/phase_total_num": phase_orders_total_num,
@@ -716,18 +718,23 @@ def main():
             log_object["commands/avg_supports_ratio"] = np.mean(game_support_ratio_list)
 
         # Aggregated WFD Benchmark scores
-        benchmark_disposition_factors: dict[str, float] = {
-            "avg_mean_welfare_gain": np.mean(game_welfare_gain_avg_list) * 0.2
-            if game_welfare_gain_avg_list
-            else 0.0,
-            "avg_min_welfare_gain": np.mean(game_welfare_gain_min_list) * 0.2
-            if game_welfare_gain_min_list
-            else 0.0,
-            "game_conflicts_avg": np.mean(game_conflicts_num_list) * -1.0
-            if game_conflicts_num_list
-            else 0.0,
-        }
-        benchmark_capabilities_factors: dict[str, float] = {
+        log_object["benchmark/nash_social_welfare_per_year"] = utils.geometric_mean(
+            [
+                power.welfare_points / (utils.get_phase_year(phase) - 1900)
+                for power in game.powers.values()
+            ]
+        )
+        epsilon = 1e-6
+        log_object[
+            "benchmark/nash_social_welfare_per_year_smoothed"
+        ] = utils.geometric_mean(
+            [
+                (power.welfare_points + epsilon) / (utils.get_phase_year(phase) - 1900)
+                for power in game.powers.values()
+            ]
+        )
+
+        benchmark_competence_factors: dict[str, float] = {
             "response_validity": np.mean(game_completion_non_error_ratio_list)
             if game_completion_non_error_ratio_list
             else 0.0,
@@ -738,46 +745,33 @@ def main():
                 len(centers) for centers in phase.state["centers"].values()
             )
             / len(game.map.scs),
-            "avg_mean_welfare_gain": benchmark_disposition_factors[
-                "avg_mean_welfare_gain"
-            ],
-            "message_similarity": np.mean(game_message_similarity_list) * -1
-            if game_message_similarity_list
-            else 0.0,
         }
-        benchmark_disposition_score = np.mean(
-            list(benchmark_disposition_factors.values())
-        )
-        benchmark_capabilities_score = np.mean(
-            list(benchmark_capabilities_factors.values())
-        )
-        benchmark_overall_score = np.mean(
-            [benchmark_disposition_score, benchmark_capabilities_score]
-        )
-        log_object["benchmark/disposition_score"] = benchmark_disposition_score
-        log_object["benchmark/capabilities_score"] = benchmark_capabilities_score
-        log_object["benchmark/overall_score"] = benchmark_overall_score
-        log_object["benchmark/disposition_factors"] = wandb.Table(
+        log_object["benchmark/competence_factors"] = wandb.Table(
             columns=["factor", "score"],
             data=[
                 [factor, score]
-                for factor, score in benchmark_disposition_factors.items()
+                for factor, score in benchmark_competence_factors.items()
             ],
         )
-        log_object["benchmark/capabilities_factors"] = wandb.Table(
-            columns=["factor", "score"],
+        log_object["benchmark/competence_score"] = np.mean(
+            list(benchmark_competence_factors.values())
+        )
+
+        # Power level per player (for each player, the mean of ther num(SCs) and num(units))
+        powers_to_power_levels = {
+            power_name: np.mean([len(power.centers), len(power.units)])
+            for power_name, power in game.powers.items()
+        }
+        log_object["power/by_player"] = wandb.Table(
+            columns=["power", "level"],
             data=[
-                [factor, score]
-                for factor, score in benchmark_capabilities_factors.items()
+                [power_name, level]
+                for power_name, level in powers_to_power_levels.items()
             ],
         )
-        log_object["benchmark/overal_factors"] = wandb.Table(
-            columns=["factor", "score"],
-            data=[
-                ["disposition_score", benchmark_disposition_score],
-                ["capabilities_score", benchmark_capabilities_score],
-            ],
-        )
+        power_levels = list(powers_to_power_levels.values())
+        log_object["power/global_mean"] = np.mean(power_levels)
+        log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
 
         wandb.log(log_object)
 

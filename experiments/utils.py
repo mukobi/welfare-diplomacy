@@ -21,12 +21,12 @@ def set_seed(seed: int) -> None:
     # torch.cuda.manual_seed_all(seed)
 
 
-def get_game_year(phase: GamePhaseData) -> int:
+def get_phase_year(phase: GamePhaseData) -> int:
     """Get integer year of phase after 1900."""
-    return int(get_game_fractional_year(phase))
+    return int(get_phase_fractional_year(phase))
 
 
-def get_game_fractional_year(game_phase_data: GamePhaseData) -> float:
+def get_phase_fractional_year(game_phase_data: GamePhaseData) -> float:
     """Get year after 1900 with fractional part indicating season."""
     phase = game_phase_data.name
     year = int("".join([char for char in phase if char.isdigit()])) - 1900
@@ -193,3 +193,12 @@ def assert_comma_separated_string(
             f'Invalid {param_name} value "{value}" extracted from your comma-separated string. '
             f"Expected one of {valid_values}"
         )
+
+
+def geometric_mean(values: list[float]) -> float:
+    """
+    Calculate the geometric mean of a list of values.
+
+    Equivalent to the Nash social welfare function for a list of welfare values.
+    """
+    return np.exp(np.mean(np.log(values)))
