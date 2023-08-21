@@ -8,6 +8,7 @@ import argparse
 import json
 import logging
 import os
+import traceback
 
 from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
@@ -29,6 +30,9 @@ from message_summarizers import (
 )
 import prompts
 import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -55,7 +59,6 @@ def main():
         game.add_rule("NO_PRESS")
     else:
         game.remove_rule("NO_PRESS")
-    logger = logging.getLogger(__name__)
     logging.basicConfig()
     logger.setLevel(wandb.config.log_level)
 
@@ -864,6 +867,10 @@ def main():
         }
     )
 
+    from openai.error import OpenAIError
+
+    raise OpenAIError("test " * 30)
+
     # Exporting the game to disk as well if desired
     if wandb.config.save:
         if not os.path.exists(wandb.config.output_folder):
@@ -1009,4 +1016,14 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        # Manually write it with the logger so it doesn't get hidden in wandb
+        tqdm.write("\n\n\n")  # Add some spacing
+        utils.log_error(
+            logger,
+            f"💀 FATAL EXCEPTION: {''.join(traceback.TracebackException.from_exception(exc).format())}",
+        )
+        tqdm.write("\n\n\n")  # Add some spacing
+        raise exc

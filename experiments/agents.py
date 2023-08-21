@@ -58,7 +58,7 @@ class RandomAgent(Agent):
     """Takes random actions and sends 1 random message."""
 
     def __repr__(self) -> str:
-        return r"RandomAgent()"
+        return "RandomAgent()"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         """Randomly generate orders and messages."""
