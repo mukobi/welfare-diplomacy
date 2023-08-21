@@ -6,7 +6,8 @@ parameters:
   seed:
     values:
       - 0
-      # - 1
+      - 1
+      - 2
   agent_model:
     value: claude-2
   summarizer_model:
