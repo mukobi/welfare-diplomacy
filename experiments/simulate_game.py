@@ -890,7 +890,7 @@ def parse_args():
         "--log_level", dest="log_level", default="INFO", help="🪵 Logging level."
     )
     parser.add_argument(
-        "--map",
+        "--map_name",
         dest="map_name",
         default="standard_welfare",
         help="🗺️ Map name which switches between rulesets.",
