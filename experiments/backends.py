@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from anthropic._exceptions import APIError
 import re
 import time
 from typing import Any
@@ -161,7 +162,7 @@ class ClaudeCompletionBackend:
         estimated_prompt_tokens = self.anthropic.count_tokens(prompt)
 
         start_time = time.time()
-        completion = self.anthropic.completions.create(
+        completion = self.completion_with_backoff(
             model=self.model_name,
             max_tokens_to_sample=self.max_tokens,
             prompt=prompt,
@@ -177,3 +178,10 @@ class ClaudeCompletionBackend:
             completion_tokens=estimated_completion_tokens,
             total_tokens=estimated_prompt_tokens + estimated_completion_tokens,
         )
+
+    @backoff.on_exception(backoff.expo, APIError, max_tries=10)
+    def completion_with_backoff(self, **kwargs):
+        """Exponential backoff for Claude API errors."""
+        response = self.anthropic.completions.create(**kwargs)
+        assert response is not None, "Anthropic response is None"
+        return response
