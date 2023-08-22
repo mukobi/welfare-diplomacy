@@ -867,10 +867,6 @@ def main():
         }
     )
 
-    from openai.error import OpenAIError
-
-    raise OpenAIError("test " * 30)
-
     # Exporting the game to disk as well if desired
     if wandb.config.save:
         if not os.path.exists(wandb.config.output_folder):
