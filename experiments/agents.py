@@ -42,14 +42,7 @@ class Agent(ABC):
     @abstractmethod
     def respond(
         self,
-        power: Power,
-        game: Game,
-        message_summary_history: MessageSummaryHistory,
-        possible_orders: dict[str, list[str]],
-        current_message_round: int,
-        max_message_rounds: int,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
+        params: AgentParams,
     ) -> AgentResponse:
         """Prompt the model for a response."""
 
