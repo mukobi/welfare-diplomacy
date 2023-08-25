@@ -20,7 +20,6 @@ class BackendResponse:
 class AgentResponse:
     """A response from an agent for a single turn of actions."""
 
-    model_name: str  # Name of the generating model.
     reasoning: str  # Private reasoning to generate the response.
     orders: list[str]  # Orders to execute.
     messages: dict[str, str]  # Messages to send to other powers.
@@ -53,17 +52,18 @@ MessageSummaryHistory = dict[str, list[PhaseMessageSummary]]
 class PromptAblation(Enum):
     """Ablations to agent prompts."""
 
+    NONE = auto()
     NO_WP_TRADEOFF = auto()
     NO_REASONING = auto()
     ORDERS_AFTER_MESSAGES = auto()
     NO_MESSAGE_INSTRUCTIONS = auto()
     NO_EXAMPLE_ORDERS = auto()
     OPPRESSION_POINTS = auto()
-    NO_PREV_DIALOGUE_SUMMARIES = auto()  # todo
-    ONLY_1_PHASE_ORDER_HISTORY = auto()  # todo
-    NO_SC_OWNERSHIPS = auto()  # todo
-    NO_UNIT_ADJACENCIES = auto()  # todo
-    NO_PHASE_INSTRUCTIONS = auto()  # todo
+    NO_PREV_DIALOGUE_SUMMARIES = auto()
+    ONLY_1_PHASE_ORDER_HISTORY = auto()
+    NO_SC_OWNERSHIPS = auto()
+    NO_UNIT_ADJACENCIES = auto()
+    NO_PHASE_INSTRUCTIONS = auto()
 
 
 @dataclass
@@ -78,3 +78,5 @@ class AgentParams:
     max_message_rounds: int
     final_game_year: int
     prompt_ablations: list[PromptAblation]
+    exploiter_prompt: str
+    exploiter_powers: list[str]

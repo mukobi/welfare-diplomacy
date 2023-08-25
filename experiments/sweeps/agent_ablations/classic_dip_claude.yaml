@@ -1,0 +1,16 @@
+method: grid
+metric:
+  goal: maximize
+  name: benchmark/nash_social_welfare_global_smoothed
+parameters:
+  seed:
+    values: [0, 1, 2, 3, 4, 5]
+  agent_model:
+    value: claude-2
+  summarizer_model:
+    value: claude-2
+  map_name:
+    values:
+      - standard
+      - standard_welfare
+program: experiments/simulate_game.py

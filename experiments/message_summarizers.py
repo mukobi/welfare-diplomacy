@@ -5,7 +5,7 @@ from logging import Logger
 
 from diplomacy import Game, Message, Power
 
-from backends import OpenAIChatBackend
+from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
 from data_types import AgentParams, PhaseMessageSummary, PromptAblation
 import prompts
 import utils
@@ -37,6 +37,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         if len(params.game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
 
+        system_prompt = prompts.get_summarizer_system_prompt(params)  # For debugging
         original_message_list = get_messages_list(params.game, params.power)
         messages_string = combine_messages(original_message_list)
 
@@ -49,20 +50,38 @@ class PassthroughMessageSummarizer(MessageSummarizer):
         )
 
 
-class OpenAIMessageSummarizer:
-    """Message summarizer using an OpenAI model backend."""
+class LLMMessageSummarizer:
+    """Message summarizer using a language model backend."""
 
     def __init__(self, model_name: str, logger: Logger):
-        self.backend = OpenAIChatBackend(model_name)
+        if (
+            "gpt-4-base" in model_name
+            or "text-" in model_name
+            or "davinci" in model_name
+        ):
+            self.backend = OpenAICompletionBackend(model_name)
+        elif "gpt-4" in model_name or "gpt-3.5" in model_name:
+            self.backend = OpenAIChatBackend(model_name)
+        elif "claude" in model_name:
+            self.backend = ClaudeCompletionBackend(model_name)
+        else:
+            raise ValueError(f"Unknown model name {model_name} for message summarizer")
         self.logger = logger
 
     def __repr__(self) -> str:
-        return f"OpenAISummarizer(backend={self.backend})"
+        return f"LLMMessageSummarizer(backend={self.backend})"
 
     def summarize(self, params: AgentParams) -> PhaseMessageSummary:
         """Generate a summary with an OpenAI model."""
         if len(params.game.messages) == 0:
             utils.log_warning(self.logger, "No messages to summarize!")
+            return PhaseMessageSummary(
+                phase=params.game.get_current_phase(),
+                original_messages=[],
+                summary="",
+                prompt_tokens=0,
+                completion_tokens=0,
+            )
 
         original_message_list = get_messages_list(params.game, params.power)
         messages_string = combine_messages(original_message_list)
@@ -71,7 +90,7 @@ class OpenAIMessageSummarizer:
         response = self.backend.complete(
             system_prompt, messages_string, temperature=0.5, top_p=0.9
         )
-        completion = response.completion
+        completion = response.completion.strip()
 
         return PhaseMessageSummary(
             phase=params.game.get_current_phase(),
@@ -87,10 +106,7 @@ def model_name_to_message_summarizer(model_name: str, **kwargs) -> MessageSummar
     model_name = model_name.lower()
     if model_name == "passthrough":
         return PassthroughMessageSummarizer(**kwargs)
-    elif "gpt-4" in model_name or "gpt-3.5" in model_name:
-        return OpenAIMessageSummarizer(model_name=model_name, **kwargs)
-    else:
-        raise ValueError(f"Unknown model name: {model_name}")
+    return LLMMessageSummarizer(model_name=model_name, **kwargs)
 
 
 def get_messages_list(game: Game, power: Power) -> list[str]:

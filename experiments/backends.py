@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
+from anthropic._exceptions import APIError
 import re
 import time
 from typing import Any
@@ -173,8 +174,6 @@ class OpenAICompletionBackend(LanguageModelBackend):
                 frequency_penalty=self.frequency_penalty,
             )
             completion = response.choices[0].text
-            # Strip away junk
-            completion = completion.split("**")[0].strip(" `\n")
             assert "usage" in response, "OpenAI response does not contain usage"
             usage = response["usage"]  # type: ignore
             completion_time_sec = response.response_ms / 1000.0  # type: ignore
@@ -220,26 +219,29 @@ class ClaudeCompletionBackend:
         top_p: float = 1.0,
     ) -> BackendResponse:
         prompt = f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}"
-        estimated_tokens = self.anthropic.count_tokens(prompt)
+        estimated_prompt_tokens = self.anthropic.count_tokens(prompt)
 
         start_time = time.time()
-        completion = self.anthropic.completions.create(
+        completion = self.completion_with_backoff(
             model=self.model_name,
             max_tokens_to_sample=self.max_tokens,
             prompt=prompt,
             temperature=temperature,
             top_p=top_p,
         )
+        estimated_completion_tokens = int(len(completion.completion.split()) * 4 / 3)
         completion_time_sec = time.time() - start_time
-        # Claude likes to add junk around the actual JSON, so find it manually
-        json_completion = completion.completion
-        start = json_completion.index("{")
-        end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
-        json_completion = json_completion[start:end]
         return BackendResponse(
-            completion=json_completion,
+            completion=completion.completion,
             completion_time_sec=completion_time_sec,
-            prompt_tokens=estimated_tokens,
-            completion_tokens=self.max_tokens,
-            total_tokens=estimated_tokens,
+            prompt_tokens=estimated_prompt_tokens,
+            completion_tokens=estimated_completion_tokens,
+            total_tokens=estimated_prompt_tokens + estimated_completion_tokens,
         )
+
+    @backoff.on_exception(backoff.expo, APIError, max_tries=10)
+    def completion_with_backoff(self, **kwargs):
+        """Exponential backoff for Claude API errors."""
+        response = self.anthropic.completions.create(**kwargs)
+        assert response is not None, "Anthropic response is None"
+        return response

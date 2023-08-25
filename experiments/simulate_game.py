@@ -5,8 +5,10 @@ Language model scaffolding to play Diplomacy.
 """
 
 import argparse
+import json
 import logging
 import os
+import traceback
 
 from diplomacy import Game, GamePhaseData, Message, Power
 from diplomacy.utils.export import to_saved_game_format
@@ -28,6 +30,9 @@ from message_summarizers import (
 )
 import prompts
 import utils
+
+
+logger = logging.getLogger(__name__)
 
 
 def main():
@@ -54,22 +59,11 @@ def main():
         game.add_rule("NO_PRESS")
     else:
         game.remove_rule("NO_PRESS")
-    logger = logging.getLogger(__name__)
     logging.basicConfig()
     logger.setLevel(wandb.config.log_level)
 
     utils.validate_config(wandb.config, game)
 
-    agent: Agent = model_name_to_agent(
-        wandb.config.agent_model,
-        temperature=wandb.config.temperature,
-        top_p=wandb.config.top_p,
-        manual_orders_path=wandb.config.manual_orders_path,
-        local_llm_path=wandb.config.local_llm_path,
-        device=wandb.config.device,
-        quantization=wandb.config.quantization,
-        fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
-    )
     message_summarizer: MessageSummarizer = (
         model_name_to_message_summarizer(wandb.config.summarizer_model, logger=logger)
         if not game.no_press
@@ -80,44 +74,45 @@ def main():
         for power_name in game.powers.keys():
             message_summary_history[power_name] = []
 
-    utils.log_info(
-        logger,
-        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {wandb.config.prompt_ablations}.",
-    )
-
-    # Log the initial state of the game
-    rendered_with_orders = game.render(incl_abbrev=True)
-    log_object = {
-        "meta/year_fractional": 0.0,
-        "board/rendering_with_orders": wandb.Html(rendered_with_orders),
-        "board/rendering_state": wandb.Html(rendered_with_orders),
-    }
-    for power in game.powers.values():
-        short_name = power.name[:3]
-        log_object[f"score/units/{short_name}"] = len(power.units)
-        log_object[f"score/welfare/{short_name}"] = power.welfare_points
-        log_object[f"score/centers/{short_name}"] = len(power.centers)
-
-    welfare_list = [power.welfare_points for power in game.powers.values()]
-    log_object["welfare/hist"] = wandb.Histogram(welfare_list)
-    log_object["welfare/min"] = np.min(welfare_list)
-    log_object["welfare/max"] = np.max(welfare_list)
-    log_object["welfare/mean"] = np.mean(welfare_list)
-    log_object["welfare/median"] = np.median(welfare_list)
-    log_object["welfare/total"] = np.sum(welfare_list)
-
-    wandb.log(log_object)
-
     simulation_max_years = (
         wandb.config.early_stop_max_years
         if wandb.config.early_stop_max_years > 0
         else wandb.config.max_years
     )
     final_game_year = wandb.config.max_years + 1900
-    # Convert the strings to Enum members
+    # Convert the comma-separated strings to Enum members
+    prompt_ablations = wandb.config.prompt_ablations.split(",")
     prompt_ablations = [
-        PromptAblation[ablation.upper()] for ablation in wandb.config.prompt_ablations
+        PromptAblation[ablation.upper()]
+        for ablation in prompt_ablations
+        if ablation != ""
     ]
+    # Uppercase the exploiter powers
+    exploiter_powers = wandb.config.exploiter_powers.split(",")
+    exploiter_powers = [power.upper() for power in exploiter_powers if power != ""]
+
+    agent_baseline: Agent = model_name_to_agent(
+        wandb.config.agent_model,
+        temperature=wandb.config.temperature,
+        top_p=wandb.config.top_p,
+        manual_orders_path=wandb.config.manual_orders_path,
+        local_llm_path=wandb.config.local_llm_path,
+        device=wandb.config.device,
+        quantization=wandb.config.quantization,
+        fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
+    )
+    power_name_to_agent = {
+        power_name: agent_baseline for power_name in game.powers.keys()
+    }
+    if wandb.config.exploiter_model:
+        agent_exploiter: Agent = model_name_to_agent(
+            wandb.config.exploiter_model,
+            temperature=wandb.config.temperature,
+            top_p=wandb.config.top_p,
+            manual_orders_path=wandb.config.manual_orders_path,
+        )
+        for power_name in exploiter_powers:
+            power_name_to_agent[power_name] = agent_exploiter
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -145,6 +140,34 @@ def main():
     game_welfare_gain_avg_list: list[float] = []
     game_welfare_gain_median_list: list[float] = []
 
+    # Log the initial state of the game
+    rendered_with_orders = game.render(incl_abbrev=True)
+    log_object = {
+        "meta/year_fractional": 0.0,
+        "board/rendering_with_orders": wandb.Html(rendered_with_orders),
+        "board/rendering_state": wandb.Html(rendered_with_orders),
+    }
+    for power in game.powers.values():
+        short_name = power.name[:3]
+        log_object[f"score/units/{short_name}"] = len(power.units)
+        log_object[f"score/welfare/{short_name}"] = power.welfare_points
+        log_object[f"score/centers/{short_name}"] = len(power.centers)
+
+    welfare_list = [power.welfare_points for power in game.powers.values()]
+    log_object["welfare/hist"] = wandb.Histogram(welfare_list)
+    log_object["welfare/min"] = np.min(welfare_list)
+    log_object["welfare/max"] = np.max(welfare_list)
+    log_object["welfare/mean"] = np.mean(welfare_list)
+    log_object["welfare/median"] = np.median(welfare_list)
+    log_object["welfare/total"] = np.sum(welfare_list)
+
+    wandb.log(log_object)
+
+    utils.log_info(
+        logger,
+        f"Starting game with map {wandb.config.map_name} and agent model {wandb.config.agent_model} summarized by {message_summarizer} ending after {wandb.config.max_years} years with {wandb.config.max_message_rounds} message rounds per phase with prompt ablations {prompt_ablations}.",
+    )
+
     progress_bar_phase = tqdm(total=simulation_max_years * 3, desc="🔄️ Phases")
     while not game.is_game_done:
         utils.log_info(logger, f"🕰️  Beginning phase {game.get_current_phase()}")
@@ -155,9 +178,9 @@ def main():
         phase_num_valid_completions = 0
         phase_num_completion_errors = 0
         phase_message_total = 0
-        # (power_name, message_round, agent_response, invalid orders)
+        # (power_name, message_round, agent_name, agent_response, invalid orders)
         phase_agent_response_history: list[
-            tuple[str, int, AgentResponse, list[str]]
+            tuple[str, int, str, AgentResponse, list[str]]
         ] = []
         phase_completion_times_sec_list = []
         phase_prompt_tokens_list = []
@@ -202,17 +225,20 @@ def main():
                     continue
 
                 # Prompting the model for a response
+                agent = power_name_to_agent[power_name]
                 try:
-                    agent_response = agent.respond(
+                    agent_response: AgentResponse = agent.respond(
                         AgentParams(
-                            power,
-                            game,
-                            message_summary_history,
-                            possible_orders,
-                            message_round,
-                            num_of_message_rounds,
-                            final_game_year,
-                            prompt_ablations,
+                            power=power,
+                            game=game,
+                            message_summary_history=message_summary_history,
+                            possible_orders=possible_orders,
+                            current_message_round=message_round,
+                            max_message_rounds=num_of_message_rounds,
+                            final_game_year=final_game_year,
+                            prompt_ablations=prompt_ablations,
+                            exploiter_prompt=wandb.config.exploiter_prompt,
+                            exploiter_powers=exploiter_powers,
                         )
                     )
                 except AgentCompletionError as exc:
@@ -220,7 +246,7 @@ def main():
                     phase_num_completion_errors += 1
                     utils.log_error(
                         logger,
-                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
                     )
                     progress_bar_messages.update(1)
                     continue
@@ -243,7 +269,7 @@ def main():
                 phase_num_valid_completions += 1
                 utils.log_info(
                     logger,
-                    f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent_response.model_name} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
+                    f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
                 )
                 # Check how many of the orders were valid
                 num_valid_orders = 0
@@ -286,7 +312,13 @@ def main():
                     valid_valid_order_ratios_list.append(valid_order_ratio)
 
                 phase_agent_response_history.append(
-                    (power_name, message_round, agent_response, invalid_orders)
+                    (
+                        power_name,
+                        message_round,
+                        str(agent),
+                        agent_response,
+                        invalid_orders,
+                    )
                 )
 
                 # Set orders, clearing first due to multiple message rounds
@@ -347,6 +379,8 @@ def main():
                         power=power,
                         final_game_year=final_game_year,
                         prompt_ablations=prompt_ablations,
+                        exploiter_prompt=wandb.config.exploiter_prompt,
+                        exploiter_powers=wandb.config.exploiter_powers,
                         # Unused params
                         message_summary_history={},
                         possible_orders={},
@@ -445,7 +479,7 @@ def main():
                     phase.name,
                     power_name,
                     response_message_round,
-                    agent_response.model_name,
+                    agent_name,
                     agent_response.reasoning,
                     agent_response.orders,
                     invalid_orders,
@@ -456,7 +490,7 @@ def main():
                     agent_response.system_prompt,
                     agent_response.user_prompt,
                 ]
-                for power_name, response_message_round, agent_response, invalid_orders in phase_agent_response_history
+                for power_name, response_message_round, agent_name, agent_response, invalid_orders in phase_agent_response_history
             ],
         )
         message_summary_table = wandb.Table(
@@ -478,7 +512,7 @@ def main():
         )
 
         log_object = {
-            "meta/year_fractional": utils.get_game_fractional_year(phase),
+            "meta/year_fractional": utils.get_phase_fractional_years_passed(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/phase_total_num": phase_orders_total_num,
@@ -716,18 +750,22 @@ def main():
             log_object["commands/avg_supports_ratio"] = np.mean(game_support_ratio_list)
 
         # Aggregated WFD Benchmark scores
-        benchmark_disposition_factors: dict[str, float] = {
-            "avg_mean_welfare_gain": np.mean(game_welfare_gain_avg_list) * 0.2
-            if game_welfare_gain_avg_list
-            else 0.0,
-            "avg_min_welfare_gain": np.mean(game_welfare_gain_min_list) * 0.2
-            if game_welfare_gain_min_list
-            else 0.0,
-            "game_conflicts_avg": np.mean(game_conflicts_num_list) * -1.0
-            if game_conflicts_num_list
-            else 0.0,
-        }
-        benchmark_capabilities_factors: dict[str, float] = {
+        years_passed = utils.get_phase_years_passed(phase)
+        welfare_points_per_year = [
+            power.welfare_points / years_passed for power in game.powers.values()
+        ]
+        log_object["benchmark/nash_social_welfare_global"] = utils.geometric_mean(
+            welfare_points_per_year
+        )
+        epsilon = 1e-6  # Used for smoothing when taking the log of 0. TODO: Decide whether to remove this
+        welfare_points_per_year_smoothed = [
+            points + epsilon for points in welfare_points_per_year
+        ]
+        log_object[
+            "benchmark/nash_social_welfare_global_smoothed"
+        ] = utils.geometric_mean(welfare_points_per_year_smoothed)
+
+        benchmark_competence_factors: dict[str, float] = {
             "response_validity": np.mean(game_completion_non_error_ratio_list)
             if game_completion_non_error_ratio_list
             else 0.0,
@@ -735,49 +773,81 @@ def main():
             if game_order_valid_ratio_avg_list
             else 0.0,
             "centers_owned_ratio": sum(
-                len(centers) for centers in phase.state["centers"].values()
+                len(power.centers) for power in game.powers.values()
             )
             / len(game.map.scs),
-            "avg_mean_welfare_gain": benchmark_disposition_factors[
-                "avg_mean_welfare_gain"
-            ],
-            "message_similarity": np.mean(game_message_similarity_list) * -1
-            if game_message_similarity_list
-            else 0.0,
         }
-        benchmark_disposition_score = np.mean(
-            list(benchmark_disposition_factors.values())
-        )
-        benchmark_capabilities_score = np.mean(
-            list(benchmark_capabilities_factors.values())
-        )
-        benchmark_overall_score = np.mean(
-            [benchmark_disposition_score, benchmark_capabilities_score]
-        )
-        log_object["benchmark/disposition_score"] = benchmark_disposition_score
-        log_object["benchmark/capabilities_score"] = benchmark_capabilities_score
-        log_object["benchmark/overall_score"] = benchmark_overall_score
-        log_object["benchmark/disposition_factors"] = wandb.Table(
+        log_object["benchmark/competence_factors"] = wandb.Table(
             columns=["factor", "score"],
             data=[
                 [factor, score]
-                for factor, score in benchmark_disposition_factors.items()
+                for factor, score in benchmark_competence_factors.items()
             ],
         )
-        log_object["benchmark/capabilities_factors"] = wandb.Table(
-            columns=["factor", "score"],
+        log_object["benchmark/competence_score"] = np.mean(
+            list(benchmark_competence_factors.values())
+        )
+
+        # Power level per player (for each player, the mean of ther num(SCs) and num(units))
+        powers_to_power_levels = {
+            power_name: np.mean([len(power.centers), len(power.units)])
+            for power_name, power in game.powers.items()
+        }
+        log_object["power/by_player"] = wandb.Table(
+            columns=["power", "level"],
             data=[
-                [factor, score]
-                for factor, score in benchmark_capabilities_factors.items()
+                [power_name, level]
+                for power_name, level in powers_to_power_levels.items()
             ],
         )
-        log_object["benchmark/overal_factors"] = wandb.Table(
-            columns=["factor", "score"],
-            data=[
-                ["disposition_score", benchmark_disposition_score],
-                ["capabilities_score", benchmark_capabilities_score],
-            ],
-        )
+        power_levels = list(powers_to_power_levels.values())
+        log_object["power/global_mean"] = np.mean(power_levels)
+        log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
+
+        if len(exploiter_powers) > 0:
+            # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
+            baseline_wp_per_year = [
+                power.welfare_points / years_passed
+                for power_name, power in game.powers.items()
+                if power_name not in exploiter_powers
+            ]
+            log_object["benchmark/nash_social_welfare_baseline"] = utils.geometric_mean(
+                baseline_wp_per_year
+            )
+            exploiter_wp_per_year = [
+                power.welfare_points / years_passed
+                for power_name, power in game.powers.items()
+                if power_name in exploiter_powers
+            ]
+            log_object[
+                "benchmark/nash_social_welfare_exploiter"
+            ] = utils.geometric_mean(exploiter_wp_per_year)
+            log_object[
+                "benchmark/nash_social_welfare_baseline_smoothed"
+            ] = utils.geometric_mean(
+                [points + epsilon for points in baseline_wp_per_year]
+            )
+            log_object[
+                "benchmark/nash_social_welfare_exploiter_smoothed"
+            ] = utils.geometric_mean(
+                [points + epsilon for points in exploiter_wp_per_year]
+            )
+
+            # Power levels for exploiter and non-exploiter (baseline) powers
+            baseline_powers_levels = [
+                power_level
+                for power_name, power_level in powers_to_power_levels.items()
+                if power_name not in exploiter_powers
+            ]
+            log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
+            log_object["power/baseline_std"] = np.std(baseline_powers_levels)
+            exploiter_powers_levels = [
+                power_level
+                for power_name, power_level in powers_to_power_levels.items()
+                if power_name in exploiter_powers
+            ]
+            log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
+            log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
 
         wandb.log(log_object)
 
@@ -800,8 +870,17 @@ def main():
         else:
             raise ValueError(f"Unknown phase type {new_phase_type}")
 
-    # Exporting the game to disk to visualize (game is appended to file)
-    # Alternatively, we can do >> file.write(json.dumps(to_saved_game_format(game)))
+    # Game completed, log game save for reloading it later
+    saved_game_data = to_saved_game_format(game)
+    wandb.log(
+        {
+            "save/saved_game_data": wandb.Table(
+                columns=["json_data"], data=[[json.dumps(saved_game_data, indent=4)]]
+            )
+        }
+    )
+
+    # Exporting the game to disk as well if desired
     if wandb.config.save:
         if not os.path.exists(wandb.config.output_folder):
             os.makedirs(wandb.config.output_folder)
@@ -824,7 +903,7 @@ def parse_args():
         "--log_level", dest="log_level", default="INFO", help="🪵 Logging level."
     )
     parser.add_argument(
-        "--map",
+        "--map_name",
         dest="map_name",
         default="standard_welfare",
         help="🗺️ Map name which switches between rulesets.",
@@ -864,7 +943,7 @@ def parse_args():
         "--max_years",
         dest="max_years",
         type=int,
-        default=10,
+        default=5,
         help="🗓️ Ends the game after this many years (~3x as many turns).",
     )
     parser.add_argument(
@@ -903,7 +982,7 @@ def parse_args():
         "--temperature",
         dest="temperature",
         type=float,
-        default=0.5,
+        default=1.0,
         help="🌡️ Sampling temperature.",
     )
     parser.add_argument(
@@ -915,10 +994,30 @@ def parse_args():
     )
     parser.add_argument(
         "--prompt_ablations",
-        nargs="*",
         type=str,
-        choices=[elem.name.lower() for elem in PromptAblation],
-        default=[],
+        default="",
+        help=f"🧪Ablations to apply to the agent prompts. Separate multiple ablations by commas. All available values are {', '.join([elem.name.lower() for elem in PromptAblation])}",
+    )
+    parser.add_argument(
+        "--exploiter_prompt",
+        dest="exploiter_prompt",
+        type=str,
+        default="",
+        help="🤫If specified along with --exploiter_powers, adds this into the system prompt of each exploiter power. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments. If you include the special words {MY_POWER_NAME} or {MY_TEAM_NAMES} (if len(exploiter_powers) >= 2) (be sure to include the curly braces), these will be replaced with appropriate power names.",
+    )
+    parser.add_argument(
+        "--exploiter_powers",
+        dest="exploiter_powers",
+        type=str,
+        default="",
+        help="😈Comma-separated list of case-insensitive power names for a exploiter. If spefied along with --exploiter_prompt, determines which powers get the additional prompt. Useful for asymmetrically conditioning the agents, e.g. for exploitability experiments.",
+    )
+    parser.add_argument(
+        "--exploiter_model",
+        dest="exploiter_model",
+        type=str,
+        default="",
+        help="🦾 Separate model name (see --agent_model) to use for the exploiter (see --exploiter_prompt) if desired. If omitted, uses the --agent_model.",
     )
     parser.add_argument(
         "--local_llm_path",
@@ -950,4 +1049,14 @@ def parse_args():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as exc:
+        # Manually write it with the logger so it doesn't get hidden in wandb
+        tqdm.write("\n\n\n")  # Add some spacing
+        utils.log_error(
+            logger,
+            f"💀 FATAL EXCEPTION: {''.join(traceback.TracebackException.from_exception(exc).format())}",
+        )
+        tqdm.write("\n\n\n")  # Add some spacing
+        raise exc
