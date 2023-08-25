@@ -14,7 +14,7 @@ import yaml
 from diplomacy import Power, Game
 import wandb
 
-from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
+from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
 from data_types import (
     AgentResponse,
     AgentParams,
@@ -192,6 +192,12 @@ class APIAgent(Agent):
             self.backend = OpenAICompletionBackend(model_name)
         elif "claude" in model_name:
             self.backend = ClaudeCompletionBackend(model_name)
+        elif "llama" in model_name:
+            self.local_llm_path = kwargs.pop("local_llm_path")
+            self.device = kwargs.pop("device")
+            self.quantization = kwargs.pop("quantization")
+            self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
+            self.backend = HuggingFaceCausalLMBackend(model_name, self.local_llm_path, self.device, self.quantization, self.fourbit_compute_dtype)
         else:
             self.backend = OpenAIChatBackend(model_name)
         self.model_name = model_name
@@ -261,6 +267,7 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         or "davinci-" in model_name
         or "text-" in model_name
         or "claude" in model_name
+        or "llama" in model_name
     ):
         return APIAgent(model_name, **kwargs)
     else:

@@ -65,6 +65,10 @@ def main():
         temperature=wandb.config.temperature,
         top_p=wandb.config.top_p,
         manual_orders_path=wandb.config.manual_orders_path,
+        local_llm_path=wandb.config.local_llm_path,
+        device=wandb.config.device,
+        quantization=wandb.config.quantization,
+        fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
     )
     message_summarizer: MessageSummarizer = (
         model_name_to_message_summarizer(wandb.config.summarizer_model, logger=logger)
@@ -241,7 +245,6 @@ def main():
                     logger,
                     f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent_response.model_name} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
                 )
-
                 # Check how many of the orders were valid
                 num_valid_orders = 0
                 invalid_orders = []
@@ -288,7 +291,17 @@ def main():
 
                 # Set orders, clearing first due to multiple message rounds
                 game.set_orders(power_name, [])
-                game.set_orders(power_name, agent_response.orders)
+                try:
+                    game.set_orders(power_name, agent_response.orders)
+                except Exception as exc:
+                    # If the agent gave an invalid order, we need to log the error and continue
+                    phase_num_completion_errors += 1
+                    utils.log_error(
+                        logger,
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                    )
+                    progress_bar_messages.update(1)
+                    continue
 
                 # Send messages
                 for recipient, message in agent_response.messages.items():
@@ -906,6 +919,30 @@ def parse_args():
         type=str,
         choices=[elem.name.lower() for elem in PromptAblation],
         default=[],
+    )
+    parser.add_argument(
+        "--local_llm_path",
+        dest="local_llm_path",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--device",
+        dest="device",
+        type=str,
+        default='auto',
+    )
+    parser.add_argument(
+        "--quantization",
+        dest="quantization",
+        type=int,
+        default=None,
+    )
+    parser.add_argument(
+        "--fourbit_compute_dtype",
+        dest="fourbit_compute_dtype",
+        type=int,
+        default=32,
     )
 
     args = parser.parse_args()
