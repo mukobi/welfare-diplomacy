@@ -65,7 +65,14 @@ def main():
     utils.validate_config(wandb.config, game)
 
     message_summarizer: MessageSummarizer = (
-        model_name_to_message_summarizer(wandb.config.summarizer_model, logger=logger)
+        model_name_to_message_summarizer(
+            wandb.config.summarizer_model,
+            logger=logger,
+            local_llm_path=wandb.config.local_llm_path,
+            device=wandb.config.device,
+            quantization=wandb.config.quantization,
+            fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
+            )
         if not game.no_press
         else None
     )
@@ -284,6 +291,14 @@ def main():
                         invalid_orders.append(order)
                         continue
                     word = order.split()
+                    if len(word) < 2:
+                        utils.log_warning(
+                            logger,
+                            f"Order needs to be longer than 1 word",
+                        )
+                        num_valid_orders += 1
+                        invalid_orders.append(order)
+                        continue
                     location = word[1]
                     if (
                         location in possible_orders

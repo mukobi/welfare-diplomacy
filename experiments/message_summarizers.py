@@ -5,7 +5,7 @@ from logging import Logger
 
 from diplomacy import Game, Message, Power
 
-from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
+from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
 from data_types import AgentParams, PhaseMessageSummary, PromptAblation
 import prompts
 import utils
@@ -53,7 +53,7 @@ class PassthroughMessageSummarizer(MessageSummarizer):
 class LLMMessageSummarizer:
     """Message summarizer using a language model backend."""
 
-    def __init__(self, model_name: str, logger: Logger):
+    def __init__(self, model_name: str, logger: Logger, **kwargs):
         if (
             "gpt-4-base" in model_name
             or "text-" in model_name
@@ -64,6 +64,12 @@ class LLMMessageSummarizer:
             self.backend = OpenAIChatBackend(model_name)
         elif "claude" in model_name:
             self.backend = ClaudeCompletionBackend(model_name)
+        elif "llama" in model_name:
+            self.local_llm_path = kwargs.pop("local_llm_path")
+            self.device = kwargs.pop("device")
+            self.quantization = kwargs.pop("quantization")
+            self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
+            self.backend = HuggingFaceCausalLMBackend(model_name, self.local_llm_path, self.device, self.quantization, self.fourbit_compute_dtype)
         else:
             raise ValueError(f"Unknown model name {model_name} for message summarizer")
         self.logger = logger
