@@ -12,3 +12,4 @@ backoff
 seaborn
 wandb
 nltk
+transformers

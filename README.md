@@ -10,7 +10,29 @@ This project contains an open-source DATC-compliant Diplomacy game engine, a cli
 
 The complete documentation is available at [diplomacy.readthedocs.io](https://diplomacy.readthedocs.io/).
 
-## Getting Started
+## Running Our Experiments
+
+If you just want to run our agents with our scaffolding in the `experiments` folder, do this:
+
+1. Install the base requirements (dev has the base requirements for the `diplomacy` module and for our scaffolding).
+```
+pip install -r requirements_dev.txt
+```
+2. Install PyTorch separately
+
+> See https://pytorch.org/get-started/locally/
+
+3. Run the `simulate_game.py` script
+
+```bash
+python experiments/simulate_game.py --help
+```
+This will show all the parameters you can use to run experiments.
+
+Note that you should set your `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables if you plan to use OpenAI or Anthropic API models.
+
+
+## Old Getting Started [For Reference]
 
 ### Installation
 
