@@ -14,15 +14,21 @@ The complete documentation is available at [diplomacy.readthedocs.io](https://di
 
 If you just want to run our agents with our scaffolding in the `experiments` folder, do this:
 
-1. Install the base requirements (dev has the base requirements for the `diplomacy` module and for our scaffolding).
-```
-pip install -r requirements_dev.txt
-```
-2. Install PyTorch separately
+1. Install PyTorch separately
 
 > See https://pytorch.org/get-started/locally/
 
-3. Run the `simulate_game.py` script
+2. Install the base requirements (dev has the base requirements for the `diplomacy` module and for our scaffolding).
+```
+pip install -r requirements_dev.txt
+```
+
+3. Install our baseline agent submodule (used for testing RL agent baselines trained for Standard Diplomacy)
+```
+pip install -r welfare_diplomacy_baselines/requirements.txt  
+```
+
+4. Run the `simulate_game.py` script
 
 ```bash
 python experiments/simulate_game.py --help
