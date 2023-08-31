@@ -247,7 +247,7 @@ def get_user_prompt(params: AgentParams) -> str:
     phase_instructions = f"### Phase Order Instructions ###\nIt is currently {params.game.phase} which is a {phase_type} phase. The possible types of orders you can submit (with syntax in parentheses) are: "
     if phase_type == "MOVEMENT":
         phase_instructions += (
-            "Hold (H), Move (-), Support (S), Convoy (C). You can not build or disband units during this phase, only during each WINTER ADJUSTMENTS phase. For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
+            "Hold (H), Move (-), Support (S), Convoy (C). You can not build or disband units during this phase, only during each WINTER ADJUSTMENTS phase. Note that newly occupied supply centers are only captured after the resolution of each FALL MOVEMENT phase. For Fleets moving to STP, SPA, or BUL, remember to specify the coasts (/NC, /SC, or /EC, depending on the destination). The units you can order are:\n"
             + (
                 "\n".join([unit for unit in params.power.units])
                 if len(params.power.units) > 0
