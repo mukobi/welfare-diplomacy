@@ -5,7 +5,12 @@ from logging import Logger
 
 from diplomacy import Game, Message, Power
 
-from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
+from backends import (
+    ClaudeCompletionBackend,
+    OpenAIChatBackend,
+    OpenAICompletionBackend,
+    HuggingFaceCausalLMBackend,
+)
 from data_types import AgentParams, PhaseMessageSummary, PromptAblation
 import prompts
 import utils
@@ -26,7 +31,7 @@ class MessageSummarizer(ABC):
 class PassthroughMessageSummarizer(MessageSummarizer):
     """Don't summarize, just copy over the messages."""
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, **kwargs):
         self.logger = logger
 
     def __repr__(self) -> str:
@@ -69,7 +74,13 @@ class LLMMessageSummarizer:
             self.device = kwargs.pop("device")
             self.quantization = kwargs.pop("quantization")
             self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
-            self.backend = HuggingFaceCausalLMBackend(model_name, self.local_llm_path, self.device, self.quantization, self.fourbit_compute_dtype)
+            self.backend = HuggingFaceCausalLMBackend(
+                model_name,
+                self.local_llm_path,
+                self.device,
+                self.quantization,
+                self.fourbit_compute_dtype,
+            )
         else:
             raise ValueError(f"Unknown model name {model_name} for message summarizer")
         self.logger = logger

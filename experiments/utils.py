@@ -156,7 +156,9 @@ def validate_config(config: wandb.Config, game: Game):
 
     # Check exploiter powers are valid powers in the game
     assert_comma_separated_string(
-        "exploiter_powers", config.exploiter_powers, list(game.powers.keys())
+        "exploiter_powers",
+        config.exploiter_powers,
+        [name.lower() for name in list(game.powers.keys())],
     )
 
     # Check exploiter powers are unique
@@ -196,7 +198,7 @@ def assert_comma_separated_string(
         # Empty string is valid
         return
     for value in input_string.split(","):
-        assert value.upper() in valid_values, (
+        assert value in valid_values, (
             f'Invalid {param_name} value "{value}" extracted from your comma-separated string. '
             f"Expected one of {valid_values}"
         )
