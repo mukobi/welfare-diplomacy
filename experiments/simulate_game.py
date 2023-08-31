@@ -110,6 +110,17 @@ def main():
         for power_name in exploiter_powers:
             power_name_to_agent[power_name] = agent_exploiter
 
+    # Set no-press powers
+    if wandb.config.no_press:
+        no_press_powers = list(game.powers.keys())
+    else:
+        no_press_powers = wandb.config.no_press_powers.split(",")
+        no_press_powers = [power.upper() for power in no_press_powers if power != ""]
+    if no_press_powers:
+        for power_name in no_press_powers:
+            agent_nopress: Agent = model_name_to_agent('nopress', policy_key = wandb.config.no_press_policy)
+            power_name_to_agent[power_name] = agent_nopress
+
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
     game_holds_num_list: list[int] = []
@@ -216,6 +227,10 @@ def main():
 
             power: Power
             for power_name, power in powers_items:
+                # Skip no-press powers until final message round
+                if power_name in no_press_powers and message_round < num_of_message_rounds:
+                    continue
+
                 # On retreat phases, skip powers that have no retreats to make
                 if game.phase_type == "R" and not power.retreats:
                     continue
@@ -1005,6 +1020,27 @@ def parse_args():
         type=str,
         default="",
         help="🦾 Separate model name (see --agent_model) to use for the exploiter (see --exploiter_prompt) if desired. If omitted, uses the --agent_model.",
+    )
+    parser.add_argument(
+        "--no_press",
+        dest="no_press",
+        type=bool,
+        default=False,
+        help="If 'True', all agents play a no-press policy. For debugging purposes.",
+    )
+    parser.add_argument(
+        "--no_press_powers",
+        dest="no_press_powers",
+        type=str,
+        default="",
+        help="🤐Comma-separated list of case-insensitive power names to run standard no-press policy.",
+    )
+    parser.add_argument(
+        "--no_press_policy",
+        dest="no_press_policy",
+        type=int,
+        default="network",
+        help="🤐Policy to use for no-press powers. Provide an integer to select a policy from no_press_policies.policy_map.",
     )
 
     args = parser.parse_args()
