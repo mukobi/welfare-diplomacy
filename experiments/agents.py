@@ -17,7 +17,7 @@ import wandb
 from welfare_diplomacy_baselines.environment import mila_actions, diplomacy_state
 from welfare_diplomacy_baselines.baselines import no_press_policies
 
-from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend
+from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
 from data_types import (
     AgentResponse,
     AgentParams,
@@ -45,14 +45,7 @@ class Agent(ABC):
     @abstractmethod
     def respond(
         self,
-        power: Power,
-        game: Game,
-        message_summary_history: MessageSummaryHistory,
-        possible_orders: dict[str, list[str]],
-        current_message_round: int,
-        max_message_rounds: int,
-        final_game_year: int,
-        prompt_ablations: list[PromptAblation],
+        params: AgentParams,
     ) -> AgentResponse:
         """Prompt the model for a response."""
 
@@ -203,6 +196,12 @@ class APIAgent(Agent):
             self.backend = OpenAICompletionBackend(model_name)
         elif "claude" in model_name:
             self.backend = ClaudeCompletionBackend(model_name)
+        elif "llama" in model_name:
+            self.local_llm_path = kwargs.pop("local_llm_path")
+            self.device = kwargs.pop("device")
+            self.quantization = kwargs.pop("quantization")
+            self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
+            self.backend = HuggingFaceCausalLMBackend(model_name, self.local_llm_path, self.device, self.quantization, self.fourbit_compute_dtype)
         else:
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
@@ -325,6 +324,7 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         or "davinci-" in model_name
         or "text-" in model_name
         or "claude" in model_name
+        or "llama" in model_name
     ):
         return APIAgent(model_name, **kwargs)
     else:
