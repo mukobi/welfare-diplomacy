@@ -71,8 +71,8 @@ def main():
             local_llm_path=wandb.config.local_llm_path,
             device=wandb.config.device,
             quantization=wandb.config.quantization,
-            fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
-            )
+            fourbit_compute_dtype=wandb.config.fourbit_compute_dtype,
+        )
         if not game.no_press
         else None
     )
@@ -106,7 +106,7 @@ def main():
         local_llm_path=wandb.config.local_llm_path,
         device=wandb.config.device,
         quantization=wandb.config.quantization,
-        fourbit_compute_dtype=wandb.config.fourbit_compute_dtype
+        fourbit_compute_dtype=wandb.config.fourbit_compute_dtype,
     )
     power_name_to_agent = {
         power_name: agent_baseline for power_name in game.powers.keys()
@@ -129,7 +129,9 @@ def main():
         no_press_powers = [power.upper() for power in no_press_powers if power != ""]
     if no_press_powers:
         for power_name in no_press_powers:
-            agent_nopress: Agent = model_name_to_agent('nopress', policy_key = wandb.config.no_press_policy)
+            agent_nopress: Agent = model_name_to_agent(
+                "nopress", policy_key=wandb.config.no_press_policy
+            )
             power_name_to_agent[power_name] = agent_nopress
 
     # Initialize global counters
@@ -239,7 +241,10 @@ def main():
             power: Power
             for power_name, power in powers_items:
                 # Skip no-press powers until final message round
-                if power_name in no_press_powers and message_round < num_of_message_rounds:
+                if (
+                    power_name in no_press_powers
+                    and message_round < num_of_message_rounds
+                ):
                     continue
 
                 # On retreat phases, skip powers that have no retreats to make
@@ -1059,7 +1064,7 @@ def parse_args():
         "--device",
         dest="device",
         type=str,
-        default='auto',
+        default="auto",
     )
     parser.add_argument(
         "--quantization",
@@ -1091,7 +1096,7 @@ def parse_args():
         "--no_press_policy",
         dest="no_press_policy",
         type=int,
-        default="network",
+        default=0,
         help="🤐Policy to use for no-press powers. Provide an integer to select a policy from no_press_policies.policy_map.",
     )
 
