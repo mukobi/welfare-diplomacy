@@ -1059,31 +1059,35 @@ def parse_args():
         dest="local_llm_path",
         type=str,
         default=None,
+        help="📁Path to a local LLM model to use instead of downloading from HuggingFace.",
     )
     parser.add_argument(
         "--device",
         dest="device",
         type=str,
         default="auto",
+        help="📱Device to use for the model. Can be 'cpu', 'cuda', or 'auto'.",
     )
     parser.add_argument(
         "--quantization",
         dest="quantization",
         type=int,
         default=None,
+        help="📉Quantization level to use for the model. If None, no quantization is used. If 8, uses 8-bit quantization. If 4, uses 4-bit quantization.",
     )
     parser.add_argument(
         "--fourbit_compute_dtype",
         dest="fourbit_compute_dtype",
         type=int,
         default=32,
+        help="📉Compute dtype to use for 4-bit quantization. If 32, uses 32-bit compute dtype. If 16, uses 16-bit compute dtype.",
     )
     parser.add_argument(
         "--no_press",
         dest="no_press",
         type=bool,
         default=False,
-        help="If 'True', all agents play a no-press policy. For debugging purposes.",
+        help="🤐If 'True', all agents play a no-press policy. For debugging purposes.",
     )
     parser.add_argument(
         "--no_press_powers",
