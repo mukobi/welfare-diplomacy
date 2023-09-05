@@ -40,6 +40,14 @@ def main():
     # Parse args
     args = parse_args()
 
+    # Calculate some config things we want to save
+    args.num_exploiter_powers = (
+        len(args.exploiter_powers.split(",")) if args.exploiter_powers else 0
+    )
+    args.num_prompt_ablations = (
+        len(args.prompt_ablations.split(",")) if args.prompt_ablations else 0
+    )
+
     # Initialize seed, wandb, game, logger, agent, and summarizer
     wandb.init(
         entity=args.entity,
