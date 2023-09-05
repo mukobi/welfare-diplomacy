@@ -157,7 +157,7 @@ def validate_config(config: wandb.Config, game: Game):
     # Check exploiter powers are valid powers in the game
     assert_comma_separated_string(
         "exploiter_powers",
-        config.exploiter_powers,
+        config.exploiter_powers.lower(),
         [name.lower() for name in list(game.powers.keys())],
     )
 
