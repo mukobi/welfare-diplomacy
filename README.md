@@ -14,6 +14,15 @@ The complete documentation is available at [diplomacy.readthedocs.io](https://di
 
 If you just want to run our agents with our scaffolding in the `experiments` folder, do this:
 
+0. Clone the repo with submodules to get `welfare_diplomacy_baselines`
+```
+git clone --recurse-submodules https://github.com/mukobi/welfare-diplomacy.git
+```
+Or if you've already cloned this repo, then pull the submodule with
+```
+git submodule update --init
+```
+
 1. Install PyTorch separately
 
 > See https://pytorch.org/get-started/locally/
@@ -28,7 +37,7 @@ pip install -r requirements_dev.txt
 pip install -r welfare_diplomacy_baselines/requirements.txt  
 ```
 
-4. Run the `simulate_game.py` script
+4. Read the arguments for the `simulate_game.py` script
 
 ```bash
 python experiments/simulate_game.py --help
@@ -36,6 +45,15 @@ python experiments/simulate_game.py --help
 This will show all the parameters you can use to run experiments.
 
 Note that you should set your `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables if you plan to use OpenAI or Anthropic API models.
+
+5. Run experiments!
+```bash
+# If you just want to check that things are working and installed, run a game with random agents
+python experiments/simulate_game.py --agent_model random --summarizer_model passthrough --disable_wandb
+
+# To run a full game with GPT-4 agents and log the results to Weights & Biases, use the default parameters
+python experiments/simulate_game.py
+```
 
 
 ## Old Getting Started [For Reference]
