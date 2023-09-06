@@ -237,6 +237,10 @@ class APIAgent(Agent):
                 else "*model outputted no reasoning*"
             )
             orders = completion["orders"]
+            # Clean orders
+            for order in orders:
+                if not isinstance(order, str):
+                    raise AgentCompletionError(f"Order is not a str\n\Response: {response}")
             # Enforce no messages in no_press
             if params.game.no_press:
                 completion["messages"] = {}
