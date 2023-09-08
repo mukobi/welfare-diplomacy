@@ -988,7 +988,7 @@ def parse_args():
         "--max_years",
         dest="max_years",
         type=int,
-        default=5,
+        default=10,
         help="🗓️ Ends the game after this many years (~3x as many turns).",
     )
     parser.add_argument(
