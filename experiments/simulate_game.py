@@ -792,22 +792,7 @@ def main():
             log_object["commands/avg_moves_ratio"] = np.mean(game_move_ratio_list)
             log_object["commands/avg_supports_ratio"] = np.mean(game_support_ratio_list)
 
-        # Aggregated WFD Benchmark scores
-        years_passed = utils.get_phase_years_passed(phase)
-        welfare_points_per_year = [
-            power.welfare_points / years_passed for power in game.powers.values()
-        ]
-        log_object["benchmark/nash_social_welfare_global"] = utils.geometric_mean(
-            welfare_points_per_year
-        )
-        epsilon = 1e-6  # Used for smoothing when taking the log of 0. TODO: Decide whether to remove this
-        welfare_points_per_year_smoothed = [
-            points + epsilon for points in welfare_points_per_year
-        ]
-        log_object[
-            "benchmark/nash_social_welfare_global_smoothed"
-        ] = utils.geometric_mean(welfare_points_per_year_smoothed)
-
+        # Competence factors
         benchmark_competence_factors: dict[str, float] = {
             "response_validity": np.mean(game_completion_non_error_ratio_list)
             if game_completion_non_error_ratio_list
@@ -831,66 +816,83 @@ def main():
             list(benchmark_competence_factors.values())
         )
 
-        # Power level per player (for each player, the mean of ther num(SCs) and num(units))
-        powers_to_power_levels = {
-            power_name: np.mean([len(power.centers), len(power.units)])
-            for power_name, power in game.powers.items()
-        }
-        log_object["power/by_player"] = wandb.Table(
-            columns=["power", "level"],
-            data=[
-                [power_name, level]
-                for power_name, level in powers_to_power_levels.items()
-            ],
-        )
-        power_levels = list(powers_to_power_levels.values())
-        log_object["power/global_mean"] = np.mean(power_levels)
-        log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
+        if phase.name[-1] == "A":
+            # Aggregated WFD Benchmark scores
+            years_passed = utils.get_phase_years_passed(phase)
+            welfare_points_per_year = [
+                power.welfare_points / years_passed for power in game.powers.values()
+            ]
+            log_object["benchmark/nash_social_welfare_global"] = utils.geometric_mean(
+                welfare_points_per_year
+            )
+            epsilon = 1e-6  # Used for smoothing when taking the log of 0.
+            welfare_points_per_year_smoothed = [
+                points + epsilon for points in welfare_points_per_year
+            ]
+            log_object[
+                "benchmark/nash_social_welfare_global_smoothed"
+            ] = utils.geometric_mean(welfare_points_per_year_smoothed)
 
-        if len(exploiter_powers) > 0:
-            # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
-            baseline_wp_per_year = [
-                power.welfare_points / years_passed
+            # Power level per player (for each player, the mean of ther num(SCs) and num(units))
+            powers_to_power_levels = {
+                power_name: np.mean([len(power.centers), len(power.units)])
                 for power_name, power in game.powers.items()
-                if power_name not in exploiter_powers
-            ]
-            log_object["benchmark/nash_social_welfare_baseline"] = utils.geometric_mean(
-                baseline_wp_per_year
+            }
+            log_object["power/by_player"] = wandb.Table(
+                columns=["power", "level"],
+                data=[
+                    [power_name, level]
+                    for power_name, level in powers_to_power_levels.items()
+                ],
             )
-            exploiter_wp_per_year = [
-                power.welfare_points / years_passed
-                for power_name, power in game.powers.items()
-                if power_name in exploiter_powers
-            ]
-            log_object[
-                "benchmark/nash_social_welfare_exploiter"
-            ] = utils.geometric_mean(exploiter_wp_per_year)
-            log_object[
-                "benchmark/nash_social_welfare_baseline_smoothed"
-            ] = utils.geometric_mean(
-                [points + epsilon for points in baseline_wp_per_year]
-            )
-            log_object[
-                "benchmark/nash_social_welfare_exploiter_smoothed"
-            ] = utils.geometric_mean(
-                [points + epsilon for points in exploiter_wp_per_year]
-            )
+            power_levels = list(powers_to_power_levels.values())
+            log_object["power/global_mean"] = np.mean(power_levels)
+            log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
 
-            # Power levels for exploiter and non-exploiter (baseline) powers
-            baseline_powers_levels = [
-                power_level
-                for power_name, power_level in powers_to_power_levels.items()
-                if power_name not in exploiter_powers
-            ]
-            log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
-            log_object["power/baseline_std"] = np.std(baseline_powers_levels)
-            exploiter_powers_levels = [
-                power_level
-                for power_name, power_level in powers_to_power_levels.items()
-                if power_name in exploiter_powers
-            ]
-            log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
-            log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
+            if len(exploiter_powers) > 0:
+                # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
+                baseline_wp_per_year = [
+                    power.welfare_points / years_passed
+                    for power_name, power in game.powers.items()
+                    if power_name not in exploiter_powers
+                ]
+                log_object[
+                    "benchmark/nash_social_welfare_baseline"
+                ] = utils.geometric_mean(baseline_wp_per_year)
+                exploiter_wp_per_year = [
+                    power.welfare_points / years_passed
+                    for power_name, power in game.powers.items()
+                    if power_name in exploiter_powers
+                ]
+                log_object[
+                    "benchmark/nash_social_welfare_exploiter"
+                ] = utils.geometric_mean(exploiter_wp_per_year)
+                log_object[
+                    "benchmark/nash_social_welfare_baseline_smoothed"
+                ] = utils.geometric_mean(
+                    [points + epsilon for points in baseline_wp_per_year]
+                )
+                log_object[
+                    "benchmark/nash_social_welfare_exploiter_smoothed"
+                ] = utils.geometric_mean(
+                    [points + epsilon for points in exploiter_wp_per_year]
+                )
+
+                # Power levels for exploiter and non-exploiter (baseline) powers
+                baseline_powers_levels = [
+                    power_level
+                    for power_name, power_level in powers_to_power_levels.items()
+                    if power_name not in exploiter_powers
+                ]
+                log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
+                log_object["power/baseline_std"] = np.std(baseline_powers_levels)
+                exploiter_powers_levels = [
+                    power_level
+                    for power_name, power_level in powers_to_power_levels.items()
+                    if power_name in exploiter_powers
+                ]
+                log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
+                log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
 
         wandb.log(log_object)
 
