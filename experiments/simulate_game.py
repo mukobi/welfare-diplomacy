@@ -172,7 +172,7 @@ def main():
     # Log the initial state of the game
     rendered_with_orders = game.render(incl_abbrev=True)
     log_object = {
-        "meta/year_fractional": 0.0,
+        "_progress/year_fractional": 0.0,
         "board/rendering_with_orders": wandb.Html(rendered_with_orders),
         "board/rendering_state": wandb.Html(rendered_with_orders),
     }
@@ -905,8 +905,6 @@ def main():
                 log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
                 log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
 
-        wandb.log(log_object)
-
         # Print some information about the game
         utils.log_info(
             logger, f"📊 {phase.name} {utils.get_power_scores_string(game, abbrev=True)}"
@@ -924,7 +922,24 @@ def main():
             # Retreats, don't count it
             pass
         else:
-            raise ValueError(f"Unknown phase type {new_phase_type}")
+            utils.log_warning(logger, f"Unknown phase type {new_phase_type}")
+
+        # Get % done and time remaining from the progress bar
+        bar_state = progress_bar_phase.format_dict
+        percent_done = (
+            bar_state["n"] / bar_state["total"] if bar_state["total"] else np.NaN
+        )
+        seconds_remaining = (
+            (bar_state["total"] - bar_state["n"]) / bar_state["rate"]
+            if bar_state["rate"] and bar_state["total"]
+            else np.NaN
+        )
+        hours_remaining = seconds_remaining / 3600
+
+        log_object["_progress/percent_done"] = percent_done
+        log_object["_progress/hours_remaining"] = hours_remaining
+
+        wandb.log(log_object)
 
     # Game completed, log game save for reloading it later
     saved_game_data = to_saved_game_format(game)
