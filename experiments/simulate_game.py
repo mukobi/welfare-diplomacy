@@ -928,7 +928,7 @@ def main():
         bar_state = progress_bar_phase.format_dict
         percent_done = (
             bar_state["n"] / bar_state["total"] if bar_state["total"] else np.NaN
-        )
+        ) * 100.0
         seconds_remaining = (
             (bar_state["total"] - bar_state["n"]) / bar_state["rate"]
             if bar_state["rate"] and bar_state["total"]
