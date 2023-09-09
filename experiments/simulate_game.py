@@ -566,7 +566,7 @@ def main():
         )
 
         log_object = {
-            "meta/year_fractional": utils.get_phase_fractional_years_passed(phase),
+            "_progress/year_fractional": utils.get_phase_fractional_years_passed(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/phase_total_num": phase_orders_total_num,
