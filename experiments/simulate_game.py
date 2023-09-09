@@ -5,6 +5,7 @@ Language model scaffolding to play Diplomacy.
 """
 
 import argparse
+from datetime import datetime
 import json
 import logging
 import os
@@ -302,9 +303,11 @@ def main():
                         )
                         agent_response.messages = {}
                 phase_num_valid_completions += 1
+                now = datetime.now()
+                current_time = now.strftime("%Y-%m-%d %H:%M:%S")
                 utils.log_info(
                     logger,
-                    f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
+                    f"⚙️  {current_time} {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
                 )
                 # Check how many of the orders were valid
                 num_valid_orders = 0
