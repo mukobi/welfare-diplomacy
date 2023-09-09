@@ -1122,11 +1122,21 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        # Manually write it with the logger so it doesn't get hidden in wandb
+        # Manually write it with the logger so it doesn't get hidden in wandb logs
         tqdm.write("\n\n\n")  # Add some spacing
+        exception_trace = "".join(
+            traceback.TracebackException.from_exception(exc).format()
+        )
         utils.log_error(
             logger,
-            f"💀 FATAL EXCEPTION: {''.join(traceback.TracebackException.from_exception(exc).format())}",
+            f"💀 FATAL EXCEPTION: {exception_trace}",
+        )
+        wandb.log(
+            {
+                "fatal_exception_trace": wandb.Table(
+                    columns=["trace"], data=[[exception_trace]]
+                )
+            }
         )
         tqdm.write("\n\n\n")  # Add some spacing
         raise exc
