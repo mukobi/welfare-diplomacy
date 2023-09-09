@@ -305,9 +305,12 @@ def main():
                 phase_num_valid_completions += 1
                 now = datetime.now()
                 current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+                agent_log_string = f"⚙️  {current_time} {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond."
+                if not isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled):
+                    agent_log_string += "\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}"
                 utils.log_info(
                     logger,
-                    f"⚙️  {current_time} {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
+                    agent_log_string,
                 )
                 # Check how many of the orders were valid
                 num_valid_orders = 0
@@ -347,11 +350,16 @@ def main():
                     if valid_order_ratio is not None
                     else np.NaN
                 )
-                utils.log_info(
-                    logger,
-                    f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
-                    + (f". Invalid Orders: {invalid_orders}" if invalid_orders else ""),
-                )
+                if not isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled):
+                    utils.log_info(
+                        logger,
+                        f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
+                        + (
+                            f". Invalid Orders: {invalid_orders}"
+                            if invalid_orders
+                            else ""
+                        ),
+                    )
                 phase_orders_total_num += num_orders
                 phase_orders_valid_num += num_valid_orders
                 if valid_order_ratio is not None:
