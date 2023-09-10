@@ -281,6 +281,7 @@ def main():
                 except AgentCompletionError as exc:
                     # If the agent fails to complete, we need to log the error and continue
                     phase_num_completion_errors += 1
+                    game_num_completion_errors += 1
                     utils.log_error(
                         logger,
                         f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
