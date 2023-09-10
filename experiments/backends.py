@@ -162,7 +162,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError, max_time=129)
+    @backoff.on_exception(backoff.expo, OpenAIError, max_time=513)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.ChatCompletion.create(**kwargs)
@@ -217,7 +217,7 @@ class OpenAICompletionBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError, max_time=129)
+    @backoff.on_exception(backoff.expo, OpenAIError, max_time=513)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.Completion.create(**kwargs)
@@ -263,7 +263,7 @@ class ClaudeCompletionBackend:
             total_tokens=estimated_prompt_tokens + estimated_completion_tokens,
         )
 
-    @backoff.on_exception(backoff.expo, APIError, max_time=129)
+    @backoff.on_exception(backoff.expo, APIError, max_time=513)
     def completion_with_backoff(self, **kwargs):
         """Exponential backoff for Claude API errors."""
         response = self.anthropic.completions.create(**kwargs)
