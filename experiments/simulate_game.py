@@ -161,6 +161,7 @@ def main():
     game_message_similarity_list: list[float] = []
     game_order_valid_ratio_avg_list: list[float] = []
     game_completion_non_error_ratio_list: list[int] = []
+    game_completion_error_traces: list[list[str]] = []
     game_num_completion_errors: int = 0
     game_completion_time_avg_sec_list: list[float] = []
     game_tokens_prompt_sum: int = 0
@@ -282,9 +283,29 @@ def main():
                     # If the agent fails to complete, we need to log the error and continue
                     phase_num_completion_errors += 1
                     game_num_completion_errors += 1
+                    exception_trace = "".join(
+                        traceback.TracebackException.from_exception(exc).format()
+                    )
                     utils.log_error(
                         logger,
-                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exception_trace}",
+                    )
+                    # Log the error to Weights & Biases
+                    game_completion_error_traces.append(
+                        [
+                            game.get_current_phase(),
+                            message_round,
+                            power_name,
+                            exception_trace,
+                        ]
+                    )
+                    wandb.log(
+                        {
+                            "completion_error_table": wandb.Table(
+                                columns=["phase", "round", "power", "exception"],
+                                data=game_completion_error_traces,
+                            )
+                        }
                     )
                     progress_bar_messages.update(1)
                     continue
@@ -388,6 +409,23 @@ def main():
                     utils.log_error(
                         logger,
                         f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                    )
+                    # Log the error to Weights & Biases
+                    game_completion_error_traces.append(
+                        [
+                            game.get_current_phase(),
+                            message_round,
+                            power_name,
+                            exception_trace,
+                        ]
+                    )
+                    wandb.log(
+                        {
+                            "completion_error_table": wandb.Table(
+                                columns=["phase", "round", "power", "exception"],
+                                data=game_completion_error_traces,
+                            )
+                        }
                     )
                     progress_bar_messages.update(1)
                     continue
