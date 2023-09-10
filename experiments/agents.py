@@ -17,7 +17,12 @@ import wandb
 from welfare_diplomacy_baselines.environment import mila_actions, diplomacy_state
 from welfare_diplomacy_baselines.baselines import no_press_policies
 
-from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
+from backends import (
+    ClaudeCompletionBackend,
+    OpenAIChatBackend,
+    OpenAICompletionBackend,
+    HuggingFaceCausalLMBackend,
+)
 from data_types import (
     AgentResponse,
     AgentParams,
@@ -201,7 +206,13 @@ class APIAgent(Agent):
             self.device = kwargs.pop("device")
             self.quantization = kwargs.pop("quantization")
             self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
-            self.backend = HuggingFaceCausalLMBackend(model_name, self.local_llm_path, self.device, self.quantization, self.fourbit_compute_dtype)
+            self.backend = HuggingFaceCausalLMBackend(
+                model_name,
+                self.local_llm_path,
+                self.device,
+                self.quantization,
+                self.fourbit_compute_dtype,
+            )
         else:
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
@@ -214,10 +225,13 @@ class APIAgent(Agent):
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
-        response: BackendResponse = self.backend.complete(
-            system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
-        )
         try:
+            response: BackendResponse = self.backend.complete(
+                system_prompt,
+                user_prompt,
+                temperature=self.temperature,
+                top_p=self.top_p,
+            )
             json_completion = response.completion
             # Remove repeated **system** from parroty completion models
             json_completion = json_completion.split("**")[0].strip(" `\n")
@@ -267,27 +281,30 @@ class APIAgent(Agent):
             completion_time_sec=response.completion_time_sec,
         )
 
+
 class NoPressAgent(Agent):
     """Follows a no-press policy from baselines.
-    
+
     Args:
         policy_key: int to select a policy from no_press_policies.policy_map."""
 
     def __init__(self, policy_key: int):
         self.policy_key = policy_key
         self.policy = no_press_policies.policy_map[policy_key]()
-    
+
     def __repr__(self) -> str:
         return f"NoPressAgent(key={self.policy_key})"
-    
+
     def respond(self, params: AgentParams) -> AgentResponse:
         power_slot = [sorted(params.game.map.powers).index(params.power.name)]
         state = diplomacy_state.WelfareDiplomacyState(params.game)
         observation = state.observation()
         legal_actions = state.legal_actions()
-        
+
         self.policy.reset()
-        actions = self.policy.actions(power_slot, observation, legal_actions)[0][0] # policy.actions returns a tuple: a list of lists of actions for each slot, and info about the step
+        actions = self.policy.actions(power_slot, observation, legal_actions)[0][
+            0
+        ]  # policy.actions returns a tuple: a list of lists of actions for each slot, and info about the step
 
         # Convert actions to MILA orders.
         orders = []
@@ -295,7 +312,9 @@ class NoPressAgent(Agent):
             candidate_orders = mila_actions.action_to_mila_actions(action)
             order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
             orders.append(order)
-        assert len(actions) == len(orders), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
+        assert len(actions) == len(
+            orders
+        ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
 
         return AgentResponse(
             reasoning="Orders from no-press baseline policy.",
