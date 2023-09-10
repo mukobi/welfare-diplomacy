@@ -225,6 +225,7 @@ class APIAgent(Agent):
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
+        response = None
         try:
             response: BackendResponse = self.backend.complete(
                 system_prompt,
