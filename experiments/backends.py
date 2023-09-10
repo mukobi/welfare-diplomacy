@@ -161,11 +161,12 @@ class OpenAICompletionBackend(LanguageModelBackend):
         self,
         system_prompt: str,
         user_prompt: str,
+        completion_preface: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
         try:
-            full_prompt = f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):"
+            full_prompt = f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):" + completion_preface
             response = self.completions_with_backoff(
                 model=self.model_name,
                 prompt=full_prompt,
@@ -216,10 +217,11 @@ class ClaudeCompletionBackend:
         self,
         system_prompt: str,
         user_prompt: str,
+        completion_preface: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
-        prompt = f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}"
+        prompt = f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}" + completion_preface
         estimated_prompt_tokens = self.anthropic.count_tokens(prompt)
 
         start_time = time.time()

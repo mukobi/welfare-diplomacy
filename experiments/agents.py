@@ -206,7 +206,7 @@ class APIAgent(Agent):
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
-        self.use_prompt_preface = kwargs.pop("use_prompt_preface", False)
+        self.completion_preface = kwargs.pop("completion_preface", False)
 
     def __repr__(self) -> str:
         return f"APIAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
@@ -215,7 +215,7 @@ class APIAgent(Agent):
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
-        if self.use_preface:
+        if self.completion_preface:
             preface_prompt = prompts.get_preface_prompt(params)
             response: BackendResponse = self.backend.complete(
                 system_prompt, user_prompt, completion_preface=preface_prompt, temperature=self.temperature, top_p=self.top_p
@@ -225,7 +225,7 @@ class APIAgent(Agent):
                 system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
             )
         try:
-            if self.use_preface:
+            if self.completion_preface:
                 json_completion = preface_prompt + response.completion
             else:
                 json_completion = response.completion
