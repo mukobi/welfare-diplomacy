@@ -1081,7 +1081,7 @@ def parse_args():
         "--max_completion_errors",
         dest="max_completion_errors",
         type=int,
-        default=10,
+        default=20,
         help="🚫Max number of completion errors before killing the run.",
     )
     parser.add_argument(
