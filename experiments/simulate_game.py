@@ -1091,6 +1091,13 @@ def parse_args():
         help="📉Compute dtype to use for 4-bit quantization. If 32, uses 32-bit compute dtype. If 16, uses 16-bit compute dtype.",
     )
     parser.add_argument(
+        "--prompt_preface",
+        dest="prompt_preface",
+        type=bool,
+        default=False,
+        help="📉If 'True', use the prompt preface to help agents comply with the json format.",
+    )
+    parser.add_argument(
         "--no_press",
         dest="no_press",
         type=bool,

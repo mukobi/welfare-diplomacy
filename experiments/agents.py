@@ -206,6 +206,7 @@ class APIAgent(Agent):
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
+        self.use_prompt_preface = kwargs.pop("use_prompt_preface", False)
 
     def __repr__(self) -> str:
         return f"APIAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
@@ -214,11 +215,20 @@ class APIAgent(Agent):
         """Prompt the model for a response."""
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
-        response: BackendResponse = self.backend.complete(
-            system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
-        )
+        if self.use_preface:
+            preface_prompt = prompts.get_preface_prompt(params)
+            response: BackendResponse = self.backend.complete(
+                system_prompt, user_prompt, completion_preface=preface_prompt, temperature=self.temperature, top_p=self.top_p
+            )
+        else:
+            response: BackendResponse = self.backend.complete(
+                system_prompt, user_prompt, temperature=self.temperature, top_p=self.top_p
+            )
         try:
-            json_completion = response.completion
+            if self.use_preface:
+                json_completion = preface_prompt + response.completion
+            else:
+                json_completion = response.completion
             # Remove repeated **system** from parroty completion models
             json_completion = json_completion.split("**")[0].strip(" `\n")
 

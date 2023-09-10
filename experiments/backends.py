@@ -66,10 +66,11 @@ class HuggingFaceCausalLMBackend(LanguageModelBackend):
         self,
         system_prompt: str,
         user_prompt: str,
+        completion_preface: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
-        prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]"
+        prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]" + completion_preface
         start_time = time.time()
 
         with torch.no_grad():
