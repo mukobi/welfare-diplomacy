@@ -155,7 +155,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
 
         except Exception as exc:  # pylint: disable=broad-except
-            self.logger.error(
+            print(
                 "Error completing prompt ending in\n%s\n\nException:\n%s",
                 user_prompt[-300:],
                 exc,
@@ -210,7 +210,7 @@ class OpenAICompletionBackend(LanguageModelBackend):
             )
 
         except Exception as exc:  # pylint: disable=broad-except
-            self.logger.error(
+            print(
                 "Error completing prompt ending in\n%s\n\nException:\n%s",
                 user_prompt[-300:],
                 exc,
