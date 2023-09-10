@@ -5,6 +5,7 @@ Language model scaffolding to play Diplomacy.
 """
 
 import argparse
+from datetime import datetime
 import json
 import logging
 import os
@@ -161,6 +162,8 @@ def main():
     game_message_similarity_list: list[float] = []
     game_order_valid_ratio_avg_list: list[float] = []
     game_completion_non_error_ratio_list: list[int] = []
+    game_completion_error_traces: list[list[str]] = []
+    game_num_completion_errors: int = 0
     game_completion_time_avg_sec_list: list[float] = []
     game_tokens_prompt_sum: int = 0
     game_tokens_completion_sum: int = 0
@@ -172,7 +175,7 @@ def main():
     # Log the initial state of the game
     rendered_with_orders = game.render(incl_abbrev=True)
     log_object = {
-        "meta/year_fractional": 0.0,
+        "_progress/year_fractional": 0.0,
         "board/rendering_with_orders": wandb.Html(rendered_with_orders),
         "board/rendering_state": wandb.Html(rendered_with_orders),
     }
@@ -280,9 +283,30 @@ def main():
                 except AgentCompletionError as exc:
                     # If the agent fails to complete, we need to log the error and continue
                     phase_num_completion_errors += 1
+                    game_num_completion_errors += 1
+                    exception_trace = "".join(
+                        traceback.TracebackException.from_exception(exc).format()
+                    )
                     utils.log_error(
                         logger,
-                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} failed to complete ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exception_trace}",
+                    )
+                    # Log the error to Weights & Biases
+                    game_completion_error_traces.append(
+                        [
+                            game.get_current_phase(),
+                            message_round,
+                            power_name,
+                            exception_trace,
+                        ]
+                    )
+                    wandb.log(
+                        {
+                            "completion_error_table": wandb.Table(
+                                columns=["phase", "round", "power", "exception"],
+                                data=game_completion_error_traces,
+                            )
+                        }
                     )
                     progress_bar_messages.update(1)
                     continue
@@ -303,9 +327,14 @@ def main():
                         )
                         agent_response.messages = {}
                 phase_num_valid_completions += 1
+                now = datetime.now()
+                current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+                agent_log_string = f"⚙️  {current_time} {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond."
+                if isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled):
+                    agent_log_string += f"\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}"
                 utils.log_info(
                     logger,
-                    f"⚙️  {power_name} {game.get_current_phase()} Round {message_round}: Agent {agent} took {agent_response.completion_time_sec:.2f}s to respond.\nReasoning: {agent_response.reasoning}\nOrders: {agent_response.orders}\nMessages: {agent_response.messages}",
+                    agent_log_string,
                 )
                 # Check how many of the orders were valid
                 num_valid_orders = 0
@@ -345,11 +374,16 @@ def main():
                     if valid_order_ratio is not None
                     else np.NaN
                 )
-                utils.log_info(
-                    logger,
-                    f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
-                    + (f". Invalid Orders: {invalid_orders}" if invalid_orders else ""),
-                )
+                if isinstance(wandb.run.mode, wandb.sdk.lib.disabled.RunDisabled):
+                    utils.log_info(
+                        logger,
+                        f"✔️  {power_name} valid orders: {num_valid_orders}/{num_orders} = {valid_order_display_percent:.2f}%"
+                        + (
+                            f". Invalid Orders: {invalid_orders}"
+                            if invalid_orders
+                            else ""
+                        ),
+                    )
                 phase_orders_total_num += num_orders
                 phase_orders_valid_num += num_valid_orders
                 if valid_order_ratio is not None:
@@ -372,9 +406,27 @@ def main():
                 except Exception as exc:
                     # If the agent gave an invalid order, we need to log the error and continue
                     phase_num_completion_errors += 1
+                    game_num_completion_errors += 1
                     utils.log_error(
                         logger,
                         f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                    )
+                    # Log the error to Weights & Biases
+                    game_completion_error_traces.append(
+                        [
+                            game.get_current_phase(),
+                            message_round,
+                            power_name,
+                            exception_trace,
+                        ]
+                    )
+                    wandb.log(
+                        {
+                            "completion_error_table": wandb.Table(
+                                columns=["phase", "round", "power", "exception"],
+                                data=game_completion_error_traces,
+                            )
+                        }
                     )
                     progress_bar_messages.update(1)
                     continue
@@ -556,7 +608,7 @@ def main():
         )
 
         log_object = {
-            "meta/year_fractional": utils.get_phase_fractional_years_passed(phase),
+            "_progress/year_fractional": utils.get_phase_fractional_years_passed(phase),
             "board/rendering_with_orders": wandb.Html(rendered_with_orders),
             "board/rendering_state": wandb.Html(rendered_state),
             "orders/phase_total_num": phase_orders_total_num,
@@ -597,6 +649,8 @@ def main():
             )
             if game_completion_non_error_ratio_list
             else None,
+            "model/phase_num_completion_errors": phase_num_completion_errors,
+            "model/game_num_completion_errors": game_num_completion_errors,
             "tokens/prompt_tokens_avg": np.mean(phase_prompt_tokens_list)
             if phase_prompt_tokens_list
             else None,
@@ -793,22 +847,7 @@ def main():
             log_object["commands/avg_moves_ratio"] = np.mean(game_move_ratio_list)
             log_object["commands/avg_supports_ratio"] = np.mean(game_support_ratio_list)
 
-        # Aggregated WFD Benchmark scores
-        years_passed = utils.get_phase_years_passed(phase)
-        welfare_points_per_year = [
-            power.welfare_points / years_passed for power in game.powers.values()
-        ]
-        log_object["benchmark/nash_social_welfare_global"] = utils.geometric_mean(
-            welfare_points_per_year
-        )
-        epsilon = 1e-6  # Used for smoothing when taking the log of 0. TODO: Decide whether to remove this
-        welfare_points_per_year_smoothed = [
-            points + epsilon for points in welfare_points_per_year
-        ]
-        log_object[
-            "benchmark/nash_social_welfare_global_smoothed"
-        ] = utils.geometric_mean(welfare_points_per_year_smoothed)
-
+        # Competence factors
         benchmark_competence_factors: dict[str, float] = {
             "response_validity": np.mean(game_completion_non_error_ratio_list)
             if game_completion_non_error_ratio_list
@@ -832,68 +871,83 @@ def main():
             list(benchmark_competence_factors.values())
         )
 
-        # Power level per player (for each player, the mean of ther num(SCs) and num(units))
-        powers_to_power_levels = {
-            power_name: np.mean([len(power.centers), len(power.units)])
-            for power_name, power in game.powers.items()
-        }
-        log_object["power/by_player"] = wandb.Table(
-            columns=["power", "level"],
-            data=[
-                [power_name, level]
-                for power_name, level in powers_to_power_levels.items()
-            ],
-        )
-        power_levels = list(powers_to_power_levels.values())
-        log_object["power/global_mean"] = np.mean(power_levels)
-        log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
+        if phase.name[-1] == "A":
+            # Aggregated WFD Benchmark scores
+            years_passed = utils.get_phase_years_passed(phase)
+            welfare_points_per_year = [
+                power.welfare_points / years_passed for power in game.powers.values()
+            ]
+            log_object["benchmark/nash_social_welfare_global"] = utils.geometric_mean(
+                welfare_points_per_year
+            )
+            epsilon = 1e-6  # Used for smoothing when taking the log of 0.
+            welfare_points_per_year_smoothed = [
+                points + epsilon for points in welfare_points_per_year
+            ]
+            log_object[
+                "benchmark/nash_social_welfare_global_smoothed"
+            ] = utils.geometric_mean(welfare_points_per_year_smoothed)
 
-        if len(exploiter_powers) > 0:
-            # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
-            baseline_wp_per_year = [
-                power.welfare_points / years_passed
+            # Power level per player (for each player, the mean of ther num(SCs) and num(units))
+            powers_to_power_levels = {
+                power_name: np.mean([len(power.centers), len(power.units)])
                 for power_name, power in game.powers.items()
-                if power_name not in exploiter_powers
-            ]
-            log_object["benchmark/nash_social_welfare_baseline"] = utils.geometric_mean(
-                baseline_wp_per_year
+            }
+            log_object["power/by_player"] = wandb.Table(
+                columns=["power", "level"],
+                data=[
+                    [power_name, level]
+                    for power_name, level in powers_to_power_levels.items()
+                ],
             )
-            exploiter_wp_per_year = [
-                power.welfare_points / years_passed
-                for power_name, power in game.powers.items()
-                if power_name in exploiter_powers
-            ]
-            log_object[
-                "benchmark/nash_social_welfare_exploiter"
-            ] = utils.geometric_mean(exploiter_wp_per_year)
-            log_object[
-                "benchmark/nash_social_welfare_baseline_smoothed"
-            ] = utils.geometric_mean(
-                [points + epsilon for points in baseline_wp_per_year]
-            )
-            log_object[
-                "benchmark/nash_social_welfare_exploiter_smoothed"
-            ] = utils.geometric_mean(
-                [points + epsilon for points in exploiter_wp_per_year]
-            )
+            power_levels = list(powers_to_power_levels.values())
+            log_object["power/global_mean"] = np.mean(power_levels)
+            log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
 
-            # Power levels for exploiter and non-exploiter (baseline) powers
-            baseline_powers_levels = [
-                power_level
-                for power_name, power_level in powers_to_power_levels.items()
-                if power_name not in exploiter_powers
-            ]
-            log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
-            log_object["power/baseline_std"] = np.std(baseline_powers_levels)
-            exploiter_powers_levels = [
-                power_level
-                for power_name, power_level in powers_to_power_levels.items()
-                if power_name in exploiter_powers
-            ]
-            log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
-            log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
+            if len(exploiter_powers) > 0:
+                # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
+                baseline_wp_per_year = [
+                    power.welfare_points / years_passed
+                    for power_name, power in game.powers.items()
+                    if power_name not in exploiter_powers
+                ]
+                log_object[
+                    "benchmark/nash_social_welfare_baseline"
+                ] = utils.geometric_mean(baseline_wp_per_year)
+                exploiter_wp_per_year = [
+                    power.welfare_points / years_passed
+                    for power_name, power in game.powers.items()
+                    if power_name in exploiter_powers
+                ]
+                log_object[
+                    "benchmark/nash_social_welfare_exploiter"
+                ] = utils.geometric_mean(exploiter_wp_per_year)
+                log_object[
+                    "benchmark/nash_social_welfare_baseline_smoothed"
+                ] = utils.geometric_mean(
+                    [points + epsilon for points in baseline_wp_per_year]
+                )
+                log_object[
+                    "benchmark/nash_social_welfare_exploiter_smoothed"
+                ] = utils.geometric_mean(
+                    [points + epsilon for points in exploiter_wp_per_year]
+                )
 
-        wandb.log(log_object)
+                # Power levels for exploiter and non-exploiter (baseline) powers
+                baseline_powers_levels = [
+                    power_level
+                    for power_name, power_level in powers_to_power_levels.items()
+                    if power_name not in exploiter_powers
+                ]
+                log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
+                log_object["power/baseline_std"] = np.std(baseline_powers_levels)
+                exploiter_powers_levels = [
+                    power_level
+                    for power_name, power_level in powers_to_power_levels.items()
+                    if power_name in exploiter_powers
+                ]
+                log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
+                log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
 
         # Print some information about the game
         utils.log_info(
@@ -912,7 +966,33 @@ def main():
             # Retreats, don't count it
             pass
         else:
-            raise ValueError(f"Unknown phase type {new_phase_type}")
+            utils.log_warning(logger, f"Unknown phase type {new_phase_type}")
+
+        # Get % done and time remaining from the progress bar
+        bar_state = progress_bar_phase.format_dict
+        percent_done = (
+            bar_state["n"] / bar_state["total"] if bar_state["total"] else np.NaN
+        ) * 100.0
+        seconds_remaining = (
+            (bar_state["total"] - bar_state["n"]) / bar_state["rate"]
+            if bar_state["rate"] and bar_state["total"]
+            else np.NaN
+        )
+        hours_remaining = seconds_remaining / 3600
+
+        log_object["_progress/percent_done"] = percent_done
+        log_object["_progress/hours_remaining"] = hours_remaining
+
+        wandb.log(log_object)
+
+        # Determine whether there have been too many completion errors to let this go on
+        if (
+            game_num_completion_errors > wandb.config.max_completion_errors
+            and wandb.config.max_completion_errors > 0
+        ):
+            raise RuntimeError(
+                f"Too many completion errors ({game_num_completion_errors}/{wandb.config.max_completion_errors})! Ending game."
+            )
 
     # Game completed, log game save for reloading it later
     saved_game_data = to_saved_game_format(game)
@@ -987,7 +1067,7 @@ def parse_args():
         "--max_years",
         dest="max_years",
         type=int,
-        default=5,
+        default=10,
         help="🗓️ Ends the game after this many years (~3x as many turns).",
     )
     parser.add_argument(
@@ -1019,7 +1099,7 @@ def parse_args():
     parser.add_argument(
         "--summarizer_model",
         dest="summarizer_model",
-        default="gpt-3.5-turbo-0613",
+        default="gpt-3.5-turbo-16k-0613",
         help="✍️ Model name to use for the message summarizer. Can be an OpenAI Chat model or 'passthrough'.",
     )
     parser.add_argument(
@@ -1035,6 +1115,13 @@ def parse_args():
         type=float,
         default=0.9,
         help="⚛️ Top-p for nucleus sampling.",
+    )
+    parser.add_argument(
+        "--max_completion_errors",
+        dest="max_completion_errors",
+        type=int,
+        default=30,
+        help="🚫Max number of completion errors before killing the run.",
     )
     parser.add_argument(
         "--prompt_ablations",
@@ -1128,11 +1215,21 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as exc:
-        # Manually write it with the logger so it doesn't get hidden in wandb
+        # Manually write it with the logger so it doesn't get hidden in wandb logs
         tqdm.write("\n\n\n")  # Add some spacing
+        exception_trace = "".join(
+            traceback.TracebackException.from_exception(exc).format()
+        )
         utils.log_error(
             logger,
-            f"💀 FATAL EXCEPTION: {''.join(traceback.TracebackException.from_exception(exc).format())}",
+            f"💀 FATAL EXCEPTION: {exception_trace}",
+        )
+        wandb.log(
+            {
+                "fatal_exception_trace": wandb.Table(
+                    columns=["trace"], data=[[exception_trace]]
+                )
+            }
         )
         tqdm.write("\n\n\n")  # Add some spacing
         raise exc

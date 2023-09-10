@@ -17,6 +17,7 @@ import torch
 
 from data_types import BackendResponse
 
+
 class LanguageModelBackend(ABC):
     """Abstract class for language model backends."""
 
@@ -35,14 +36,22 @@ class LanguageModelBackend(ABC):
         """
         raise NotImplementedError("Subclass must implement abstract method")
 
+
 class HuggingFaceCausalLMBackend(LanguageModelBackend):
     """HuggingFace chat completion backend (e.g. GPT-4, GPT-3.5-turbo)."""
 
-    def __init__(self, model_name, local_llm_path, device='cuda', quantization=None, fourbit_compute_dtype=32):
+    def __init__(
+        self,
+        model_name,
+        local_llm_path,
+        device="cuda",
+        quantization=None,
+        fourbit_compute_dtype=32,
+    ):
         super().__init__()
         self.model_name = model_name
         self.device = device
-        self.max_tokens = 1000 # TODO does this upperbound include the input prompt?
+        self.max_tokens = 1000  # TODO does this upperbound include the input prompt?
 
         if quantization == 4:
             fourbit = True
@@ -58,9 +67,19 @@ class HuggingFaceCausalLMBackend(LanguageModelBackend):
         else:
             bnb_4bit_compute_dtype = torch.bfloat32
 
-        quantization_config = BitsAndBytesConfig(load_in_4bit=fourbit, load_in_8bit=eightbit, bnb_4bit_compute_dtype=bnb_4bit_compute_dtype)
-        self.model = LlamaForCausalLM.from_pretrained(f"{local_llm_path}/{self.model_name}", quantization_config=quantization_config, device_map=self.device)
-        self.tokenizer = AutoTokenizer.from_pretrained(f"{local_llm_path}/{self.model_name}", use_fast=True)
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=fourbit,
+            load_in_8bit=eightbit,
+            bnb_4bit_compute_dtype=bnb_4bit_compute_dtype,
+        )
+        self.model = LlamaForCausalLM.from_pretrained(
+            f"{local_llm_path}/{self.model_name}",
+            quantization_config=quantization_config,
+            device_map=self.device,
+        )
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            f"{local_llm_path}/{self.model_name}", use_fast=True
+        )
 
     def complete(
         self,
@@ -70,7 +89,9 @@ class HuggingFaceCausalLMBackend(LanguageModelBackend):
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
-        prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]" + completion_preface
+        prompt = (
+            f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]" + completion_preface
+        )
         start_time = time.time()
 
         with torch.no_grad():
@@ -79,21 +100,24 @@ class HuggingFaceCausalLMBackend(LanguageModelBackend):
 
             # Generate
             generate_ids = self.model.generate(
-                inputs.input_ids.to(self.device), 
-                max_new_tokens=self.max_tokens, 
-                temperature=temperature, 
-                top_p=top_p
+                inputs.input_ids.to(self.device),
+                max_new_tokens=self.max_tokens,
+                temperature=temperature,
+                top_p=top_p,
             )
-            output_ids = generate_ids.cpu()[:, inputs.input_ids.shape[1]:]
-            completion = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True)[0]
+            output_ids = generate_ids.cpu()[:, inputs.input_ids.shape[1] :]
+            completion = self.tokenizer.batch_decode(
+                output_ids, skip_special_tokens=True, clean_up_tokenization_spaces=True
+            )[0]
             completion_time_sec = time.time() - start_time
             return BackendResponse(
-                completion=completion, 
+                completion=completion,
                 completion_time_sec=completion_time_sec,
                 prompt_tokens=estimated_tokens,
                 completion_tokens=self.max_tokens,
                 total_tokens=estimated_tokens,
             )
+
 
 class OpenAIChatBackend(LanguageModelBackend):
     """OpenAI chat completion backend (e.g. GPT-4, GPT-3.5-turbo)."""
@@ -132,14 +156,14 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
 
         except Exception as exc:  # pylint: disable=broad-except
-            self.logger.error(
+            print(
                 "Error completing prompt ending in\n%s\n\nException:\n%s",
                 user_prompt[-300:],
                 exc,
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError)
+    @backoff.on_exception(backoff.expo, OpenAIError, max_time=1025)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.ChatCompletion.create(**kwargs)
@@ -188,14 +212,14 @@ class OpenAICompletionBackend(LanguageModelBackend):
             )
 
         except Exception as exc:  # pylint: disable=broad-except
-            self.logger.error(
+            print(
                 "Error completing prompt ending in\n%s\n\nException:\n%s",
                 user_prompt[-300:],
                 exc,
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError)
+    @backoff.on_exception(backoff.expo, OpenAIError, max_time=1025)
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.Completion.create(**kwargs)
@@ -242,7 +266,7 @@ class ClaudeCompletionBackend:
             total_tokens=estimated_prompt_tokens + estimated_completion_tokens,
         )
 
-    @backoff.on_exception(backoff.expo, APIError, max_tries=10)
+    @backoff.on_exception(backoff.expo, APIError, max_time=1025)
     def completion_with_backoff(self, **kwargs):
         """Exponential backoff for Claude API errors."""
         response = self.anthropic.completions.create(**kwargs)

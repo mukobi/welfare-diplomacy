@@ -58,6 +58,19 @@
             "justMyCode": true
         },
         {
+            "name": "Claude-1.2 NoWandb",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/experiments/simulate_game.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--disable_wandb",
+                "--agent_model",
+                "claude-instant-1.2",
+            ],
+            "justMyCode": true
+        },
+        {
             "name": "Claude-2",
             "type": "python",
             "request": "launch",
