@@ -161,6 +161,7 @@ def main():
     game_message_similarity_list: list[float] = []
     game_order_valid_ratio_avg_list: list[float] = []
     game_completion_non_error_ratio_list: list[int] = []
+    game_num_completion_errors: int = 0
     game_completion_time_avg_sec_list: list[float] = []
     game_tokens_prompt_sum: int = 0
     game_tokens_completion_sum: int = 0
@@ -382,6 +383,7 @@ def main():
                 except Exception as exc:
                     # If the agent gave an invalid order, we need to log the error and continue
                     phase_num_completion_errors += 1
+                    game_num_completion_errors += 1
                     utils.log_error(
                         logger,
                         f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
@@ -607,6 +609,8 @@ def main():
             )
             if game_completion_non_error_ratio_list
             else None,
+            "model/phase_num_completion_errors": phase_num_completion_errors,
+            "model/game_num_completion_errors": game_num_completion_errors,
             "tokens/prompt_tokens_avg": np.mean(phase_prompt_tokens_list)
             if phase_prompt_tokens_list
             else None,
@@ -941,6 +945,15 @@ def main():
 
         wandb.log(log_object)
 
+        # Determine whether there have been too many completion errors to let this go on
+        if (
+            game_num_completion_errors > wandb.config.max_completion_errors
+            and wandb.config.max_completion_errors > 0
+        ):
+            raise RuntimeError(
+                f"Too many completion errors ({game_num_completion_errors}/{wandb.config.max_completion_errors})! Ending game."
+            )
+
     # Game completed, log game save for reloading it later
     saved_game_data = to_saved_game_format(game)
     wandb.log(
@@ -1062,6 +1075,13 @@ def parse_args():
         type=float,
         default=0.9,
         help="⚛️ Top-p for nucleus sampling.",
+    )
+    parser.add_argument(
+        "--max_completion_errors",
+        dest="max_completion_errors",
+        type=int,
+        default=10,
+        help="🚫Max number of completion errors before killing the run.",
     )
     parser.add_argument(
         "--prompt_ablations",
