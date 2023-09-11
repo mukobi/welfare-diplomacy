@@ -384,7 +384,7 @@ class ExploiterAgent(Agent):
     def respond(self, params: AgentParams) -> AgentResponse:
         assert self.power_name==params.power.name, f"Power mismatch: {self.power_name} vs {params.power.name}"
         state = diplomacy_state.WelfareDiplomacyState(params.game)
-        year = params.game.phase.split()[1]
+        year = int(params.game.phase.split()[1])
         
         # Count number of enemy units
         enemy_units = sum(len(params.game.get_units(power)) for power in params.game.map.powers if power != params.power.name)
