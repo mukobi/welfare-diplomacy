@@ -3609,8 +3609,9 @@ class Game(Jsonable):
                             self.lost[center] = power
                         break
 
-        # Determining if we have a winner
-        self._determine_win(victory_score_prev_year)
+        # Determining if we have a winner, unless we are in a welfare variant
+        if not self.welfare:
+            self._determine_win(victory_score_prev_year)
 
     def _transfer_center(self, from_power, to_power, center):
         """Transfers a supply center from a power to another
