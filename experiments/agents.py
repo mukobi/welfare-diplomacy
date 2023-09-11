@@ -15,7 +15,7 @@ from diplomacy import Power, Game
 import wandb
 
 from welfare_diplomacy_baselines.environment import mila_actions, diplomacy_state
-from welfare_diplomacy_baselines.baselines import no_press_policies
+from welfare_diplomacy_baselines.baselines import no_press_policies, disband_policies
 
 from backends import ClaudeCompletionBackend, OpenAIChatBackend, OpenAICompletionBackend, HuggingFaceCausalLMBackend
 from data_types import (
@@ -309,6 +309,81 @@ class NoPressAgent(Agent):
             completion_time_sec=0.0,
         )
 
+class ExploiterAgent(Agent):
+    """Initially uses OpenAI/Claude Chat/Completion to generate orders and messages.
+    
+    Once a certain condition is satisfied, switches to zero-sum policy and eventually switches to disbanding.
+    
+    Kwargs:
+        unit_threshold: int, number of enemy units on board below which the agent switches to RL policy.
+        center_threshold: int, number of centers below which the agent switches back to APIAgent policy.
+        power: str, name of power to use as exploiter.
+        
+        and remaining kwargs for API model (temperature, top_p and manual_orders_path)"""
+
+    def __init__(self, api_model, **kwargs):
+        """Instantiate API and exploiter policies."""
+        self.power_name = kwargs.pop("power")
+        self.power_ix = Game().map.powers.index(self.power_name)
+        self.center_threshold=kwargs.pop("center_threshold")
+        self.unit_threshold = kwargs.pop("unit_threshold")
+        # Set exploiter policy
+        self.rl_policy=no_press_policies.get_network_policy_instance()
+        # Set intial "cooperative" policy
+        self.api_policy = APIAgent(api_model, **kwargs)
+        self.exploiting = False
+
+    def __repr__(self) -> str:
+        if self.exploiting:
+            return f"ExploiterAgent playing RL policy, {self.rl_policy}"
+        else:
+            return f"ExploiterAgent 'playing nice' with {self.api_policy}"
+
+    def respond(self, params: AgentParams) -> AgentResponse:
+        assert self.power_name==params.power.name, f"Power mismatch: {self.power_name} vs {params.power.name}"
+        state = diplomacy_state.WelfareDiplomacyState(params.game)
+        
+        # Count number of enemy units
+        enemy_units = sum(len(params.game.get_units(power)) for power in params.game.map.powers if power != params.power.name)
+
+        # Count number of centers
+        centers = len(params.power.centers)
+        
+        if enemy_units > self.unit_threshold or centers > self.center_threshold:
+            # Play nice
+            self.exploiting = False
+            return self.api_policy.respond(params)
+        else:
+            self.exploiting = True
+            self.rl_policy.reset()
+            actions, _ = self.rl_policy.actions(
+                [self.power_ix],
+                state.observation(),
+                state.legal_actions()
+                )
+            # actions is a list of lists of actions for each slot
+            actions = actions[0]
+
+            # Convert actions to MILA orders.
+            orders = []
+            for action in actions:
+                candidate_orders = mila_actions.action_to_mila_actions(action)
+                order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
+                orders.append(order)
+            assert len(actions) == len(orders), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
+
+            return AgentResponse(
+                reasoning="Orders from hybrid exploiter.",
+                orders=orders,
+                messages={},
+                system_prompt="",
+                user_prompt="",
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+                completion_time_sec=0.0,
+            )
+
 
 def model_name_to_agent(model_name: str, **kwargs) -> Agent:
     """Given a model name, return an instantiated corresponding agent."""
@@ -319,6 +394,8 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         return ManualAgent(**kwargs)
     elif model_name == "nopress":
         return NoPressAgent(**kwargs)
+    elif model_name == "exploiter":
+        return ExploiterAgent(**kwargs)
     elif (
         "gpt-" in model_name
         or "davinci-" in model_name

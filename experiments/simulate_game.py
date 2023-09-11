@@ -129,7 +129,7 @@ def main():
         for power_name in exploiter_powers:
             power_name_to_agent[power_name] = agent_exploiter
 
-    # Set no-press powers
+    # Set no-press powers (non-exploiter) - for test purposes
     if wandb.config.no_press:
         no_press_powers = list(game.powers.keys())
     else:
@@ -141,6 +141,24 @@ def main():
                 "nopress", policy_key=wandb.config.no_press_policy
             )
             power_name_to_agent[power_name] = agent_nopress
+
+    # Set hybrid LM+RL exploiters
+    super_exploiter_powers = wandb.config.super_exploiter_powers.split(",")
+    super_exploiter_powers = [power.upper() for power in super_exploiter_powers if power != ""]
+    for power_name in super_exploiter_powers:
+        agent_super_exploiter: Agent = model_name_to_agent(
+            "exploiter",
+            api_model=wandb.config.agent_model, # same as API agents
+            power=power_name,
+            unit_threshold=wandb.config.unit_threshold,
+            center_threshold=wandb.config.center_threshold,
+            max_years = wandb.config.max_years,
+            temperature=wandb.config.temperature,
+            top_p=wandb.config.top_p,
+            manual_orders_path=wandb.config.manual_orders_path,
+        )
+        power_name_to_agent[power_name] = agent_super_exploiter
+
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []
@@ -1110,6 +1128,27 @@ def parse_args():
         type=int,
         default=0,
         help="🤐Policy to use for no-press powers. Provide an integer to select a policy from no_press_policies.policy_map.",
+    )
+    parser.add_argument(
+        "--super_exploiter_powers",
+        dest="super_exploiter_powers",
+        type=str,
+        default="",
+        help="🤐Comma-separated list of case-insensitive powers to use hybrid LM + RL exploiter policy.",
+    )
+    parser.add_argument(
+        "--unit_threshold",
+        dest="unit_threshold",
+        type=int,
+        default=12,
+        help="🤐Number of enemy units on the board below which a super exploiter switches from the APIAgent policy to the RL policy.",
+    )
+    parser.add_argument(
+        "--center_threshold",
+        dest="center_threshold",
+        type=int,
+        default=12,
+        help="🤐Number of centers a super exploiter acquires before it switches back to the APIAgent policy.",
     )
 
     args = parser.parse_args()
