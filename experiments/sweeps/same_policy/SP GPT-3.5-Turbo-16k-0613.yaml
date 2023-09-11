@@ -1,0 +1,12 @@
+method: grid
+metric:
+  goal: maximize
+  name: benchmark/nash_social_welfare_global_smoothed
+parameters:
+  agent_model:
+    value: gpt-3.5-turbo-16k-0613
+  max_years:
+    value: 10
+  seed:
+    values: [0, 1, 2, 3, 4]
+program: experiments/simulate_game.py
