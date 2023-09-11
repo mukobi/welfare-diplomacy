@@ -193,19 +193,23 @@ class APIAgent(Agent):
 
     def __init__(self, model_name: str, **kwargs):
         # Decide whether it's a chat or completion model
+        disable_completion_preface = kwargs.pop("disable_completion_preface", False)
         if (
             "gpt-4-base" in model_name
             or "text-" in model_name
             or "davinci" in model_name
         ):
+            self.use_completion_preface = not disable_completion_preface
             self.backend = OpenAICompletionBackend(model_name)
         elif "claude" in model_name:
+            self.use_completion_preface = not disable_completion_preface
             self.backend = ClaudeCompletionBackend(model_name)
         elif "llama" in model_name:
             self.local_llm_path = kwargs.pop("local_llm_path")
             self.device = kwargs.pop("device")
             self.quantization = kwargs.pop("quantization")
             self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
+            self.use_completion_preface = not disable_completion_preface
             self.backend = HuggingFaceCausalLMBackend(
                 model_name,
                 self.local_llm_path,
@@ -214,10 +218,10 @@ class APIAgent(Agent):
                 self.fourbit_compute_dtype,
             )
         else:
+            self.use_completion_preface = False
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
-        self.completion_preface = kwargs.pop("completion_preface", False)
 
     def __repr__(self) -> str:
         return f"APIAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
@@ -228,7 +232,7 @@ class APIAgent(Agent):
         user_prompt = prompts.get_user_prompt(params)
         response = None
         try:
-            if self.completion_preface:
+            if self.use_completion_preface:
                 preface_prompt = prompts.get_preface_prompt(params)
                 response: BackendResponse = self.backend.complete(
                     system_prompt, 

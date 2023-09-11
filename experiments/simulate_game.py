@@ -116,7 +116,7 @@ def main():
         device=wandb.config.device,
         quantization=wandb.config.quantization,
         fourbit_compute_dtype=wandb.config.fourbit_compute_dtype,
-        completion_preface=wandb.config.completion_preface,
+        disable_completion_preface=wandb.config.disable_completion_preface,
     )
     power_name_to_agent = {
         power_name: agent_baseline for power_name in game.powers.keys()
@@ -1179,11 +1179,10 @@ def parse_args():
         help="📉Compute dtype to use for 4-bit quantization. If 32, uses 32-bit compute dtype. If 16, uses 16-bit compute dtype.",
     )
     parser.add_argument(
-        "--completion_preface",
-        dest="completion_preface",
-        type=bool,
-        default=False,
-        help="📉If 'True', use the prompt preface to help agents comply with the json format.",
+        "--disable_completion_preface",
+        dest="disable_completion_preface",
+        action="store_true",
+        help="📉Don't use the completion preface (which helps agents comply with the json format).",
     )
     parser.add_argument(
         "--no_press",
