@@ -154,7 +154,7 @@ def main():
             power=power_name,
             unit_threshold=wandb.config.unit_threshold,
             center_threshold=wandb.config.center_threshold,
-            max_years = wandb.config.max_years,
+            max_years=wandb.config.max_years,
             temperature=wandb.config.temperature,
             top_p=wandb.config.top_p,
             manual_orders_path=wandb.config.manual_orders_path,

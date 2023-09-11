@@ -352,7 +352,7 @@ class NoPressAgent(Agent):
 class ExploiterAgent(Agent):
     """Initially uses OpenAI/Claude Chat/Completion to generate orders and messages.
     
-    Once a certain condition is satisfied, switches to zero-sum policy and eventually switches to disbanding.
+    Once there are fewer than a certain number of enemy units, switches to zero-sum RL policy, and switches back to APIAgent policy once enough supply centers are acquired.
     
     Kwargs:
         unit_threshold: int, number of enemy units on board below which the agent switches to RL policy.
@@ -362,11 +362,13 @@ class ExploiterAgent(Agent):
         and remaining kwargs for API model (temperature, top_p and manual_orders_path)"""
 
     def __init__(self, api_model, **kwargs):
-        """Instantiate API and exploiter policies."""
+        """Instantiate APIAgent and RL policies."""
         self.power_name = kwargs.pop("power")
         self.power_ix = Game().map.powers.index(self.power_name)
         self.center_threshold=kwargs.pop("center_threshold")
         self.unit_threshold = kwargs.pop("unit_threshold")
+        self.max_years = kwargs.pop("max_years")
+        self.final_year = 1901 + self.max_years - 1
         # Set exploiter policy
         self.rl_policy=no_press_policies.get_network_policy_instance()
         # Set intial "cooperative" policy
@@ -382,6 +384,7 @@ class ExploiterAgent(Agent):
     def respond(self, params: AgentParams) -> AgentResponse:
         assert self.power_name==params.power.name, f"Power mismatch: {self.power_name} vs {params.power.name}"
         state = diplomacy_state.WelfareDiplomacyState(params.game)
+        year = params.game.phase.split()[1]
         
         # Count number of enemy units
         enemy_units = sum(len(params.game.get_units(power)) for power in params.game.map.powers if power != params.power.name)
@@ -389,8 +392,8 @@ class ExploiterAgent(Agent):
         # Count number of centers
         centers = len(params.power.centers)
         
-        if enemy_units > self.unit_threshold or centers > self.center_threshold:
-            # Play nice
+        if enemy_units > self.unit_threshold or centers > self.center_threshold or year >= self.final_year - 2:
+            # If there are too many enemy units, player has enough centers, or close enough to end of game, play nice
             self.exploiting = False
             return self.api_policy.respond(params)
         else:
