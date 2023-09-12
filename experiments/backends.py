@@ -167,7 +167,6 @@ class OpenAIChatBackend(LanguageModelBackend):
     )
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
-        raise openai.error.Timeout
         response = openai.ChatCompletion.create(**kwargs)
         assert response is not None, "OpenAI response is None"
         assert "choices" in response, "OpenAI response does not contain choices"
