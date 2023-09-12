@@ -29,7 +29,7 @@ from message_summarizers import (
     MessageSummarizer,
     model_name_to_message_summarizer,
 )
-import prompts
+import constants
 import utils
 
 
@@ -1073,7 +1073,7 @@ def parse_args():
     parser.add_argument(
         "--project",
         dest="project",
-        default=prompts.WANDB_PROJECT,
+        default=constants.WANDB_PROJECT,
         help="🏗️ Weights & Biases project name.",
     )
     parser.add_argument(
