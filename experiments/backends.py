@@ -24,6 +24,7 @@ class LanguageModelBackend(ABC):
         self,
         system_prompt: str,
         user_prompt: str,
+        completion_preface: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
@@ -129,9 +130,13 @@ class OpenAIChatBackend(LanguageModelBackend):
         self,
         system_prompt: str,
         user_prompt: str,
+        completion_preface: str = "",
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
+        assert (
+            completion_preface == ""
+        ), "OpenAI chat backend does not support completion preface"
         try:
             response = self.completions_with_backoff(
                 model=self.model_name,
