@@ -194,22 +194,20 @@ class APIAgent(Agent):
     def __init__(self, model_name: str, **kwargs):
         # Decide whether it's a chat or completion model
         disable_completion_preface = kwargs.pop("disable_completion_preface", False)
+        self.use_completion_preface = not disable_completion_preface
         if (
             "gpt-4-base" in model_name
             or "text-" in model_name
             or "davinci" in model_name
         ):
-            self.use_completion_preface = not disable_completion_preface
             self.backend = OpenAICompletionBackend(model_name)
         elif "claude" in model_name:
-            self.use_completion_preface = not disable_completion_preface
             self.backend = ClaudeCompletionBackend(model_name)
         elif "llama" in model_name:
             self.local_llm_path = kwargs.pop("local_llm_path")
             self.device = kwargs.pop("device")
             self.quantization = kwargs.pop("quantization")
             self.fourbit_compute_dtype = kwargs.pop("fourbit_compute_dtype")
-            self.use_completion_preface = not disable_completion_preface
             self.backend = HuggingFaceCausalLMBackend(
                 model_name,
                 self.local_llm_path,
@@ -218,6 +216,7 @@ class APIAgent(Agent):
                 self.fourbit_compute_dtype,
             )
         else:
+            # Chat models can't specify the start of the completion
             self.use_completion_preface = False
             self.backend = OpenAIChatBackend(model_name)
         self.temperature = kwargs.pop("temperature", 0.7)
@@ -235,19 +234,19 @@ class APIAgent(Agent):
             if self.use_completion_preface:
                 preface_prompt = prompts.get_preface_prompt(params)
                 response: BackendResponse = self.backend.complete(
-                    system_prompt, 
-                    user_prompt, 
-                    completion_preface=preface_prompt, 
-                    temperature=self.temperature, 
-                    top_p=self.top_p
+                    system_prompt,
+                    user_prompt,
+                    completion_preface=preface_prompt,
+                    temperature=self.temperature,
+                    top_p=self.top_p,
                 )
                 json_completion = preface_prompt + response.completion
             else:
                 response: BackendResponse = self.backend.complete(
-                    system_prompt, 
-                    user_prompt, 
-                    temperature=self.temperature, 
-                    top_p=self.top_p
+                    system_prompt,
+                    user_prompt,
+                    temperature=self.temperature,
+                    top_p=self.top_p,
                 )
                 json_completion = response.completion
             # Remove repeated **system** from parroty completion models
@@ -271,7 +270,9 @@ class APIAgent(Agent):
             # Clean orders
             for order in orders:
                 if not isinstance(order, str):
-                    raise AgentCompletionError(f"Order is not a str\n\Response: {response}")
+                    raise AgentCompletionError(
+                        f"Order is not a str\n\Response: {response}"
+                    )
             # Enforce no messages in no_press
             if params.game.no_press:
                 completion["messages"] = {}
@@ -349,28 +350,30 @@ class NoPressAgent(Agent):
             completion_time_sec=0.0,
         )
 
+
 class ExploiterAgent(Agent):
     """Initially uses OpenAI/Claude Chat/Completion to generate orders and messages.
-    
+
     Once there are fewer than a certain number of enemy units, switches to zero-sum RL policy, and switches back to APIAgent policy once enough supply centers are acquired.
-    
+
     Kwargs:
         unit_threshold: int, number of enemy units on board below which the agent switches to RL policy.
         center_threshold: int, number of centers below which the agent switches back to APIAgent policy.
         power: str, name of power to use as exploiter.
-        
-        and remaining kwargs for API model (temperature, top_p and manual_orders_path)"""
+
+        and remaining kwargs for API model (temperature, top_p and manual_orders_path)
+    """
 
     def __init__(self, api_model, **kwargs):
         """Instantiate APIAgent and RL policies."""
         self.power_name = kwargs.pop("power")
         self.power_ix = Game().map.powers.index(self.power_name)
-        self.center_threshold=kwargs.pop("center_threshold")
+        self.center_threshold = kwargs.pop("center_threshold")
         self.unit_threshold = kwargs.pop("unit_threshold")
         self.max_years = kwargs.pop("max_years")
         self.final_year = 1901 + self.max_years - 1
         # Set exploiter policy
-        self.rl_policy=no_press_policies.get_network_policy_instance()
+        self.rl_policy = no_press_policies.get_network_policy_instance()
         # Set intial "cooperative" policy
         self.api_policy = APIAgent(api_model, **kwargs)
         self.exploiting = False
@@ -382,17 +385,27 @@ class ExploiterAgent(Agent):
             return f"ExploiterAgent 'playing nice' with {self.api_policy}"
 
     def respond(self, params: AgentParams) -> AgentResponse:
-        assert self.power_name==params.power.name, f"Power mismatch: {self.power_name} vs {params.power.name}"
+        assert (
+            self.power_name == params.power.name
+        ), f"Power mismatch: {self.power_name} vs {params.power.name}"
         state = diplomacy_state.WelfareDiplomacyState(params.game)
         year = int(params.game.phase.split()[1])
-        
+
         # Count number of enemy units
-        enemy_units = sum(len(params.game.get_units(power)) for power in params.game.map.powers if power != params.power.name)
+        enemy_units = sum(
+            len(params.game.get_units(power))
+            for power in params.game.map.powers
+            if power != params.power.name
+        )
 
         # Count number of centers
         centers = len(params.power.centers)
-        
-        if enemy_units > self.unit_threshold or centers > self.center_threshold or year >= self.final_year - 2:
+
+        if (
+            enemy_units > self.unit_threshold
+            or centers > self.center_threshold
+            or year >= self.final_year - 2
+        ):
             # If there are too many enemy units, player has enough centers, or close enough to end of game, play nice
             self.exploiting = False
             return self.api_policy.respond(params)
@@ -400,10 +413,8 @@ class ExploiterAgent(Agent):
             self.exploiting = True
             self.rl_policy.reset()
             actions, _ = self.rl_policy.actions(
-                [self.power_ix],
-                state.observation(),
-                state.legal_actions()
-                )
+                [self.power_ix], state.observation(), state.legal_actions()
+            )
             # actions is a list of lists of actions for each slot
             actions = actions[0]
 
@@ -413,7 +424,9 @@ class ExploiterAgent(Agent):
                 candidate_orders = mila_actions.action_to_mila_actions(action)
                 order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
                 orders.append(order)
-            assert len(actions) == len(orders), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
+            assert len(actions) == len(
+                orders
+            ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
 
             return AgentResponse(
                 reasoning="Orders from hybrid exploiter.",
