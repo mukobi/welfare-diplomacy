@@ -369,11 +369,14 @@ class ExploiterAgent(Agent):
         self.unit_threshold = kwargs.pop("unit_threshold")
         self.max_years = kwargs.pop("max_years")
         self.final_year = 1901 + self.max_years - 1
+        self.latest_year_to_switch = 1901 + int(self.max_years / 3)
         # Set exploiter policy
         self.rl_policy=no_press_policies.get_network_policy_instance()
         # Set intial "cooperative" policy
         self.api_policy = APIAgent(api_model, **kwargs)
         self.exploiting = False
+        self.triggered = False
+        self.start_disbanding = False
 
     def __repr__(self) -> str:
         if self.exploiting:
@@ -391,9 +394,22 @@ class ExploiterAgent(Agent):
 
         # Count number of centers
         centers = len(params.power.centers)
-        
-        if enemy_units > self.unit_threshold or centers > self.center_threshold or year >= self.final_year - 2:
-            # If there are too many enemy units, player has enough centers, or close enough to end of game, play nice
+
+        # Switch to RL policy if few enough enemy units or end of 4th year:
+        if not self.triggered and (enemy_units <= self.unit_threshold or (year == self.latest_year_to_switch and "A" in params.game.phase_type)):
+            self.triggered = True
+
+        if year == self.final_year - 2 and "A" in params.game.phase_type:
+            self.start_disbanding = True
+
+        # Determine whether to play RL policy
+        play_rl_policy = (
+            self.triggered and
+            centers <= self.center_threshold and
+            not self.start_disbanding
+        )
+
+        if not play_rl_policy:
             self.exploiting = False
             return self.api_policy.respond(params)
         else:
