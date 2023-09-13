@@ -1235,14 +1235,14 @@ def parse_args():
         "--unit_threshold",
         dest="unit_threshold",
         type=int,
-        default=12,
+        default=10,
         help="🤐Number of enemy units on the board below which a super exploiter switches from the APIAgent policy to the RL policy.",
     )
     parser.add_argument(
         "--center_threshold",
         dest="center_threshold",
         type=int,
-        default=12,
+        default=10,
         help="🤐Number of centers a super exploiter acquires before it switches back to the APIAgent policy.",
     )
 
