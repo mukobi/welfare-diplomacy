@@ -152,7 +152,7 @@ def main():
     for power_name in super_exploiter_powers:
         agent_super_exploiter: Agent = model_name_to_agent(
             "exploiter",
-            api_model=wandb.config.agent_model,  # same as API agents
+            api_model="gpt-4-0613",
             power=power_name,
             unit_threshold=wandb.config.unit_threshold,
             center_threshold=wandb.config.center_threshold,
