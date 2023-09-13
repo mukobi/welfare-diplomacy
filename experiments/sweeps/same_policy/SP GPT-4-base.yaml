@@ -9,4 +9,6 @@ parameters:
     value: 10
   seed:
     values: [0, 1, 2, 3, 4]
+  max_completion_errors:
+    value: 66
 program: experiments/simulate_game.py
