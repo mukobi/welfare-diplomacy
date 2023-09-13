@@ -10,7 +10,6 @@ from data_types import (
 )
 import utils
 
-WANDB_PROJECT = "welfare-diplomacy-v3"
 
 
 def get_system_prompt(params: AgentParams) -> str:

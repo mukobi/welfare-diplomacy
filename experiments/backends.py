@@ -3,10 +3,7 @@
 from abc import ABC, abstractmethod
 from anthropic import Anthropic, HUMAN_PROMPT, AI_PROMPT
 from anthropic._exceptions import APIError
-import re
 import time
-from typing import Any
-
 
 import backoff
 import openai
@@ -15,6 +12,7 @@ from openai.error import OpenAIError
 from transformers import AutoTokenizer, LlamaForCausalLM, BitsAndBytesConfig
 import torch
 
+import constants
 from data_types import BackendResponse
 
 
@@ -90,7 +88,8 @@ class HuggingFaceCausalLMBackend(LanguageModelBackend):
         top_p: float = 1.0,
     ) -> BackendResponse:
         prompt = (
-            f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]" + completion_preface
+            f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n{user_prompt} [/INST]"
+            + completion_preface
         )
         start_time = time.time()
 
@@ -163,7 +162,9 @@ class OpenAIChatBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError, max_time=1025)
+    @backoff.on_exception(
+        backoff.expo, OpenAIError, max_time=constants.MAX_BACKOFF_TIME_DEFAULT
+    )
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.ChatCompletion.create(**kwargs)
@@ -190,7 +191,10 @@ class OpenAICompletionBackend(LanguageModelBackend):
         top_p: float = 1.0,
     ) -> BackendResponse:
         try:
-            full_prompt = f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):" + completion_preface
+            full_prompt = (
+                f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):"
+                + completion_preface
+            )
             response = self.completions_with_backoff(
                 model=self.model_name,
                 prompt=full_prompt,
@@ -219,7 +223,9 @@ class OpenAICompletionBackend(LanguageModelBackend):
             )
             raise
 
-    @backoff.on_exception(backoff.expo, OpenAIError, max_time=1025)
+    @backoff.on_exception(
+        backoff.expo, OpenAIError, max_time=constants.MAX_BACKOFF_TIME_DEFAULT
+    )
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
         response = openai.Completion.create(**kwargs)
@@ -245,7 +251,10 @@ class ClaudeCompletionBackend:
         temperature: float = 1.0,
         top_p: float = 1.0,
     ) -> BackendResponse:
-        prompt = f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}" + completion_preface
+        prompt = (
+            f"{HUMAN_PROMPT} {system_prompt}\n\n{user_prompt}{AI_PROMPT}"
+            + completion_preface
+        )
         estimated_prompt_tokens = self.anthropic.count_tokens(prompt)
 
         start_time = time.time()
@@ -266,7 +275,9 @@ class ClaudeCompletionBackend:
             total_tokens=estimated_prompt_tokens + estimated_completion_tokens,
         )
 
-    @backoff.on_exception(backoff.expo, APIError, max_time=1025)
+    @backoff.on_exception(
+        backoff.expo, APIError, max_time=constants.MAX_BACKOFF_TIME_DEFAULT
+    )
     def completion_with_backoff(self, **kwargs):
         """Exponential backoff for Claude API errors."""
         response = self.anthropic.completions.create(**kwargs)
