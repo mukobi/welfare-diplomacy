@@ -11,7 +11,6 @@ from data_types import (
 import utils
 
 
-
 def get_system_prompt(params: AgentParams) -> str:
     """Instructions for the setting, game, and response format."""
     welfare_rules = get_welfare_rules(params)
@@ -330,7 +329,9 @@ def get_summarizer_system_prompt(
 
 You will get the message history that this player saw for the most recent phase which is {params.game.phase} ({params.game.get_current_phase()}). Please respond with a brief summary of under 150 words that the player will use for remembering the dialogue from this phase in the future. Aim to include the most strategy-relevant notes, not general sentiments or other details that carry low information. Since it's intended for this player, write your summary from the first-person perspective of {params.power.name.title()}. Respond with just the summary without quotes or any other text."""
 
+
 def get_preface_prompt(
     params: AgentParams,
 ) -> str:
-    return "{\n\t\"reasoning\": \""
+    # Remove reasoning with NO_REASONING ablation
+    return f""" {{\n\t{'"reasoning": "' if PromptAblation.NO_REASONING not in params.prompt_ablations else '"'}"""
