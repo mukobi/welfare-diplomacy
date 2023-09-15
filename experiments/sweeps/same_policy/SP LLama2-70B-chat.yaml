@@ -1,0 +1,29 @@
+method: grid
+metric:
+  goal: maximize
+  name: benchmark/nash_social_welfare_global_smoothed
+parameters:
+  local_llm_path:
+    value: "/nas/ucb/nlauffer/datasets"
+  agent_model:
+    value: "llama-2-70b-chat"
+  max_years:
+    value: 10
+  device:
+    value: "cuda:0"
+  quantization:
+    value: 4
+  fourbit_compute_dtype:
+    value: 16
+  max_completion_errors:
+    value: 0
+  temperature:
+    value: 1.0
+  seed:
+    values:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+program: experiments/simulate_game.py

@@ -1,0 +1,32 @@
+method: grid
+metric:
+  goal: maximize
+  name: welfare_aggregation/mean
+parameters:
+  max_years:
+    value: 5
+  local_llm_path:
+    value: "/nas/ucb/nlauffer/datasets"
+  agent_model:
+    value: "llama-2-70b-chat"
+  summarizer_model:
+    value: "llama-2-13b-chat"
+  device:
+    value: "cuda:0"
+  quantization:
+    value: 4
+  fourbit_compute_dtype:
+    value: 16
+  max_completion_errors:
+    value: 0
+  seed:
+    values:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+  temperature:
+    values:
+      - 1.0
+program: experiments/simulate_game.py
