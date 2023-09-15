@@ -45,6 +45,11 @@ def main():
     args.num_exploiter_powers = (
         len(args.exploiter_powers.split(",")) if args.exploiter_powers else 0
     )
+    args.num_super_exploiter_powers = (
+        len(args.super_exploiter_powers.split(","))
+        if args.super_exploiter_powers
+        else 0
+    )
     args.num_prompt_ablations = (
         len(args.prompt_ablations.split(",")) if args.prompt_ablations else 0
     )
