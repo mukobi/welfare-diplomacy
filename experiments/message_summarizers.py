@@ -95,7 +95,7 @@ class LLMMessageSummarizer:
             return PhaseMessageSummary(
                 phase=params.game.get_current_phase(),
                 original_messages=[],
-                summary="",
+                summary="No messages sent or received.",
                 prompt_tokens=0,
                 completion_tokens=0,
             )
