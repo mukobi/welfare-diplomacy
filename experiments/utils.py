@@ -181,6 +181,18 @@ def validate_config(config: wandb.Config, game: Game):
             "{MY_TEAM_NAMES}" not in config.exploiter_prompt
         ), f"Cannot use {{MY_TEAM_NAMES}} in exploiter prompt if exploiter {config.exploiter_powers.split(',')} has less than 2 powers."
 
+    # Check that super exploiter powers are valid powers in the game
+    assert_comma_separated_string(
+        "super_exploiter_powers",
+        config.super_exploiter_powers.lower(),
+        [name.lower() for name in list(game.powers.keys())],
+    )
+
+    # Check super exploiter powers are unique
+    assert len(config.super_exploiter_powers.split(",")) == len(
+        set(config.super_exploiter_powers.split(","))
+    ), f"Super exploiter powers must be unique. Found {config.super_exploiter_powers.split(',')}"
+
 
 def assert_comma_separated_string(
     param_name: str, input_string: str, valid_values: list[str]
