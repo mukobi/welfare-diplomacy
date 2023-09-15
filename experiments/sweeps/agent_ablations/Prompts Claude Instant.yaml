@@ -3,6 +3,8 @@ metric:
   goal: maximize
   name: welfare_aggregation/mean
 parameters:
+  max_years:
+    value: 5
   seed:
     values:
       - 0
