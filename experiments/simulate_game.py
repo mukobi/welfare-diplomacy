@@ -431,9 +431,12 @@ def main():
                     # If the agent gave an invalid order, we need to log the error and continue
                     phase_num_completion_errors += 1
                     game_num_completion_errors += 1
+                    exception_trace = "".join(
+                        traceback.TracebackException.from_exception(exc).format()
+                    )
                     utils.log_error(
                         logger,
-                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exc}",
+                        f"🚨 {power_name} {game.get_current_phase()} Round {message_round}: Agent {wandb.config.agent_model} gave an invalid order ({phase_num_completion_errors} errors this phase). Skipping. Exception:\n{exception_trace}",
                     )
                     # Log the error to Weights & Biases
                     game_completion_error_traces.append(
