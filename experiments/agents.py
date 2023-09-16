@@ -425,6 +425,7 @@ class ExploiterAgent(Agent):
             self.exploiting = False
             return self.api_policy.respond(params)
         else:
+            start_time = time.time()
             self.exploiting = True
             self.rl_policy.reset()
             actions, _ = self.rl_policy.actions(
@@ -443,6 +444,7 @@ class ExploiterAgent(Agent):
                 orders
             ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
 
+            elapsed_time = time.time() - start_time
             return AgentResponse(
                 reasoning="Orders from hybrid exploiter.",
                 orders=orders,
@@ -452,7 +454,7 @@ class ExploiterAgent(Agent):
                 prompt_tokens=0,
                 completion_tokens=0,
                 total_tokens=0,
-                completion_time_sec=0.0,
+                completion_time_sec=elapsed_time,
             )
 
 
