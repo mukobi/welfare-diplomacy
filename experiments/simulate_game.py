@@ -154,7 +154,7 @@ def main():
     super_exploiter_powers = [
         power.upper() for power in super_exploiter_powers if power != ""
     ]
-    for power_name in super_exploiter_powers:
+    if super_exploiter_powers:
         agent_super_exploiter: Agent = model_name_to_agent(
             "exploiter",
             api_model="gpt-4-0613",
@@ -166,7 +166,8 @@ def main():
             top_p=wandb.config.top_p,
             manual_orders_path=wandb.config.manual_orders_path,
         )
-        power_name_to_agent[power_name] = agent_super_exploiter
+        for power_name in super_exploiter_powers:
+            power_name_to_agent[power_name] = agent_super_exploiter
 
     # Initialize global counters
     game_conflicts_num_list: list[int] = []

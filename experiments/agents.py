@@ -366,8 +366,6 @@ class ExploiterAgent(Agent):
 
     def __init__(self, api_model, **kwargs):
         """Instantiate APIAgent and RL policies."""
-        self.power_name = kwargs.pop("power")
-        self.power_ix = Game().map.powers.index(self.power_name)
         self.center_threshold = kwargs.pop("center_threshold")
         self.unit_threshold = kwargs.pop("unit_threshold")
         self.max_years = kwargs.pop("max_years")
@@ -388,10 +386,6 @@ class ExploiterAgent(Agent):
             return f"ExploiterAgent 'playing nice' with {self.api_policy}"
 
     def respond(self, params: AgentParams) -> AgentResponse:
-        assert (
-            self.power_name == params.power.name
-        ), f"Power mismatch: {self.power_name} vs {params.power.name}"
-        state = diplomacy_state.WelfareDiplomacyState(params.game)
         year = int(params.game.phase.split()[1])
 
         # Count number of enemy units
@@ -426,10 +420,12 @@ class ExploiterAgent(Agent):
             return self.api_policy.respond(params)
         else:
             start_time = time.time()
+            state = diplomacy_state.WelfareDiplomacyState(params.game)
             self.exploiting = True
             self.rl_policy.reset()
+            power_ix = Game().map.powers.index(params.power.name)
             actions, _ = self.rl_policy.actions(
-                [self.power_ix], state.observation(), state.legal_actions()
+                [power_ix], state.observation(), state.legal_actions()
             )
             # actions is a list of lists of actions for each slot
             actions = actions[0]
