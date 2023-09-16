@@ -1,18 +1,14 @@
-# Diplomacy: DATC-Compliant Game Engine [![Build Status](https://travis-ci.org/diplomacy/diplomacy.svg?branch=master)](https://travis-ci.org/diplomacy/diplomacy) [![Documentation Status](https://readthedocs.org/projects/diplomacy/badge/?version=latest)](https://diplomacy.readthedocs.io/en/latest/?badge=latest)
+# Welfare Diplomacy: Benchmarking Autonomous Language Model Cooperation
 
-This project contains an open-source DATC-compliant Diplomacy game engine, a client-server architecture for network play, a web interface to play against bots and to visualize games, and a DAIDE-compatible adapter to connect DAIDE bots to the server.
+Implementation of Welfare Diplomacy (a novel variant of the board game Diplomacy), language model scaffolding to build competent baseline agents, experiment runner harness and sweep setups, collected data, and figure graphing scripts. Originally forked from https://github.com/diplomacy/diplomacy.
 
 <p align="center">
   <img width="500" src="docs/images/map_overview.png" alt="Diplomacy Map Overview">
 </p>
 
-## Documentation
+## Running Same-Policy Experiments
 
-The complete documentation is available at [diplomacy.readthedocs.io](https://diplomacy.readthedocs.io/).
-
-## Running Our Experiments
-
-If you just want to run our agents with our scaffolding in the `experiments` folder, do this:
+To run our agents with our scaffolding in the `experiments` folder in same-policy games, do the following steps:
 
 0. Clone the repo with submodules to get `welfare_diplomacy_baselines`
 ```
@@ -55,8 +51,44 @@ python experiments/simulate_game.py --agent_model random --summarizer_model pass
 python experiments/simulate_game.py
 ```
 
+## Running Exploitation Experiments
 
-## Old Getting Started [For Reference]
+For running experiments with exploiter agents, you must first download the necessary weights, then you can use the super exploiter arguments.
+
+### Download Exploiter Policy Weights
+
+In your shell:
+
+```bash
+wget -P welfare_diplomacy_baselines/network_parameters https://storage.googleapis.com/dm-diplomacy/fppi2_params.npz
+```
+
+Or download manually: [fppi2_params.npz](https://storage.googleapis.com/dm-diplomacy/fppi2_params.npz) and place it in the `welfare_diplomacy_baselines/network_parameters` directory.
+
+### Run Exploitation Experiments
+
+If you run `experiments/simulate_game.py` with `exploiter_prompt`, `exploiter_powers`, and optionally `exploiter_model` set (see `--help` documentation), this will prompt normal scaffolded language models to try to get them to exploit the other agents. See `./experiments/sweeps/exploitation/Exploit 2E GPT-4 Self.yaml` for an example. In practice, we find these are not very good exploiting powers.
+
+Instead, we recommend you use the "super exploiters" by just passing a comma-separate list of power names for `super_exploiter_powers`. These behave as a normal language model agent (i.e. cooperatively) until the other powers have a combined unit count below `unit_threshold` (default: 10), at which point they will switch to the pre-trained RL Standard Diplomacy agents (hence why you need to download weights above). Finally, when these agents have captured `center_threshold` or more supply centers (default 10) or 2 years remain in the game, they'll switch back to the cooperative language model policy to demilitarize and gain a bunch of welfare points at the end of the game. For example:
+
+```bash
+python experiments/simulate_game.py --exploiter_powers France,Russia
+```
+
+---
+---
+
+# Parent Repo Readme [For Reference]
+
+## Diplomacy: DATC-Compliant Game Engine [![Build Status](https://travis-ci.org/diplomacy/diplomacy.svg?branch=master)](https://travis-ci.org/diplomacy/diplomacy) [![Documentation Status](https://readthedocs.org/projects/diplomacy/badge/?version=latest)](https://diplomacy.readthedocs.io/en/latest/?badge=latest)
+
+This project contains an open-source DATC-compliant Diplomacy game engine, a client-server architecture for network play, a web interface to play against bots and to visualize games, and a DAIDE-compatible adapter to connect DAIDE bots to the server.
+
+## Documentation
+
+The complete documentation is available at [diplomacy.readthedocs.io](https://diplomacy.readthedocs.io/).
+
+## Old Getting Started
 
 ### Installation
 
