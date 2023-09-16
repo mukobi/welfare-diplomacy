@@ -64,17 +64,20 @@ def main():
         settings=wandb.Settings(code_dir="experiments"),
     )
     assert wandb.run is not None
+
     autolog()  # Logs OpenAI API calls to wandb
 
     utils.set_seed(wandb.config.seed)
 
+    logging.basicConfig()
+    logger.setLevel(wandb.config.log_level)
+
+    utils.log_info(logger, f"⌛ Instantiating game {wandb.config.map_name}")
     game: Game = Game(map_name=wandb.config.map_name)
     if wandb.config.max_message_rounds <= 0:
         game.add_rule("NO_PRESS")
     else:
         game.remove_rule("NO_PRESS")
-    logging.basicConfig()
-    logger.setLevel(wandb.config.log_level)
 
     utils.validate_config(wandb.config, game)
 
@@ -112,6 +115,7 @@ def main():
     exploiter_powers = wandb.config.exploiter_powers.split(",")
     exploiter_powers = [power.upper() for power in exploiter_powers if power != ""]
 
+    utils.log_info(logger, f"⌛ Instantiating base agents {wandb.config.agent_model}")
     agent_baseline: Agent = model_name_to_agent(
         wandb.config.agent_model,
         temperature=wandb.config.temperature,
@@ -127,6 +131,10 @@ def main():
         power_name: agent_baseline for power_name in game.powers.keys()
     }
     if wandb.config.exploiter_model:
+        utils.log_info(
+            logger,
+            f"⌛ Instantiating exploiter agents for {exploiter_powers}",
+        )
         agent_exploiter: Agent = model_name_to_agent(
             wandb.config.exploiter_model,
             temperature=wandb.config.temperature,
@@ -143,6 +151,10 @@ def main():
         no_press_powers = wandb.config.no_press_powers.split(",")
         no_press_powers = [power.upper() for power in no_press_powers if power != ""]
     if no_press_powers:
+        utils.log_info(
+            logger,
+            f"⌛ Instantiating no-press agents for {no_press_powers}",
+        )
         for power_name in no_press_powers:
             agent_nopress: Agent = model_name_to_agent(
                 "nopress", policy_key=wandb.config.no_press_policy
@@ -155,6 +167,10 @@ def main():
         power.upper() for power in super_exploiter_powers if power != ""
     ]
     if super_exploiter_powers:
+        utils.log_info(
+            logger,
+            f"⌛ Instantiating super exploiter agents for {super_exploiter_powers}",
+        )
         agent_super_exploiter: Agent = model_name_to_agent(
             "exploiter",
             api_model="gpt-4-0613",
