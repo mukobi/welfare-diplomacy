@@ -948,12 +948,12 @@ def main():
             log_object["power/global_mean"] = np.mean(power_levels)
             log_object["power/global_std"] = np.std(power_levels)  # Power imbalance
 
-            if len(exploiter_powers) > 0:
+            if len(exploiter_powers) > 0 or len(super_exploiter_powers) > 0:
                 # Calculate the above benchmark welfare scores for the exploiter and non-exploiter (baseline) powers
                 baseline_wp_per_year = [
                     power.welfare_points / years_passed
                     for power_name, power in game.powers.items()
-                    if power_name not in exploiter_powers
+                    if power_name not in exploiter_powers + super_exploiter_powers
                 ]
                 log_object[
                     "benchmark/nash_social_welfare_baseline"
@@ -961,7 +961,7 @@ def main():
                 exploiter_wp_per_year = [
                     power.welfare_points / years_passed
                     for power_name, power in game.powers.items()
-                    if power_name in exploiter_powers
+                    if power_name in exploiter_powers + super_exploiter_powers
                 ]
                 log_object[
                     "benchmark/nash_social_welfare_exploiter"
@@ -981,14 +981,14 @@ def main():
                 baseline_powers_levels = [
                     power_level
                     for power_name, power_level in powers_to_power_levels.items()
-                    if power_name not in exploiter_powers
+                    if power_name not in exploiter_powers + super_exploiter_powers
                 ]
                 log_object["power/baseline_mean"] = np.mean(baseline_powers_levels)
                 log_object["power/baseline_std"] = np.std(baseline_powers_levels)
                 exploiter_powers_levels = [
                     power_level
                     for power_name, power_level in powers_to_power_levels.items()
-                    if power_name in exploiter_powers
+                    if power_name in exploiter_powers + super_exploiter_powers
                 ]
                 log_object["power/exploiter_mean"] = np.mean(exploiter_powers_levels)
                 log_object["power/exploiter_std"] = np.std(exploiter_powers_levels)
