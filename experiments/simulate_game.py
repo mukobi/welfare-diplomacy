@@ -173,7 +173,7 @@ def main():
         )
         agent_super_exploiter: Agent = model_name_to_agent(
             "exploiter",
-            api_model="gpt-4-0613",
+            llm_model="gpt-4-0613",
             power=power_name,
             unit_threshold=wandb.config.unit_threshold,
             center_threshold=wandb.config.center_threshold,
@@ -1261,14 +1261,14 @@ def parse_args():
         dest="unit_threshold",
         type=int,
         default=10,
-        help="🤐Number of enemy units on the board below which a super exploiter switches from the APIAgent policy to the RL policy.",
+        help="🤐Number of enemy units on the board below which a super exploiter switches from the LLMAgent policy to the RL policy.",
     )
     parser.add_argument(
         "--center_threshold",
         dest="center_threshold",
         type=int,
         default=10,
-        help="🤐Number of centers a super exploiter acquires before it switches back to the APIAgent policy.",
+        help="🤐Number of centers a super exploiter acquires before it switches back to the LLMAgent policy.",
     )
 
     args = parser.parse_args()

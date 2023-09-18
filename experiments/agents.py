@@ -188,7 +188,7 @@ class ManualAgent(Agent):
         )
 
 
-class APIAgent(Agent):
+class LLMAgent(Agent):
     """Uses OpenAI/Claude Chat/Completion to generate orders and messages."""
 
     def __init__(self, model_name: str, **kwargs):
@@ -223,7 +223,7 @@ class APIAgent(Agent):
         self.top_p = kwargs.pop("top_p", 1.0)
 
     def __repr__(self) -> str:
-        return f"APIAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
+        return f"LLMAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         """Prompt the model for a response."""
@@ -354,18 +354,18 @@ class NoPressAgent(Agent):
 class ExploiterAgent(Agent):
     """Initially uses OpenAI/Claude Chat/Completion to generate orders and messages.
 
-    Once there are fewer than a certain number of enemy units, switches to zero-sum RL policy, and switches back to APIAgent policy once enough supply centers are acquired.
+    Once there are fewer than a certain number of enemy units, switches to zero-sum RL policy, and switches back to LLMAgent policy once enough supply centers are acquired.
 
     Kwargs:
         unit_threshold: int, number of enemy units on board below which the agent switches to RL policy.
-        center_threshold: int, number of centers below which the agent switches back to APIAgent policy.
+        center_threshold: int, number of centers below which the agent switches back to LLMAgent policy.
         power: str, name of power to use as exploiter.
 
         and remaining kwargs for API model (temperature, top_p and manual_orders_path)
     """
 
-    def __init__(self, api_model, **kwargs):
-        """Instantiate APIAgent and RL policies."""
+    def __init__(self, llm_model, **kwargs):
+        """Instantiate LLMAgent and RL policies."""
         self.center_threshold = kwargs.pop("center_threshold")
         self.unit_threshold = kwargs.pop("unit_threshold")
         self.max_years = kwargs.pop("max_years")
@@ -374,7 +374,7 @@ class ExploiterAgent(Agent):
         # Set exploiter policy
         self.rl_policy = no_press_policies.get_network_policy_instance()
         # Set intial "cooperative" policy
-        self.api_policy = APIAgent(api_model, **kwargs)
+        self.llm_policy = LLMAgent(llm_model, **kwargs)
         self.exploiting = False
         self.triggered = False
         self.start_disbanding = False
@@ -383,7 +383,7 @@ class ExploiterAgent(Agent):
         if self.exploiting:
             return f"ExploiterAgent playing RL policy, {self.rl_policy}"
         else:
-            return f"ExploiterAgent 'playing nice' with {self.api_policy}"
+            return f"ExploiterAgent 'playing nice' with {self.llm_policy}"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         year = int(params.game.phase.split()[1])
@@ -417,7 +417,7 @@ class ExploiterAgent(Agent):
 
         if not play_rl_policy:
             self.exploiting = False
-            return self.api_policy.respond(params)
+            return self.llm_policy.respond(params)
         else:
             start_time = time.time()
             state = diplomacy_state.WelfareDiplomacyState(params.game)
@@ -472,6 +472,6 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         or "claude" in model_name
         or "llama" in model_name
     ):
-        return APIAgent(model_name, **kwargs)
+        return LLMAgent(model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
