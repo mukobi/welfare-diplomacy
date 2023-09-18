@@ -2,9 +2,26 @@
 
 Implementation of Welfare Diplomacy (a novel variant of the board game Diplomacy), language model scaffolding to build competent baseline agents, experiment runner harness and sweep setups, collected data, and figure graphing scripts. Originally forked from https://github.com/diplomacy/diplomacy.
 
+<!-- TODO better gif of exploitation game -->
+
 <p align="center">
-  <img width="500" src="docs/images/map_overview.png" alt="Diplomacy Map Overview">
+  <img width="500" src="experiments/gifs/wfd_2_exploit_claude_jugg.gif" alt="Diplomacy Map Overview">
 </p>
+
+## Repository Structure
+
+The important locations are are:
+- [`diplomacy`](./diplomacy): A Python Diplomacy engine (modified from https://github.com/diplomacy/diplomacy to support the Welfare Diplomacy variant).
+- [`experiments`](./experiments/): Scaffolding to get zero-shot prompted language models to play Diplomacy or Welfare Diplomacy.
+- [`experiments/charts`](./experiments/charts): Plotting code and outputted plots.
+- [`experiments/gifs`](./experiments/gifs): Saved animated GIFs of a few games.
+- [`experiments/manual_orders`](./experiments/manual_orders): Hard-coded listed of orders to simulate when using the `manual` agent. 
+- [`experiments/results`](./experiments/results): CSV files of results from our experiments (used to create the charts).
+- [`experiments/sweeps`](./experiments/sweeps): [Weights & Biases](https://wandb.ai/) sweep configs used to run our experiments.
+- [`experiments/agents.py`](./experiments/agents.py): 
+- [`experiments/backends.py`](./experiments/backends.py): 
+- [`experiments/prompts.py`](./experiments/prompts.py): 
+- [`experiments/simulate_game.py`](./experiments/simulate_game.py): 
 
 ## Running Same-Policy Experiments
 
@@ -67,7 +84,9 @@ Or download manually: [fppi2_params.npz](https://storage.googleapis.com/dm-diplo
 
 ### Run Exploitation Experiments
 
-If you run `experiments/simulate_game.py` with `exploiter_prompt`, `exploiter_powers`, and optionally `exploiter_model` set (see `--help` documentation), this will prompt normal scaffolded language models to try to get them to exploit the other agents. See `./experiments/sweeps/exploitation/Exploit 2E GPT-4 Self.yaml` for an example. In practice, we find these are not very good exploiting powers.
+To test how robust an agent policy is against counterplay, we developed two kinds of exploiter agents: Language models prompted with instructions to exploit the other players (_exploiters_, simpler to set up) and hybrid agents that switch between normal language models when playing nice and pre-trained Standard Diplomacy RL agents when being treacherous (_super exploiters_, more effective).
+
+If you run `experiments/simulate_game.py` with `exploiter_prompt`, `exploiter_powers`, and optionally `exploiter_model` set (see `--help` documentation), this will prompt normal scaffolded language models to try to get them to exploit the other agents. See [`./experiments/sweeps/exploitation/Exploit 2E GPT-4 Self.yaml`](experiments/sweeps/exploitation/Exploit%202E%20GPT-4%20Self.yaml) for an example. In practice, we find these are not very good exploiting powers.
 
 Instead, we recommend you use the "super exploiters" by just passing a comma-separate list of power names for `super_exploiter_powers`. These behave as a normal language model agent (i.e. cooperatively) until the other powers have a combined unit count below `unit_threshold` (default: 10), at which point they will switch to the pre-trained RL Standard Diplomacy agents (hence why you need to download weights above). Finally, when these agents have captured `center_threshold` or more supply centers (default 10) or 2 years remain in the game, they'll switch back to the cooperative language model policy to demilitarize and gain a bunch of welfare points at the end of the game. For example:
 
@@ -75,10 +94,33 @@ Instead, we recommend you use the "super exploiters" by just passing a comma-sep
 python experiments/simulate_game.py --exploiter_powers France,Russia
 ```
 
+## Reproducing Our Experiments
+
+We use [Weights & Biases](https://wandb.ai/) to run and track our experiments. 
+TODO move old experiments into some unused/deprecated/archive folder with a brief readme
+
+Feel free to create additional sweeps (perhaps by duplicating the existing ones as a template) to run your own experiments!
+
+## Troubleshooting
+
+**I keep getting a bunch of backoff warnings and the agents never finish their turns.**
+
+- 
+
+**TODO not about `illegal instruction`**
+
+## Repository Todo
+Here are some remaining tasks that weren't strictly necessary for our initial work but that might benefit follow-up work:
+
+[] Allow loading JSON save game files to continue a game part-way through (allows for contriving OOD scenarios to start from).
+[] 
+
+
+
 ---
 ---
 
-# Parent Repo Readme [For Reference]
+# Diplomacy Engine Readme [From the Parent Repository]
 
 ## Diplomacy: DATC-Compliant Game Engine [![Build Status](https://travis-ci.org/diplomacy/diplomacy.svg?branch=master)](https://travis-ci.org/diplomacy/diplomacy) [![Documentation Status](https://readthedocs.org/projects/diplomacy/badge/?version=latest)](https://diplomacy.readthedocs.io/en/latest/?badge=latest)
 
