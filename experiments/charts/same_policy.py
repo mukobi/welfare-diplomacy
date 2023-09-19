@@ -103,7 +103,7 @@ def main() -> None:
             optimal_prosocial = df_optimal_prosocial[metric_name].iloc[0]
             plot.axhline(
                 optimal_prosocial,
-                color=MODEL_NAME_TO_COLOR["Optimal Prosocial"],
+                color=COLOR_ALT_1,
                 linestyle="--",
                 linewidth=2,
                 label="Optimal Prosocial",

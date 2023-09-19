@@ -30,9 +30,9 @@ def main() -> None:
     print(df.groupby(["map_name", "max_years"])["_progress/percent_done"].mean())
 
     # Plot a bunch of different bar graphs for different metrics
-    for metric_name, y_label in [
-        ("benchmark/competence_score", "Competence Score"),
-        ("combat/game_conflicts_avg", "Average Conflicts per Phase"),
+    for metric_name, y_label, improvement_sign in [
+        ("benchmark/competence_score", "Competence Score", 1),
+        ("combat/game_conflicts_avg", "Average Conflicts per Phase", -1),
     ]:
         # Initialize
         initialize_plot_default()
@@ -55,9 +55,6 @@ def main() -> None:
         plot_df[grouping] = plot_df[grouping].str.replace("standard_welfare", "Welfare")
         plot_df[grouping] = plot_df[grouping].str.capitalize()
 
-        # # convert to long format
-        # plot_df = plot_df.melt()
-
         # Create the plot by plotting two lines
         plot = sns.lineplot(
             data=plot_df,
@@ -72,7 +69,12 @@ def main() -> None:
 
         # Set labels and title
         plt.xlabel(x_label)
-        plt.ylabel(y_label)
+        y_axis_label = y_label
+        if improvement_sign == 1:
+            y_axis_label += " →"
+        elif improvement_sign == -1:
+            y_axis_label += " ←"
+        plt.ylabel(y_axis_label)
         title = f"{y_label} by Diplomacy Variant (GPT-3.5)"
         plt.title(title)
 
