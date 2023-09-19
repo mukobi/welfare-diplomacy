@@ -91,6 +91,7 @@ def main() -> None:
             errorbar="ci",
             order=MODEL_ORDER,
             capsize=0.2,
+            hue=x_label,
             palette=MODEL_COMPARISON_COLORS,
             # errwidth=2,
         )
@@ -149,8 +150,8 @@ def main() -> None:
         hue="Agent Model",
         palette=MODEL_COMPARISON_COLORS,
     )
-    plt.xlabel("Average Conflicts per Phase")
-    plt.ylabel("Nash Social Welfare")
+    plt.xlabel("Average Conflicts per Phase ↓")
+    plt.ylabel("Nash Social Welfare →")
     plt.title("Nash Social Welfare vs Average Conflicts per Phase")
     title = "SP Nash Social Welfare vs Conflicts.png"
     output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
