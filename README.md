@@ -3,8 +3,19 @@
 Implementation of Welfare Diplomacy (a novel variant of the board game Diplomacy), language model scaffolding to build competent baseline agents, experiment runner harness and sweep setups, collected data, and figure graphing scripts. Originally forked from https://github.com/diplomacy/diplomacy.
 
 <p align="center">
-  <img width="500" src="experiments/gifs/SE-2 GPT-4 Fra,Rus.gif" alt="Diplomacy Map Overview">
+    <img width="50%" src="experiments/gifs/SE-2 GPT-4 Fra,Rus.gif" alt="Diplomacy Map Overview" />
+    <center><i>GIF of a Welfare Diplomacy game using super exploiters (France, Russia) against GPT-4 agents.</i></center>
 </p>
+
+## About Welfare Diplomacy
+
+While the board game Standard Diplomacy (SD, [short rules](https://webdiplomacy.net/intro.php), [long rules](https://media.wizards.com/2015/downloads/ah/diplomacy_rules.pdf)) has several features that make it interesting as an environment for cooperative AI research, its zero-sum nature makes it non-ideal for incentivizing and measuring differential progress on cooperative AI. We propose a general-sum variant called Welfare Diplomacy (WD). WD is a simple modification of SD: 
+- Powers can build/disband to fewer units than their current supply center count in build phases, and the difference between the two each year permanently adds to their Welfare Points (WP).
+- The game ends after a fixed number of years. A player's total utility is equal to their accumulated WP at the end of the game (crucially, there is no "winner"), meaning powers have incentives to trade off military conquest with making peace to mutually benefit their nations.
+
+Welfare Diplomacy leads to clearer evaluations of and stronger selection pressures for cooperative AI systems. This repository implements the WD variant and establishes a simulation loop and metrics for evaluating cooperative negotiating agents in it.
+
+📜 Preprint forthcoming with more details and results!
 
 ## Repository Structure
 
@@ -150,7 +161,7 @@ Here are some remaining tasks that weren't strictly necessary for our initial wo
 - [ ] Configure max backoff time as a command-line argument for debugging.
 - [ ] Modularize and reorganize [`experiments/simulate_game.py`](./experiments/simulate_game.py) (currently, it's a long researcher-code file).
 
-
+<!-- TODO ## Acknowledgements -->
 
 ---
 ---
