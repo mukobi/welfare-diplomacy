@@ -74,6 +74,7 @@ def main() -> None:
         improvement_sign,
         include_optimal,
         include_random,
+        y_bounds,
         legend_loc,
     ) in [
         (
@@ -82,15 +83,25 @@ def main() -> None:
             1,
             True,
             True,
+            (None, None),
             (0.0, 0.75),
         ),
-        ("benchmark/competence_score", "Competence Score", 1, False, False, "best"),
+        (
+            "benchmark/competence_score",
+            "Competence Score",
+            1,
+            False,
+            False,
+            (0.65, 1.005),
+            "best",
+        ),
         (
             "combat/game_conflicts_avg",
             "Average Conflicts per Phase",
             -1,
             False,
             True,
+            (None, None),
             "best",
         ),
     ]:
@@ -157,6 +168,12 @@ def main() -> None:
         plt.ylabel(y_axis_label)
         title = f"{y_label} by Agent Model"
         plt.title(title)
+
+        # Set y bounds
+        if y_bounds[0] is not None:
+            plt.ylim(bottom=y_bounds[0])
+        if y_bounds[1] is not None:
+            plt.ylim(top=y_bounds[1])
 
         # Save the plot
         output_file = get_results_full_path(
