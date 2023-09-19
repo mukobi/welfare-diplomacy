@@ -101,10 +101,10 @@ def get_results_full_path(relative_path: str) -> str:
     return os.path.join(os.path.dirname(__file__), relative_path)
 
 
-DEFAULT_COLOR_PALETTE = "muted"
+DEFAULT_COLOR_PALETTE = "colorblind"
 
 MODEL_NAME_TO_DISPLAY_NAME = {
-    "llama-2-70B": "Llama 2\n(70B)",
+    # "llama-2-70B": "Llama 2\n(70B)",
     "Super Exploiter": "Super\nExploiter",
     "claude-instant-1.2": "Claude\n1.2",
     "claude-2.0": "Claude\n2.0",
@@ -118,6 +118,8 @@ MODEL_NAME_TO_COLOR = {
     model_name: _get_color_from_palette(index)
     for index, model_name in enumerate(MODEL_ORDER)
 }
+MODEL_NAME_TO_COLOR["Optimal Prosocial"] = _get_color_from_palette(0)
+MODEL_NAME_TO_COLOR["Random"] = _get_color_from_palette(len(MODEL_ORDER) + 1)
 
 MODEL_COMPARISON_COLORS = [
     MODEL_NAME_TO_COLOR[model_name] for model_name in MODEL_ORDER
