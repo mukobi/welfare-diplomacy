@@ -154,7 +154,7 @@ def main() -> None:
                 color=COLOR_ALT_2,
                 linestyle="--",
                 linewidth=2,
-                label="Random",
+                label="Random Policy",
             )
             plt.legend(loc=legend_loc)
 
