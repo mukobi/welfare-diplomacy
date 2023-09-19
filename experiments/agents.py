@@ -199,6 +199,7 @@ class LLMAgent(Agent):
             "gpt-4-base" in model_name
             or "text-" in model_name
             or "davinci" in model_name
+            or "turbo-instruct" in model_name
         ):
             self.backend = OpenAICompletionBackend(model_name)
         elif "claude" in model_name:
