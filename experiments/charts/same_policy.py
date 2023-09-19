@@ -9,6 +9,8 @@ import pandas as pd
 import seaborn as sns
 
 from chart_utils import (
+    COLOR_ALT_1,
+    COLOR_ALT_2,
     MODEL_COMPARISON_COLORS,
     MODEL_NAME_TO_DISPLAY_NAME,
     MODEL_NAME_TO_COLOR,
@@ -140,6 +142,7 @@ def main() -> None:
         x="combat/game_conflicts_avg",
         y="benchmark/nash_social_welfare_global",
         scatter=False,
+        color=COLOR_ALT_1,
     )
     initialize_plot_default()
     plt.rcParams["lines.markersize"] = 12

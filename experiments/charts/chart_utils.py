@@ -124,3 +124,6 @@ MODEL_NAME_TO_COLOR["Random"] = _get_color_from_palette(len(MODEL_ORDER) + 1)
 MODEL_COMPARISON_COLORS = [
     MODEL_NAME_TO_COLOR[model_name] for model_name in MODEL_ORDER
 ]
+
+COLOR_ALT_1 = "tab:purple"
+COLOR_ALT_2 = "tab:red"
