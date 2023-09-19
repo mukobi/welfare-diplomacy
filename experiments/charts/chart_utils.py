@@ -44,7 +44,7 @@ def bootstrapped_stdev(data: list[Any], num_samples: int = 1000) -> Any:
 
 
 def load_json(file_path: str) -> dict[str, Any]:
-    """Load a JSON file."""
+    """Load a JSON file of a given path (absolute or relative to cwd)."""
     with open(file_path, encoding="utf-8") as file:
         file_data = json.load(file)
     assert isinstance(file_data, dict)

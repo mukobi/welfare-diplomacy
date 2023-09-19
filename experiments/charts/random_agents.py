@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 
-from chart_utils import initialize_plot_bar, save_plot, get_results_full_path
+from chart_utils import initialize_plot_default, save_plot, get_results_full_path
 
 INPUT_FILE = "../results/sweeps/Seed GPT-3.5.csv"
 OUTPUT_DIR = "./environment/seed/gpt-3.5"
@@ -16,15 +16,16 @@ def main() -> None:
     """Main function."""
 
     # Initialize
-    initialize_plot_bar()
+    initialize_plot_default()
 
     # Load the data
     df = pd.read_csv(get_results_full_path(INPUT_FILE))
     print(f"Loaded {INPUT_FILE} with shape {df.shape}")
 
     # Plot a bunch of different bar graphs for different metrics
+    # All grouped by map_name, x-axis is max_years
     for metric_name, y_label in [
-        ("welfare", "Welfare Points"),
+        ("", "Welfare Points"),
         ("centers", "Supply Centers"),
         ("units", "Unit Counts"),
     ]:
