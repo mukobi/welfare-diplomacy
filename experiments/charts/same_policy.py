@@ -14,6 +14,7 @@ from chart_utils import (
     MODEL_NAME_TO_COLOR,
     MODEL_ORDER,
     initialize_plot_bar,
+    initialize_plot_default,
     save_plot,
     get_results_full_path,
 )
@@ -126,6 +127,35 @@ def main() -> None:
 
         # Clear the plot
         plt.clf()
+
+    # Special plot: Scatterplot of nash social welfare vs conflicts
+    df_plot = df_models.copy()
+    df_plot["agent_model"] = df_plot["agent_model"].str.replace("\n", " ")
+    df_plot = df_plot.rename(columns={"agent_model": "Agent Model"})
+    initialize_plot_default()
+    plt.rcParams["lines.marker"] = ""
+    sns.regplot(
+        data=df_plot,
+        x="combat/game_conflicts_avg",
+        y="benchmark/nash_social_welfare_global",
+        scatter=False,
+    )
+    initialize_plot_default()
+    plt.rcParams["lines.markersize"] = 12
+    sns.scatterplot(
+        data=df_plot,
+        x="combat/game_conflicts_avg",
+        y="benchmark/nash_social_welfare_global",
+        hue="Agent Model",
+        palette=MODEL_COMPARISON_COLORS,
+    )
+    plt.xlabel("Average Conflicts per Phase")
+    plt.ylabel("Nash Social Welfare")
+    plt.title("Nash Social Welfare vs Average Conflicts per Phase")
+    title = "SP Nash Social Welfare vs Conflicts.png"
+    output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
+    save_plot(output_file)
+    print(f"Saved plot '{title}' to {output_file}")
 
 
 if __name__ == "__main__":
