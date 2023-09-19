@@ -11,7 +11,7 @@ import seaborn as sns
 from chart_utils import initialize_plot_default, save_plot, get_results_full_path
 
 INPUT_FILE = "../results/environment/SvW GPT-3.5.csv"
-OUTPUT_DIR = "./environment/SvW GPT-3.5"
+OUTPUT_DIR = "./standard_vs_welfare"
 
 
 def main() -> None:
