@@ -11,8 +11,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-DEFAULT_COLOR_PALETTE = "muted"
-
 
 def set_seed(seed: int) -> None:
     """Set the seed for numpy and tensorflow."""
@@ -101,3 +99,26 @@ def save_plot(file_path: str) -> None:
 def get_results_full_path(relative_path: str) -> str:
     """Given a relative path from the charts directory, return the full path."""
     return os.path.join(os.path.dirname(__file__), relative_path)
+
+
+DEFAULT_COLOR_PALETTE = "muted"
+
+MODEL_NAME_TO_DISPLAY_NAME = {
+    "llama-2-70B": "Llama 2\n(70B)",
+    "Super Exploiter": "Super\nExploiter",
+    "claude-instant-1.2": "Claude\n1.2",
+    "claude-2.0": "Claude\n2.0",
+    "gpt-3.5-turbo-16k-0613": "GPT-3.5",
+    "gpt-4-base": "GPT-4\n(Base)",
+    "gpt-4-0613": "GPT-4\n(RLHF)",
+}
+MODEL_ORDER = list(MODEL_NAME_TO_DISPLAY_NAME.values())
+
+MODEL_NAME_TO_COLOR = {
+    model_name: _get_color_from_palette(index)
+    for index, model_name in enumerate(MODEL_ORDER)
+}
+
+MODEL_COMPARISON_COLORS = [
+    MODEL_NAME_TO_COLOR[model_name] for model_name in MODEL_ORDER
+]
