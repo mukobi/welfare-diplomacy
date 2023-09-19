@@ -4,7 +4,7 @@ Implementation of Welfare Diplomacy (a novel variant of the board game Diplomacy
 
 <p align="center">
     <img width="50%" src="experiments/gifs/SE-2 GPT-4 Fra,Rus.gif" alt="Diplomacy Map Overview" />
-    <center><i>GIF of a Welfare Diplomacy game using super exploiters (France, Russia) against GPT-4 agents.</i></center>
+    <center><i>GIF of <a href="https://wandb.ai/gabrielmukobi/welfare-diplomacy-v3/runs/1h2gtzz5?workspace=user-gabrielmukobi">a Welfare Diplomacy game</a> using super exploiters (France, Russia) against GPT-4 agents.</i></center>
 </p>
 
 ## About Welfare Diplomacy
