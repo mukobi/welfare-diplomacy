@@ -29,6 +29,7 @@ INPUT_FILES_MODELS = [
     "../results/same_policy/SP SuperExploiter (GPT-4).csv",
 ]
 INPUT_FILE_OPTIMAL_PROSOCIAL = "../results/same_policy/Optimal Prosocial.csv"
+INPUT_FILE_RANDOM = "../results/same_policy/SP Random.csv"
 
 OUTPUT_DIR = "same_policy"
 
@@ -45,6 +46,8 @@ def main() -> None:
     df_optimal_prosocial = pd.read_csv(
         get_results_full_path(INPUT_FILE_OPTIMAL_PROSOCIAL)
     )
+    df_random = pd.read_csv(get_results_full_path(INPUT_FILE_RANDOM))
+    df_random["agent_model"] = "Random"
 
     # Change the agent model of all rows with non-empty super_exploiter_powers to "Super Exploiter"
     df_models.loc[
@@ -65,10 +68,31 @@ def main() -> None:
     print(df_models.groupby(["agent_model"])["_progress/percent_done"].mean())
 
     # Plot a bunch of different bar graphs for different metrics
-    for metric_name, y_label, improvement_sign, include_optimal, include_random in [
-        ("benchmark/nash_social_welfare_global", "Nash Social Welfare", 1, True, True),
-        ("benchmark/competence_score", "Competence Score", 1, False, False),
-        ("combat/game_conflicts_avg", "Average Conflicts per Phase", -1, False, True),
+    for (
+        metric_name,
+        y_label,
+        improvement_sign,
+        include_optimal,
+        include_random,
+        legend_loc,
+    ) in [
+        (
+            "benchmark/nash_social_welfare_global",
+            "Nash Social Welfare",
+            1,
+            True,
+            True,
+            (0.0, 0.75),
+        ),
+        ("benchmark/competence_score", "Competence Score", 1, False, False, "best"),
+        (
+            "combat/game_conflicts_avg",
+            "Average Conflicts per Phase",
+            -1,
+            False,
+            True,
+            "best",
+        ),
     ]:
         # Initialize
         initialize_plot_bar()
@@ -108,7 +132,20 @@ def main() -> None:
                 linewidth=2,
                 label="Optimal Prosocial",
             )
-            plt.legend()
+            plt.legend(loc=legend_loc)
+
+        if include_random:
+            # Calculate the average of the metric for random
+            random_avg = df_random[metric_name].mean()
+            # Add horizontal line for random with label
+            plot.axhline(
+                random_avg,
+                color=COLOR_ALT_2,
+                linestyle="--",
+                linewidth=2,
+                label="Random",
+            )
+            plt.legend(loc=legend_loc)
 
         # Set labels and title
         plt.xlabel(x_label)
@@ -132,9 +169,10 @@ def main() -> None:
         plt.clf()
 
     # Special plot: Scatterplot of nash social welfare vs conflicts
-    df_plot = df_models.copy()
+    df_plot = pd.concat([df_models, df_random]).copy()
     df_plot["agent_model"] = df_plot["agent_model"].str.replace("\n", " ")
-    df_plot = df_plot.rename(columns={"agent_model": "Agent Model"})
+    grouping = "Agent Model"
+    df_plot = df_plot.rename(columns={"agent_model": grouping})
     initialize_plot_default()
     plt.rcParams["lines.marker"] = ""
     sns.regplot(
@@ -145,17 +183,25 @@ def main() -> None:
         color=COLOR_ALT_1,
     )
     initialize_plot_default()
-    plt.rcParams["lines.markersize"] = 12
+    plt.rcParams["lines.markersize"] = 14
     sns.scatterplot(
         data=df_plot,
         x="combat/game_conflicts_avg",
         y="benchmark/nash_social_welfare_global",
-        hue="Agent Model",
-        palette=MODEL_COMPARISON_COLORS,
+        hue=grouping,
+        style=grouping,
+        palette=MODEL_COMPARISON_COLORS + [COLOR_ALT_2],
     )
     plt.xlabel("Average Conflicts per Phase ↓")
     plt.ylabel("Nash Social Welfare →")
     plt.title("Nash Social Welfare vs Average Conflicts per Phase")
+    # Legend in 2 columns
+    plt.legend(
+        borderaxespad=0.0,
+        ncol=2,
+        handletextpad=0.1,
+        columnspacing=0.5,
+    )
     title = "SP Nash Social Welfare vs Conflicts.png"
     output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
     save_plot(output_file)
