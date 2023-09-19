@@ -1,5 +1,5 @@
 """
-Plot elo scores as for each model type.
+Charts for Standard Diplomacy vs Welfare Diplomacy experiment.
 """
 
 import os

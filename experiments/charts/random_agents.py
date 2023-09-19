@@ -1,5 +1,5 @@
 """
-Plot elo scores as for each model type.
+Plot early metrics for sweeps across random seeds for random and GPT-3.5 agents.
 """
 
 import matplotlib.pyplot as plt
@@ -8,8 +8,8 @@ import seaborn as sns
 
 from chart_utils import initialize_plot_default, save_plot, get_results_full_path
 
-INPUT_FILE = "../results/sweeps/Seed GPT-3.5.csv"
-OUTPUT_DIR = "./environment/seed/gpt-3.5"
+INPUT_FILE = "../results/seed/Seed GPT-3.5.csv"
+OUTPUT_DIR = "./seed/gpt-3.5"
 
 
 def main() -> None:
