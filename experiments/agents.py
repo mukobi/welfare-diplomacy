@@ -82,13 +82,13 @@ class RandomAgent(Agent):
                     )
                 else:
                     power_orders.append(random.choice(params.possible_orders[loc]))
-        # Randomly add an invalid order
-        if random.random() < 0.1:
-            power_orders.append("Random invalid order")
+        # # Testing: Randomly add an invalid order
+        # if random.random() < 0.1:
+        #     power_orders.append("Random invalid order")
 
-        # More randomly raise a completion error
-        if random.random() < 0.05:
-            raise AgentCompletionError("Randomly raised completion error")
+        # # Testing: More randomly raise a completion error
+        # if random.random() < 0.05:
+        #     raise AgentCompletionError("Randomly raised completion error")
 
         # For debugging prompting
         system_prompt = prompts.get_system_prompt(params)
