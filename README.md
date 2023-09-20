@@ -45,21 +45,29 @@ Or if you've already cloned this repo, then pull the submodule with
 git submodule update --init
 ```
 
-1. Install PyTorch separately (for local language models)
+1. If setting up an environment, use Python 3.11 (tested on 3.10 and 3.11, might work with other versions), e.g.
+
+```bash
+conda create --name wfd python=3.11
+
+conda activate wfd
+```
+
+2. Install PyTorch separately (for local language models)
 
 > See https://pytorch.org/get-started/locally/
 
-2. Install the base requirements (dev has the base requirements for the `diplomacy` module as well as our scaffolding).
+3. Install the base requirements (dev has the base requirements for the `diplomacy` module as well as our scaffolding).
 ```
 pip install -r requirements_dev.txt
 ```
 
-3. Install our baseline agent submodule (used for testing RL agent baselines trained for Standard Diplomacy)
+4. Install our baseline agent submodule (used for testing RL agent baselines trained for Standard Diplomacy)
 ```
 pip install -r welfare_diplomacy_baselines/requirements.txt  
 ```
 
-4. Read the arguments for the `simulate_game.py` script
+5. Read the arguments for the `simulate_game.py` script
 
 ```bash
 python experiments/simulate_game.py --help
@@ -68,7 +76,7 @@ This will show all the parameters you can use to run experiments.
 
 Note that you should set your `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` environment variables if you plan to use OpenAI or Anthropic API models.
 
-5. Run experiments!
+6. Run experiments!
 ```bash
 # If you just want to check that things are working and installed, run a game with random agents
 python experiments/simulate_game.py --agent_model random --summarizer_model passthrough --disable_wandb
@@ -104,6 +112,12 @@ python experiments/simulate_game.py --super_exploiter_powers France,Russia
 ```
 
 Note that the super exploiters default to using GPT-4 as their language model agent when playing nice (since it's the most capable model at the time of writing), so be aware of the token costs that come with that.
+
+If you just want to test the RL policy part without language models, you can use these arguments:
+
+```bash
+python experiments/simulate_game.py --disable_wandb --agent_model random --max_message_rounds 1 --summarizer_model passthrough --super_exploiter_powers Austria,England,France,Germany,Italy,Russia,Turkey --unit_threshold 999 --center_threshold 999
+```
 
 ## Reproducing Our Experiments
 
@@ -186,7 +200,7 @@ The latest version of the package can be installed with:
 pip install diplomacy
 ```
 
-The package is compatible with Python 3.5, 3.6, and 3.7.
+~The package is compatible with Python 3.5, 3.6, and 3.7.~
 
 ### Running a game
 
