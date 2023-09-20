@@ -90,6 +90,18 @@ def _get_color_from_palette(index: int) -> Any:
     return color
 
 
+def geometric_mean(values: list[float]) -> float:
+    """
+    Calculate the geometric mean of a list of values.
+
+    Equivalent to the Nash social welfare function for a list of welfare values.
+    """
+    if any([value <= 0.0 for value in values]):
+        # Avoid log(0)
+        return 0.0
+    return np.exp(np.mean(np.log(values)))
+
+
 def save_plot(file_path: str) -> None:
     """Save a plot to a file."""
     create_file_dir_if_not_exists(file_path)
@@ -113,6 +125,7 @@ MODEL_NAME_TO_DISPLAY_NAME = {
     "gpt-4-0613": "GPT-4\n(RLHF)",
 }
 MODEL_ORDER = list(MODEL_NAME_TO_DISPLAY_NAME.values())
+MODEL_ORDER_NO_SE = [model for model in MODEL_ORDER if model != "Super\nExploiter"]
 
 MODEL_NAME_TO_COLOR = {
     model_name: _get_color_from_palette(index)
