@@ -32,6 +32,7 @@ INPUT_FILE_OPTIMAL_PROSOCIAL = "../results/same_policy/Optimal Prosocial.csv"
 INPUT_FILE_RANDOM = "../results/same_policy/SP Random.csv"
 
 OUTPUT_DIR = "same_policy"
+NON_ROOT_WELFARE = False
 
 
 def main() -> None:
@@ -115,6 +116,13 @@ def main() -> None:
         ]
 
         plot_df = df_models[cols_of_interest].copy()
+
+        # Exponentiate nash welfare scores
+        if NON_ROOT_WELFARE and "welfare" in metric_name:
+            plot_df[metric_name] = plot_df[metric_name].pow(7)
+            df_random[metric_name] = df_random[metric_name].pow(7)
+            df_optimal_prosocial[metric_name] = df_optimal_prosocial[metric_name].pow(7)
+            plt.yscale("log")
 
         # update the column names
         x_label = "Agent Model"
