@@ -220,7 +220,7 @@ def geometric_mean(values: list[float]) -> float:
     """
     Calculate the geometric mean of a list of values.
 
-    Equivalent to the Nash social welfare function for a list of welfare values.
+    Equivalent to the root Nash social welfare function for a list of welfare values.
     """
     if any([value <= 0.0 for value in values]):
         # Avoid log(0)

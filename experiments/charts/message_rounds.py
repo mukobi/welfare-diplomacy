@@ -40,7 +40,7 @@ def main() -> None:
 
     # Plot a bunch of different bar graphs for different metrics
     for y_metric, y_label, improvement_sign, palette_index in [
-        ("benchmark/nash_social_welfare_global", "Nash Social Welfare", 1, 1),
+        ("benchmark/nash_social_welfare_global", "Root Nash Welfare", 1, 1),
         ("benchmark/competence_score", "Competence Score", 1, 0),
     ]:
         # Initialize

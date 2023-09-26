@@ -81,7 +81,7 @@ def main() -> None:
     ) in [
         (
             "benchmark/nash_social_welfare_global",
-            "Nash Social Welfare",
+            "Root Nash Welfare",
             1,
             True,
             True,
@@ -194,7 +194,7 @@ def main() -> None:
         # Clear the plot
         plt.clf()
 
-    # Special plot: Scatterplot of nash social welfare vs other things
+    # Special plot: Scatterplot of roow nash welfare vs other things
     for x_axis, x_label in [
         ("combat/game_conflicts_avg", "Conflicts"),
         ("conquest/game_centers_lost_avg", "SCs Lost"),
@@ -232,7 +232,7 @@ def main() -> None:
             handletextpad=0.1,
             columnspacing=0.5,
         )
-        title = f"SP Nash Social Welfare vs {x_label}.png"
+        title = f"SP Root Nash Welfare vs {x_label}.png"
         output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
         save_plot(output_file)
         print(f"Saved plot '{title}' to {output_file}")
