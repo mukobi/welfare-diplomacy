@@ -116,7 +116,7 @@ def get_results_full_path(relative_path: str) -> str:
 DEFAULT_COLOR_PALETTE = "colorblind"
 
 MODEL_NAME_TO_DISPLAY_NAME = {
-    # "llama-2-70B": "Llama 2\n(70B)",
+    "llama-2-70b-chat": "Llama 2\n(70B)",
     "Super Exploiter": "Super\nExploiter",
     "claude-instant-1.2": "Claude\n1.2",
     "claude-2.0": "Claude\n2.0",
