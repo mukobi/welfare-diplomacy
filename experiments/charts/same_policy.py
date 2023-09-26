@@ -27,6 +27,7 @@ INPUT_FILES_MODELS = [
     "../results/same_policy/SP GPT-4-0613.csv",
     "../results/same_policy/SP GPT-4-Base.csv",
     "../results/same_policy/SP SuperExploiter (GPT-4).csv",
+    "../results/same_policy/SP Llama2-70b-chat.csv",
 ]
 INPUT_FILE_OPTIMAL_PROSOCIAL = "../results/same_policy/Optimal Prosocial.csv"
 INPUT_FILE_RANDOM = "../results/same_policy/SP Random.csv"
@@ -93,7 +94,7 @@ def main() -> None:
             1,
             False,
             False,
-            (0.65, 1.005),
+            (0.5, 1.005),
             "best",
         ),
         (
@@ -193,44 +194,50 @@ def main() -> None:
         # Clear the plot
         plt.clf()
 
-    # Special plot: Scatterplot of nash social welfare vs conflicts
-    df_plot = pd.concat([df_models, df_random]).copy()
-    df_plot["agent_model"] = df_plot["agent_model"].str.replace("\n", " ")
-    grouping = "Agent Model"
-    df_plot = df_plot.rename(columns={"agent_model": grouping})
-    initialize_plot_default()
-    plt.rcParams["lines.marker"] = ""
-    sns.regplot(
-        data=df_plot,
-        x="combat/game_conflicts_avg",
-        y="benchmark/nash_social_welfare_global",
-        scatter=False,
-        color=COLOR_ALT_1,
-    )
-    initialize_plot_default()
-    plt.rcParams["lines.markersize"] = 14
-    sns.scatterplot(
-        data=df_plot,
-        x="combat/game_conflicts_avg",
-        y="benchmark/nash_social_welfare_global",
-        hue=grouping,
-        style=grouping,
-        palette=MODEL_COMPARISON_COLORS + [COLOR_ALT_2],
-    )
-    plt.xlabel("Average Conflicts per Phase ↓")
-    plt.ylabel("Nash Social Welfare →")
-    plt.title("Nash Social Welfare vs Average Conflicts per Phase")
-    # Legend in 2 columns
-    plt.legend(
-        borderaxespad=0.0,
-        ncol=2,
-        handletextpad=0.1,
-        columnspacing=0.5,
-    )
-    title = "SP Nash Social Welfare vs Conflicts.png"
-    output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
-    save_plot(output_file)
-    print(f"Saved plot '{title}' to {output_file}")
+    # Special plot: Scatterplot of nash social welfare vs other things
+    for x_axis, x_label in [
+        ("combat/game_conflicts_avg", "Conflicts"),
+        ("conquest/game_centers_lost_avg", "SCs Lost"),
+    ]:
+        df_plot = pd.concat([df_models, df_random]).copy()
+        df_plot["agent_model"] = df_plot["agent_model"].str.replace("\n", " ")
+        grouping = "Agent Model"
+        df_plot = df_plot.rename(columns={"agent_model": grouping})
+        initialize_plot_default()
+        plt.rcParams["lines.marker"] = ""
+        sns.regplot(
+            data=df_plot,
+            x=x_axis,
+            y="benchmark/nash_social_welfare_global",
+            scatter=False,
+            color=COLOR_ALT_1,
+        )
+        initialize_plot_default()
+        plt.rcParams["lines.markersize"] = 14
+        sns.scatterplot(
+            data=df_plot,
+            x=x_axis,
+            y="benchmark/nash_social_welfare_global",
+            hue=grouping,
+            style=grouping,
+            palette=MODEL_COMPARISON_COLORS + [COLOR_ALT_2],
+        )
+        plt.xlabel(f"Average {x_label} per Phase ↓")
+        plt.ylabel("Root Nash Welfare →")
+        plt.title(f"Root Nash Welfare vs Average {x_label} per Phase")
+        # Legend in 2 columns
+        plt.legend(
+            borderaxespad=0.0,
+            ncol=2,
+            handletextpad=0.1,
+            columnspacing=0.5,
+        )
+        title = f"SP Nash Social Welfare vs {x_label}.png"
+        output_file = get_results_full_path(os.path.join(OUTPUT_DIR, title))
+        save_plot(output_file)
+        print(f"Saved plot '{title}' to {output_file}")
+
+        plt.clf()
 
 
 if __name__ == "__main__":
