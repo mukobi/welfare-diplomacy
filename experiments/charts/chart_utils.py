@@ -113,6 +113,8 @@ def get_results_full_path(relative_path: str) -> str:
     return os.path.join(os.path.dirname(__file__), relative_path)
 
 
+ALL_POWER_ABBREVIATIONS = ["AUS", "ENG", "FRA", "GER", "ITA", "RUS", "TUR"]
+
 DEFAULT_COLOR_PALETTE = "colorblind"
 
 MODEL_NAME_TO_DISPLAY_NAME = {

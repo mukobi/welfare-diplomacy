@@ -9,11 +9,11 @@ import pandas as pd
 import seaborn as sns
 
 from chart_utils import (
+    ALL_POWER_ABBREVIATIONS,
     COLOR_ALT_1,
     COLOR_ALT_2,
     MODEL_COMPARISON_COLORS,
     MODEL_NAME_TO_DISPLAY_NAME,
-    MODEL_NAME_TO_COLOR,
     MODEL_ORDER,
     initialize_plot_bar,
     initialize_plot_default,
@@ -42,6 +42,17 @@ def main() -> None:
     # Load the data from each file into one big dataframe
     df_models = pd.concat(
         [pd.read_csv(get_results_full_path(f)) for f in INPUT_FILES_MODELS]
+    )
+
+    # Preprocess a 2D table that has an average WP for each [language model, power] combo
+    # model is in agent_model, and power welfares are each score/welfare/{power abbreviation}
+    columns_of_interest = ["agent_model"] + [
+        f"score/welfare/{power}" for power in ALL_POWER_ABBREVIATIONS
+    ]
+    df_model_power_wp = df_models[columns_of_interest].copy()
+    df_model_power_wp = df_model_power_wp.groupby(["agent_model"]).mean().reset_index()
+    df_model_power_wp.to_csv(
+        get_results_full_path(os.path.join(OUTPUT_DIR, "SP Model Power WP.csv")),
     )
 
     # Load other data
