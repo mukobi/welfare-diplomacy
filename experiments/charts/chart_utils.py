@@ -117,7 +117,7 @@ DEFAULT_COLOR_PALETTE = "colorblind"
 
 MODEL_NAME_TO_DISPLAY_NAME = {
     "llama-2-70b-chat": "Llama 2\n(70B)",
-    "Super Exploiter": "Super\nExploiter",
+    "Super Exploiter": "Exploiter\n(GPT-4)",
     "claude-instant-1.2": "Claude\n1.2",
     "claude-2.0": "Claude\n2.0",
     "gpt-3.5-turbo-16k-0613": "GPT-3.5",
@@ -125,7 +125,9 @@ MODEL_NAME_TO_DISPLAY_NAME = {
     "gpt-4-0613": "GPT-4\n(RLHF)",
 }
 MODEL_ORDER = list(MODEL_NAME_TO_DISPLAY_NAME.values())
-MODEL_ORDER_NO_SE = [model for model in MODEL_ORDER if model != "Super\nExploiter"]
+MODEL_ORDER_NO_EXPLOITER = [
+    model for model in MODEL_ORDER if model != "Exploiter\n(GPT-4)"
+]
 
 MODEL_NAME_TO_COLOR = {
     model_name: _get_color_from_palette(index)
