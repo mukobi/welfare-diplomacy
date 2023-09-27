@@ -33,7 +33,7 @@ def main() -> None:
     for metric_name, y_label, improvement_sign in [
         ("benchmark/competence_score", "Basic Proficiency", 1),
         ("combat/game_conflicts_avg", "Average Conflicts per Phase", -1),
-        ("conquest/game_centers_lost_avg", "Average SCs Lost per Phase", -1),
+        ("conquest/game_centers_lost_avg", "Average SCs Stolen per Phase", -1),
     ]:
         # Initialize
         initialize_plot_default()

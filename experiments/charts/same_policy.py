@@ -225,7 +225,7 @@ def main() -> None:
     # Special plot: Scatterplot of roow nash welfare vs other things
     for x_axis, x_label in [
         ("combat/game_conflicts_avg", "Conflicts"),
-        ("conquest/game_centers_lost_avg", "SCs Lost"),
+        ("conquest/game_centers_lost_avg", "SCs Stolen"),
     ]:
         df_plot = pd.concat([df_models, df_random]).copy()
         df_plot["agent_model"] = df_plot["agent_model"].str.replace("\n", " ")
