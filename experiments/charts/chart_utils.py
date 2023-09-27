@@ -58,6 +58,8 @@ def create_file_dir_if_not_exists(file_path: str) -> None:
 
 def initialize_plot_default() -> None:
     """Set default plot styling."""
+    # Clear the plot
+    plt.clf()
     # Set seed
     set_seed(66)
     # Default theme
@@ -118,8 +120,8 @@ ALL_POWER_ABBREVIATIONS = ["AUS", "ENG", "FRA", "GER", "ITA", "RUS", "TUR"]
 DEFAULT_COLOR_PALETTE = "colorblind"
 
 MODEL_NAME_TO_DISPLAY_NAME = {
-    "llama-2-70b-chat": "Llama 2\n(70B)",
     "Super Exploiter": "Exploiter\n(GPT-4)",
+    "llama-2-70b-chat": "Llama 2\n(70B)",
     "claude-instant-1.2": "Claude\n1.2",
     "claude-2.0": "Claude\n2.0",
     "gpt-3.5-turbo-16k-0613": "GPT-3.5",
