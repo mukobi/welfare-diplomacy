@@ -101,7 +101,7 @@ def main() -> None:
         ),
         (
             "benchmark/competence_score",
-            "Competence Score",
+            "Basic Proficiency",
             1,
             False,
             False,
