@@ -203,7 +203,7 @@ def main() -> None:
         elif improvement_sign == -1:
             y_axis_label += " ←"
         plt.ylabel(y_axis_label)
-        title = f"{y_label} by Agent Model"
+        title = f"{y_label} by Agent Model (Self-Play)"
         plt.title(title)
 
         # Set y bounds
@@ -252,7 +252,7 @@ def main() -> None:
         )
         plt.xlabel(f"Average {x_label} per Phase ↓")
         plt.ylabel("Root Nash Welfare →")
-        plt.title(f"Root Nash Welfare vs Average {x_label} per Phase")
+        plt.title(f"Root Nash Welfare vs Average {x_label} per Phase (Self-Play)")
         # Legend in 2 columns
         plt.legend(
             borderaxespad=0.0,

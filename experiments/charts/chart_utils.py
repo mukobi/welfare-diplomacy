@@ -58,8 +58,6 @@ def create_file_dir_if_not_exists(file_path: str) -> None:
 
 def initialize_plot_default() -> None:
     """Set default plot styling."""
-    # Clear the plot
-    plt.clf()
     # Set seed
     set_seed(66)
     # Default theme
