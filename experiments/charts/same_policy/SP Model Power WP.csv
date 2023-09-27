@@ -1,7 +1,7 @@
-,agent_model,score/welfare/AUS,score/welfare/ENG,score/welfare/FRA,score/welfare/GER,score/welfare/ITA,score/welfare/RUS,score/welfare/TUR
-0,claude-2.0,21.8,21.0,24.6,27.8,28.4,42.2,26.2
-1,claude-instant-1.2,5.8,13.8,12.8,23.0,12.4,15.4,16.6
-2,gpt-3.5-turbo-16k-0613,23.8,17.0,17.0,17.2,16.4,26.4,16.2
-3,gpt-4-0613,25.9,21.1,23.0,26.6,23.4,26.5,26.8
-4,gpt-4-base,26.8,20.6,26.6,20.6,22.2,23.4,24.8
-5,llama-2-70b-chat,12.0,15.6,13.6,22.2,18.0,23.2,20.8
+,agent_model,_progress/year_fractional,yearly_welfare/AUS,yearly_welfare/ENG,yearly_welfare/FRA,yearly_welfare/GER,yearly_welfare/ITA,yearly_welfare/RUS,yearly_welfare/TUR,_progress/year_integer
+0,claude-2.0,10.9,2.18,2.1,2.46,2.7800000000000002,2.84,4.220000000000001,2.62,10.0
+1,claude-instant-1.2,10.9,0.5800000000000001,1.3800000000000001,1.28,2.3,1.24,1.5399999999999998,1.6600000000000001,10.0
+2,gpt-3.5-turbo-16k-0613,10.9,2.38,1.7,1.7,1.72,1.64,2.6399999999999997,1.6199999999999999,10.0
+3,gpt-4-0613,10.9,2.59,2.1100000000000003,2.3,2.66,2.3400000000000003,2.65,2.68,10.0
+4,gpt-4-base,10.9,2.68,2.06,2.6599999999999997,2.06,2.2199999999999998,2.34,2.48,10.0
+5,llama-2-70b-chat,10.9,1.2,1.56,1.3599999999999999,2.2199999999999998,1.8,2.32,2.08,10.0
