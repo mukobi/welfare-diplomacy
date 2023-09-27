@@ -117,30 +117,33 @@ ALL_POWER_ABBREVIATIONS = ["AUS", "ENG", "FRA", "GER", "ITA", "RUS", "TUR"]
 
 DEFAULT_COLOR_PALETTE = "colorblind"
 
+MODELS_NAMES_COLORS = [
+    ("Super Exploiter", "Exploiter\n(GPT-4)", 2),
+    ("llama-2-70b-chat", "Llama 2\n(70B)", 5),
+    ("claude-instant-1.2", "Claude\n1.2", 9),
+    ("claude-2.0", "Claude\n2.0", 0),
+    ("gpt-3.5-turbo-16k-0613", "GPT-3.5", 3),
+    ("gpt-4-base", "GPT-4\n(Base)", 1),
+    ("gpt-4-0613", "GPT-4\n(RLHF)", 4),
+]
+MODEL_ORDER = [model_name for _, model_name, _ in MODELS_NAMES_COLORS]
+MODEL_ORDER_NO_EXPLOITER = [model for model in MODEL_ORDER if "Exploit" not in model]
 MODEL_NAME_TO_DISPLAY_NAME = {
-    "Super Exploiter": "Exploiter\n(GPT-4)",
-    "llama-2-70b-chat": "Llama 2\n(70B)",
-    "claude-instant-1.2": "Claude\n1.2",
-    "claude-2.0": "Claude\n2.0",
-    "gpt-3.5-turbo-16k-0613": "GPT-3.5",
-    "gpt-4-base": "GPT-4\n(Base)",
-    "gpt-4-0613": "GPT-4\n(RLHF)",
+    model_name: display_name for model_name, display_name, _ in MODELS_NAMES_COLORS
 }
-MODEL_ORDER = list(MODEL_NAME_TO_DISPLAY_NAME.values())
-MODEL_ORDER_NO_EXPLOITER = [
-    model for model in MODEL_ORDER if model != "Exploiter\n(GPT-4)"
-]
-
-MODEL_NAME_TO_COLOR = {
-    model_name: _get_color_from_palette(index)
-    for index, model_name in enumerate(MODEL_ORDER)
-}
-MODEL_NAME_TO_COLOR["Optimal Prosocial"] = _get_color_from_palette(0)
-MODEL_NAME_TO_COLOR["Random"] = _get_color_from_palette(len(MODEL_ORDER) + 1)
-
-MODEL_COMPARISON_COLORS = [
-    MODEL_NAME_TO_COLOR[model_name] for model_name in MODEL_ORDER
-]
 
 COLOR_ALT_1 = "tab:purple"
 COLOR_ALT_2 = "tab:red"
+
+MODEL_NAME_TO_COLOR = {
+    model_name: _get_color_from_palette(index)
+    for _, model_name, index in MODELS_NAMES_COLORS
+}
+MODEL_NAME_TO_COLOR.update(
+    {
+        model_name.replace("\n", " "): _get_color_from_palette(index)
+        for _, model_name, index in MODELS_NAMES_COLORS
+    }
+)
+MODEL_NAME_TO_COLOR["Optimal Prosocial"] = COLOR_ALT_1
+MODEL_NAME_TO_COLOR["Random"] = COLOR_ALT_2

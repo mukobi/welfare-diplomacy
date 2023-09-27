@@ -12,7 +12,7 @@ from chart_utils import (
     ALL_POWER_ABBREVIATIONS,
     COLOR_ALT_1,
     COLOR_ALT_2,
-    MODEL_COMPARISON_COLORS,
+    MODEL_NAME_TO_COLOR,
     MODEL_NAME_TO_DISPLAY_NAME,
     MODEL_ORDER,
     initialize_plot_bar,
@@ -166,7 +166,7 @@ def main() -> None:
             order=MODEL_ORDER,
             capsize=0.2,
             hue=x_label,
-            palette=MODEL_COMPARISON_COLORS,
+            palette=MODEL_NAME_TO_COLOR,
             # errwidth=2,
         )
 
@@ -248,7 +248,7 @@ def main() -> None:
             y="benchmark/nash_social_welfare_global",
             hue=grouping,
             style=grouping,
-            palette=MODEL_COMPARISON_COLORS + [COLOR_ALT_2],
+            palette=MODEL_NAME_TO_COLOR,
         )
         plt.xlabel(f"Average {x_label} per Phase ↓")
         plt.ylabel("Root Nash Welfare →")
