@@ -106,7 +106,7 @@ def main() -> None:
     ]:
         # Initialize
         initialize_plot_bar()
-        plt.rcParams["figure.figsize"] = (12, 6)
+        plt.rcParams["figure.figsize"] = (12, 4.5)
 
         # Plot the welfare scores for each power
         cols_of_interest = [
