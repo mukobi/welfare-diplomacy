@@ -1,4 +1,10 @@
-"""Constant expressions."""
+"""
+Prompt engineering functions. This handles extracting data from the current game state,
+manipulating text constants for our prompt ablation experiment in \Cref{sec:prompt_ablation}, and
+putting it all together into single system and user prompts with which to prompt language models
+for completing a turn as an agent or generating summaries of past messages for compressing future
+context windows.
+"""
 
 from diplomacy import Power
 
