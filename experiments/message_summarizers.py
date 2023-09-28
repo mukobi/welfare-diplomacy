@@ -11,7 +11,7 @@ from backends import (
     OpenAICompletionBackend,
     HuggingFaceCausalLMBackend,
 )
-from data_types import AgentParams, PhaseMessageSummary, PromptAblation
+from data_types import AgentParams, PhaseMessageSummary
 import prompts
 import utils
 
