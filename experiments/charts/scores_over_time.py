@@ -58,7 +58,7 @@ def main() -> None:
         initialize_plot_default()
 
         # Bigger figure since it's busy
-        plt.rcParams["figure.figsize"] = (10, 5)
+        plt.rcParams["figure.figsize"] = (10, 6)
 
         # Plot the welfare scores for each power
         cols_of_interest = [
