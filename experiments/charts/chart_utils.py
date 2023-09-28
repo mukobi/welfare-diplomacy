@@ -125,6 +125,8 @@ MODELS_NAMES_COLORS = [
     ("gpt-3.5-turbo-16k-0613", "GPT-3.5", 3),
     ("gpt-4-base", "GPT-4\n(Base)", 1),
     ("gpt-4-0613", "GPT-4\n(RLHF)", 4),
+    ("manual", "Optimal Prosocial", 0),
+    ("random", "Random Policy", 0),
 ]
 MODEL_ORDER = [model_name for _, model_name, _ in MODELS_NAMES_COLORS]
 MODEL_ORDER_NO_EXPLOITER = [model for model in MODEL_ORDER if "Exploit" not in model]
