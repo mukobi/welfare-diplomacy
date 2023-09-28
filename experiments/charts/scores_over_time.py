@@ -120,7 +120,7 @@ def main() -> None:
             loc="upper left",
             handletextpad=0.1,
             # columnspacing=1,
-            labelspacing=1.5,
+            labelspacing=2,
             # Order by
             # framealpha=0.25,
         )
