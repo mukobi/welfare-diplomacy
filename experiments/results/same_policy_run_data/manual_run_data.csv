@@ -1,4 +1,4 @@
-model_name,year_integer,score/welfare/AUS,score/welfare/ENG,score/welfare/FRA,score/welfare/GER,score/welfare/ITA,score/welfare/RUS,score/welfare/TUR,score/centers/AUS,score/centers/ENG,score/centers/FRA,score/centers/GER,score/centers/ITA,score/centers/RUS,score/centers/TUR,score/units/AUS,score/units/ENG,score/units/FRA,score/units/GER,score/units/ITA,score/units/RUS,score/units/TUR
+agent_model,year_integer,score/welfare/AUS,score/welfare/ENG,score/welfare/FRA,score/welfare/GER,score/welfare/ITA,score/welfare/RUS,score/welfare/TUR,score/centers/AUS,score/centers/ENG,score/centers/FRA,score/centers/GER,score/centers/ITA,score/centers/RUS,score/centers/TUR,score/units/AUS,score/units/ENG,score/units/FRA,score/units/GER,score/units/ITA,score/units/RUS,score/units/TUR
 manual,0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.0,3.0,3.0,3.0,3.0,4.0,3.0,3.0,3.0,3.0,3.0,3.0,4.0,3.0
 manual,1,5.0,5.0,5.0,5.0,4.0,5.0,5.0,5.0,5.0,5.0,5.0,4.0,5.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
 manual,2,10.0,10.0,10.0,10.0,8.0,10.0,10.0,5.0,5.0,5.0,5.0,4.0,5.0,5.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

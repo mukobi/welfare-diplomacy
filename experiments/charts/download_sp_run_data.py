@@ -106,7 +106,7 @@ def main():
 def get_row_data(row, model_name: str):
     """Extract the desired data from a given row and return it as a dict."""
     output = {
-        "model_name": model_name,
+        "agent_model": model_name,
         "year_integer": int(row["_progress/year_fractional"])
         if "_progress/year_fractional" in row
         else int(row["meta/year_fractional"]),
