@@ -129,6 +129,7 @@ MODELS_NAMES_COLORS = [
     ("random", "Random Policy", 0),
 ]
 MODEL_ORDER = [model_name for _, model_name, _ in MODELS_NAMES_COLORS]
+MODEL_ORDER_NO_NEWLINES = [model.replace("\n", " ") for model in MODEL_ORDER]
 MODEL_ORDER_NO_EXPLOITER = [model for model in MODEL_ORDER if "Exploit" not in model]
 MODEL_NAME_TO_DISPLAY_NAME = {
     model_name: display_name for model_name, display_name, _ in MODELS_NAMES_COLORS
@@ -148,4 +149,4 @@ MODEL_NAME_TO_COLOR.update(
     }
 )
 MODEL_NAME_TO_COLOR["Optimal Prosocial"] = COLOR_ALT_1
-MODEL_NAME_TO_COLOR["Random"] = COLOR_ALT_2
+MODEL_NAME_TO_COLOR["Random Policy"] = COLOR_ALT_2
