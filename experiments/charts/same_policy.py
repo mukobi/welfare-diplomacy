@@ -44,11 +44,19 @@ def main() -> None:
         [pd.read_csv(get_results_full_path(f)) for f in INPUT_FILES_MODELS]
     )
 
-    # Preprocess a 2D table that has an average WP for each [language model, power] combo
+    # Preprocess a 2D table that has the WP for each [language model, power] combo for each run
     # model is in agent_model, and power welfares are each score/welfare/{power abbreviation}
     wp_column_names = [f"score/welfare/{power}" for power in ALL_POWER_ABBREVIATIONS]
-    columns_of_interest = ["agent_model", "_progress/year_fractional"] + wp_column_names
+    columns_of_interest = [
+        "agent_model",
+        "_progress/year_fractional",
+        "super_exploiter_powers",
+    ] + wp_column_names
     df_model_power_wp = df_models[columns_of_interest].copy()
+    df_model_power_wp.loc[
+        df_model_power_wp["super_exploiter_powers"].notnull(), "agent_model"
+    ] = "Super Exploiter"
+    df_model_power_wp = df_model_power_wp.drop(columns=["super_exploiter_powers"])
     # Calculate integer years, first converting NaN values to the value in the first row
     df_model_power_wp = df_model_power_wp.fillna(
         df_model_power_wp["_progress/year_fractional"].iloc[0]
@@ -67,7 +75,7 @@ def main() -> None:
             for wp, power in zip(wp_column_names, ALL_POWER_ABBREVIATIONS)
         }
     )
-    df_model_power_wp = df_model_power_wp.groupby(["agent_model"]).mean().reset_index()
+    # df_model_power_wp = df_model_power_wp.groupby(["agent_model"]).mean().reset_index()
     df_model_power_wp.to_csv(
         get_results_full_path(os.path.join(OUTPUT_DIR, "SP Model Power WP.csv")),
     )
