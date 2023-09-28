@@ -55,7 +55,7 @@ def main() -> None:
         plot_df = df[cols_of_interest].copy()
 
         # update the column names
-        x_label = "Message Rounds per Phase"
+        x_label = "Message Rounds per Turn"
         plot_df.columns = [x_label, y_label]
 
         # Create the plot by plotting two lines

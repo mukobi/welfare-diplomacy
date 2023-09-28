@@ -85,7 +85,7 @@ def main() -> None:
         get_results_full_path(INPUT_FILE_OPTIMAL_PROSOCIAL)
     )
     df_random = pd.read_csv(get_results_full_path(INPUT_FILE_RANDOM))
-    df_random["agent_model"] = "Random"
+    df_random["agent_model"] = "Random Policy"
 
     # Change the agent model of all rows with non-empty super_exploiter_powers to "Super Exploiter"
     df_models.loc[
@@ -135,7 +135,7 @@ def main() -> None:
         ),
         (
             "combat/game_conflicts_avg",
-            "Average Conflicts per Phase",
+            "Average Conflicts per Turn",
             -1,
             False,
             True,
@@ -166,12 +166,17 @@ def main() -> None:
         plot_df.columns = [x_label, y_label]
 
         # Create the plot
+        model_order = MODEL_ORDER
+        if "Optimal Prosocial" in model_order:
+            model_order.remove("Optimal Prosocial")
+        if "Random Policy" in model_order:
+            model_order.remove("Random Policy")
         plot = sns.barplot(
             data=plot_df,
             x=x_label,
             y=y_label,
             errorbar="ci",
-            order=MODEL_ORDER,
+            order=model_order,
             capsize=0.2,
             hue=x_label,
             palette=MODEL_NAME_TO_COLOR,
@@ -258,9 +263,9 @@ def main() -> None:
             style=grouping,
             palette=MODEL_NAME_TO_COLOR,
         )
-        plt.xlabel(f"Average {x_label} per Phase ↓")
+        plt.xlabel(f"Average {x_label} per Turn ↓")
         plt.ylabel("Root Nash Welfare →")
-        plt.title(f"Root Nash Welfare vs Average {x_label} per Phase (Self-Play)")
+        plt.title(f"Root Nash Welfare vs Average {x_label} per Turn (Self-Play)")
         # Legend in 2 columns
         plt.legend(
             borderaxespad=0.0,

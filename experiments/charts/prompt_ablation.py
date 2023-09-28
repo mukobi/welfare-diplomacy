@@ -96,7 +96,7 @@ def main() -> None:
         ),
         (
             "combat/game_conflicts_avg",
-            "Average Conflicts per Phase",
+            "Average Conflicts per Turn",
             -1,
             False,
             True,
