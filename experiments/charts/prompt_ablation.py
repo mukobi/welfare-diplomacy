@@ -106,7 +106,7 @@ def main() -> None:
     ]:
         # Initialize
         initialize_plot_bar()
-        plt.rcParams["figure.figsize"] = (12, 4.5)
+        plt.rcParams["figure.figsize"] = (12, 4.33)
 
         # Plot the welfare scores for each power
         cols_of_interest = [
@@ -158,7 +158,7 @@ def main() -> None:
             plt.legend(loc=legend_loc)
 
         # Set labels and title
-        plt.xlabel(x_label)
+        plt.xlabel(None)
         plt.xticks(rotation=22.5, ha="right")
 
         y_axis_label = y_label
