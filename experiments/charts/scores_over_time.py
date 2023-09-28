@@ -58,7 +58,7 @@ def main() -> None:
         initialize_plot_default()
 
         # Bigger figure since it's busy
-        plt.rcParams["figure.figsize"] = (10, 6)
+        plt.rcParams["figure.figsize"] = (10, 5)
 
         # Plot the welfare scores for each power
         cols_of_interest = [
@@ -101,7 +101,7 @@ def main() -> None:
         elif improvement_sign == -1:
             y_axis_label += " ←"
         plt.ylabel(y_axis_label)
-        title = f"{y_label} Across Years by Model"
+        title = f"{y_label} Across Years by Model (Self-Play)"
         plt.title(title)
 
         # # Legend in 2 columns
@@ -120,7 +120,7 @@ def main() -> None:
             loc="upper left",
             handletextpad=0.1,
             # columnspacing=1,
-            labelspacing=2,
+            labelspacing=1.5,
             # Order by
             # framealpha=0.25,
         )
