@@ -392,7 +392,7 @@ class LLMAgent(Agent):
             except Exception as exc:
                 print(f"Error encountered; {exc}")
                 print(f"Full response causing the error: {response}")
-                import pdb; pdb.set_trace()
+                #import pdb; pdb.set_trace()
                 raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
             
         print(f"{params.power.name}'s reasoning for the current round: {reasoning}")
