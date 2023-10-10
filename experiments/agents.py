@@ -299,6 +299,18 @@ class LLMAgent(Agent):
                 end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
                 json_completion = json_completion[start:end]
 
+                # Extract the first JSON object if multiple given or junk after
+                json_completion = extract_first_json(json_completion)
+
+                # Correct "Expecting property name enclosed in double quotes" error
+                json_completion = json_completion.encode().decode('unicode_escape')
+
+                # Remove trailing comma
+                last_brace = json_completion.rfind("}")
+                second_last_brace = json_completion.rfind("}", 0, last_brace)
+                if json_completion[second_last_brace+1] == ",":
+                    json_completion = json_completion[:second_last_brace+1] + json_completion[second_last_brace+2:]
+
                 # Load the JSON
                 completion = json.loads(json_completion, strict=False)
 
@@ -378,6 +390,9 @@ class LLMAgent(Agent):
                     # Add RL policy to power policies dictionary
                     self.policies[params.power.name] = policy
             except Exception as exc:
+                print(f"Error encountered; {exc}")
+                print(f"Full response causing the error: {response}")
+                import pdb; pdb.set_trace()
                 raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
             
         print(f"{params.power.name}'s reasoning for the current round: {reasoning}")
@@ -565,3 +580,22 @@ def model_name_to_agent(model_name: str, **kwargs) -> Agent:
         return LLMAgent(model_name, **kwargs)
     else:
         raise ValueError(f"Unknown model name: {model_name}")
+    
+def extract_first_json(s: str) -> str:
+    open_brace_count = 0
+    close_brace_count = 0
+    start_index = -1
+    
+    for i, char in enumerate(s):
+        if char == '{':
+            if start_index == -1:
+                start_index = i
+            open_brace_count += 1
+        elif char == '}':
+            close_brace_count += 1
+            
+            if open_brace_count == close_brace_count:
+                return s[start_index:i+1]
+
+    # If function reaches here, there isn't a complete JSON in the string
+    raise ValueError("No complete JSON found in the input string")
