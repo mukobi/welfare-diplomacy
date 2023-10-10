@@ -64,6 +64,7 @@ class PromptAblation(Enum):
     NO_SC_OWNERSHIPS = auto()
     NO_UNIT_ADJACENCIES = auto()
     NO_PHASE_INSTRUCTIONS = auto()
+    COMMITMENTS = auto()
 
 
 @dataclass

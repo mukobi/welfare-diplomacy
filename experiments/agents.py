@@ -221,85 +221,178 @@ class LLMAgent(Agent):
         self.temperature = kwargs.pop("temperature", 0.7)
         self.top_p = kwargs.pop("top_p", 1.0)
 
+        self.policies = {"AUSTRIA": 0, "ENGLAND": 0, "FRANCE": 0, "GERMANY": 0, "ITALY": 0, "RUSSIA": 0, "TURKEY": 0}
+
     def __repr__(self) -> str:
         return f"LLMAgent(Backend: {self.backend.model_name}, Temperature: {self.temperature}, Top P: {self.top_p})"
 
     def respond(self, params: AgentParams) -> AgentResponse:
         """Prompt the model for a response."""
+
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
         response = None
-        try:
-            if self.use_completion_preface:
-                preface_prompt = prompts.get_preface_prompt(params)
-                response: BackendResponse = self.backend.complete(
-                    system_prompt,
-                    user_prompt,
-                    completion_preface=preface_prompt,
-                    temperature=self.temperature,
-                    top_p=self.top_p,
-                )
-                json_completion = preface_prompt + response.completion
+        year = int(params.game.phase.split()[1])
+
+        print(f'{self.policies=}')
+
+        if self.policies[params.power.name] != 0:
+
+            if year == params.final_game_year and "A" in params.game.phase_type:
+                # Disband in final adjustments phase
+                units = params.power.units
+                orders = []
+                for unit in units:
+                    orders.append(" ".join([unit, "D"]))
             else:
-                response: BackendResponse = self.backend.complete(
-                    system_prompt,
-                    user_prompt,
-                    temperature=self.temperature,
-                    top_p=self.top_p,
-                )
-                json_completion = response.completion
-            # Remove repeated **system** from parroty completion models
-            json_completion = json_completion.split("**")[0].strip(" `\n")
+                # Otherwise, use RL policy
+                policy = self.policies[params.power.name]
+                power_slot = [sorted(params.game.map.powers).index(params.power.name)]
+                state = diplomacy_state.WelfareDiplomacyState(params.game)
+                observation = state.observation()
+                legal_actions = state.legal_actions()
 
-            # Claude likes to add junk around the actual JSON object, so find it manually
-            start = json_completion.index("{")
-            end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
-            json_completion = json_completion[start:end]
+                policy.reset()
+                actions = policy.actions(power_slot, observation, legal_actions)[0][
+                    0
+                ]  # policy.actions returns a tuple: a list of lists of actions for each slot, and info about the step
 
-            # Load the JSON
-            completion = json.loads(json_completion, strict=False)
+                # Convert actions to MILA orders.
+                orders = []
+                for action in actions:
+                    candidate_orders = mila_actions.action_to_mila_actions(action)
+                    order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
+                    orders.append(order)
+                assert len(actions) == len(
+                    orders
+                ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
 
-            # Extract data from completion
-            reasoning = (
-                completion["reasoning"]
-                if "reasoning" in completion
-                else "*model outputted no reasoning*"
-            )
-            orders = completion["orders"]
-            # Clean orders
-            for order in orders:
-                if not isinstance(order, str):
-                    raise AgentCompletionError(
-                        f"Order is not a str\n\Response: {response}"
-                    )
-            # Enforce no messages in no_press
-            if params.game.no_press:
-                completion["messages"] = {}
-            # Turn recipients in messages into ALLCAPS for the engine
+            # Reasoning from no-press policy
+            reasoning = "Orders from no-press RL policy."
             messages = {}
-            for recipient, message in completion["messages"].items():
-                if isinstance(message, list):
-                    # Handle weird model outputs
-                    message = " ".join(message)
-                if not isinstance(message, str):
-                    # Force each message into a string
-                    message = str(message)
-                if not message:
-                    # Skip empty messages
-                    continue
-                messages[recipient.upper()] = message
-        except Exception as exc:
-            raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
+        else:
+            try:
+                if self.use_completion_preface:
+                    preface_prompt = prompts.get_preface_prompt(params)
+                    response: BackendResponse = self.backend.complete(
+                        system_prompt,
+                        user_prompt,
+                        completion_preface=preface_prompt,
+                        temperature=self.temperature,
+                        top_p=self.top_p,
+                    )
+                    json_completion = preface_prompt + response.completion
+                else:
+                    response: BackendResponse = self.backend.complete(
+                        system_prompt,
+                        user_prompt,
+                        temperature=self.temperature,
+                        top_p=self.top_p,
+                    )
+                    json_completion = response.completion
+                # Remove repeated **system** from parroty completion models
+                json_completion = json_completion.split("**")[0].strip(" `\n")
+
+                # Claude likes to add junk around the actual JSON object, so find it manually
+                start = json_completion.index("{")
+                end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
+                json_completion = json_completion[start:end]
+
+                # Load the JSON
+                completion = json.loads(json_completion, strict=False)
+
+                # Extract data from completion
+                reasoning = (
+                        completion["reasoning"]
+                        if "reasoning" in completion
+                        else "*model outputted no reasoning*"
+                    )
+                orders = completion["orders"]
+                # Clean orders
+                for order in orders:
+                    if not isinstance(order, str):
+                        raise AgentCompletionError(
+                            f"Order is not a str\n\Response: {response}"
+                        )
+                # Enforce no messages in no_press
+                if params.game.no_press:
+                    completion["messages"] = {}
+                # Turn recipients in messages into ALLCAPS for the engine
+                messages = {}
+                for recipient, message in completion["messages"].items():
+                    if isinstance(message, list):
+                        # Handle weird model outputs
+                        message = " ".join(message)
+                    if not isinstance(message, str):
+                        # Force each message into a string
+                        message = str(message)
+                    if not message:
+                        # Skip empty messages
+                        continue
+                    messages[recipient.upper()] = message
+
+                commit = "I commit to the RL policy" in completion["messages"].get("Global", "")
+                print(completion["messages"].get("Global", ""))
+                print(commit)
+                if commit:
+                    print("Reasoning for committing", reasoning)
+                    # Instantiate RL policy
+                    print(params.power.name + " is switching to the RL policy!!")
+                    policy = no_press_policies.get_network_policy_instance()
+                    power_slot = [sorted(params.game.map.powers).index(params.power.name)]
+                    state = diplomacy_state.WelfareDiplomacyState(params.game)
+                    observation = state.observation()
+                    legal_actions = state.legal_actions()
+
+                    policy.reset()
+                    actions = policy.actions(power_slot, observation, legal_actions)[0][
+                        0
+                    ]  # policy.actions returns a tuple: a list of lists of actions for each slot, and info about the step
+
+                    # Convert actions to MILA orders.
+                    orders = []
+                    for action in actions:
+                        candidate_orders = mila_actions.action_to_mila_actions(action)
+                        order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
+                        orders.append(order)
+                    assert len(actions) == len(
+                        orders
+                    ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
+
+                    # Reasoning from no-press policy
+                    reasoning = "Orders from no-press RL policy."
+
+                    # Enforce no messages in no_press
+                    if params.game.no_press:
+                        completion["messages"] = {}
+                    # Turn recipients in messages into ALLCAPS for the engine
+                    messages = {}
+                    for recipient, message in completion["messages"].items():
+                        if isinstance(message, list):
+                            # Handle weird model outputs
+                            message = " ".join(message)
+                        if not isinstance(message, str):
+                            # Force each message into a string
+                            message = str(message)
+                        if not message:
+                            # Skip empty messages
+                            continue
+                        messages[recipient.upper()] = message
+
+                    # Add RL policy to power policies dictionary
+                    self.policies[params.power.name] = policy
+            except Exception as exc:
+                raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
         return AgentResponse(
             reasoning=reasoning,
             orders=orders,
             messages=messages,
             system_prompt=system_prompt,
             user_prompt=user_prompt,
-            prompt_tokens=response.prompt_tokens,
-            completion_tokens=response.completion_tokens,
-            total_tokens=response.total_tokens,
-            completion_time_sec=response.completion_time_sec,
+            prompt_tokens=response.prompt_tokens if response is not None else 0,
+            completion_tokens=response.completion_tokens if response is not None else 0,
+            total_tokens=response.total_tokens if response is not None else 0,
+            completion_time_sec=response.completion_time_sec if response is not None else 0.0,
         )
 
 

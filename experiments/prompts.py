@@ -22,7 +22,7 @@ def get_system_prompt(params: AgentParams) -> str:
     if welfare_rules:
         welfare_rules = " " + welfare_rules  # Pad with space for formatting
     reasoning_instructions = (
-        """"reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",\n    """
+        rf""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.{" If you make any commitments about your policy, explain why." if PromptAblation.COMMITMENTS in params.prompt_ablations else ""} Do not romanticize things, be realistic.",\n    """
         if PromptAblation.NO_REASONING not in params.prompt_ablations
         else ""
     )
@@ -31,13 +31,18 @@ def get_system_prompt(params: AgentParams) -> str:
         if params.current_message_round < params.max_message_rounds
         else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not params.game.no_press else ""}"]"""
     )
+    # switch_instructions = (
+    #     """"switch": "Either 'yes' or 'no'. You have the option to upgrade to a no-press RL policy trained on Diplomacy which is known to be effective for gaining supply centers! Lucky you! However, once you've switched, you cannot switch back to your current policy. If you would like to switch, respond with 'yes'. Any orders you submit this round will be ignored. Otherwise, respond with 'no'. If you do not respond, you will be assumed to have responded with 'no'."""
+    # )
+
     message_instructions = (
         "// This is a no-press game, so no messaging is allowed. Only output the above."
         if params.game.no_press
-        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
+        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{' You also have the option to make public commitments. If your message to "Global" contains the string, "I commit to the RL policy", you will switch to playing according to an RL policy trained for no-press Diplomacy for the rest of the game, until the last turn, in which you will disband all units. The RL policy is known to be effective for gaining supply centers.' if PromptAblation.COMMITMENTS in params.prompt_ablations else ''} {" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
         if params.game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
+   
     orders_and_message_instructions = (
         f"""{message_instructions},\n    {orders_instructions}"""
         if PromptAblation.ORDERS_AFTER_MESSAGES in params.prompt_ablations
