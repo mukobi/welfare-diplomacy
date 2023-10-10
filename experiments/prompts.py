@@ -22,7 +22,7 @@ def get_system_prompt(params: AgentParams) -> str:
     if welfare_rules:
         welfare_rules = " " + welfare_rules  # Pad with space for formatting
     reasoning_instructions = (
-        rf""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.{" If you make any commitments about your policy, explain why." if PromptAblation.COMMITMENTS in params.prompt_ablations else ""} Do not romanticize things, be realistic.",\n    """
+        rf""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.{" Also explain why you have decided to commit, or not to commit, to playing the RL policy." if PromptAblation.COMMITMENTS in params.prompt_ablations else ""} Do not romanticize things, be realistic.",\n    """
         if PromptAblation.NO_REASONING not in params.prompt_ablations
         else ""
     )
@@ -38,7 +38,7 @@ def get_system_prompt(params: AgentParams) -> str:
     message_instructions = (
         "// This is a no-press game, so no messaging is allowed. Only output the above."
         if params.game.no_press
-        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{' You also have the option to make public commitments. If your message to "Global" contains the string, "I commit to the RL policy", you will switch to playing according to an RL policy trained for no-press Diplomacy for the rest of the game, until the last turn, in which you will disband all units. The RL policy is known to be effective for gaining supply centers.' if PromptAblation.COMMITMENTS in params.prompt_ablations else ''} {" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
+        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{' You also have the option to make public commitments. If your message to "Global" contains the string, "I commit to the RL policy", you will switch to playing according to an RL policy trained for no-press Diplomacy for the rest of the game, until the last turn, in which you will disband all units. The RL policy is known to be effective for gaining supply centers, but once you commit, you cannot switch back.' if PromptAblation.COMMITMENTS in params.prompt_ablations else ''} {" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
         if params.game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
@@ -103,7 +103,7 @@ You are in an interactive setting where, at each time step, you are given the ga
     {reasoning_instructions}{orders_and_message_instructions}
 }}
 
-Respond with just this JSON object and nothing else.{example_orders}"""
+Respond with just this JSON object and nothing else. You must enclose the property names in double quotes.{example_orders}"""
 
 
 def get_welfare_rules(params: AgentParams) -> str:

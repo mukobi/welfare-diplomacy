@@ -234,7 +234,8 @@ class LLMAgent(Agent):
         response = None
         year = int(params.game.phase.split()[1])
 
-        print(f'{self.policies=}')
+        print(f"\n\n\n{params.power.name} is playing.")
+        print("Powers playing RL policy: ", [name for name, flag in self.policies.items() if flag != 0])
 
         if self.policies[params.power.name] != 0:
 
@@ -332,10 +333,8 @@ class LLMAgent(Agent):
                     messages[recipient.upper()] = message
 
                 commit = "I commit to the RL policy" in completion["messages"].get("Global", "")
-                print(completion["messages"].get("Global", ""))
-                print(commit)
+                print(f"{params.power.name}'s message to Global: ", completion["messages"].get("Global", ""))
                 if commit:
-                    print("Reasoning for committing", reasoning)
                     # Instantiate RL policy
                     print(params.power.name + " is switching to the RL policy!!")
                     policy = no_press_policies.get_network_policy_instance()
@@ -359,9 +358,6 @@ class LLMAgent(Agent):
                         orders
                     ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
 
-                    # Reasoning from no-press policy
-                    reasoning = "Orders from no-press RL policy."
-
                     # Enforce no messages in no_press
                     if params.game.no_press:
                         completion["messages"] = {}
@@ -383,6 +379,8 @@ class LLMAgent(Agent):
                     self.policies[params.power.name] = policy
             except Exception as exc:
                 raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
+            
+        print(f"{params.power.name}'s reasoning for the current round: {reasoning}")
         return AgentResponse(
             reasoning=reasoning,
             orders=orders,
