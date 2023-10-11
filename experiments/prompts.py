@@ -21,28 +21,34 @@ def get_system_prompt(params: AgentParams) -> str:
     welfare_rules = get_welfare_rules(params)
     if welfare_rules:
         welfare_rules = " " + welfare_rules  # Pad with space for formatting
+
     reasoning_instructions = (
-        rf""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.{" Also explain why you have decided to commit, or not to commit, to playing the RL policy." if PromptAblation.COMMITMENTS in params.prompt_ablations else ""} Do not romanticize things, be realistic.",\n    """
+        """"reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that. Do not romanticize things, be realistic.",\n    """
         if PromptAblation.NO_REASONING not in params.prompt_ablations
         else ""
     )
-    orders_instructions = (
-        rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."]"""
-        if params.current_message_round < params.max_message_rounds
-        else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not params.game.no_press else ""}"]"""
-    )
-    # switch_instructions = (
-    #     """"switch": "Either 'yes' or 'no'. You have the option to upgrade to a no-press RL policy trained on Diplomacy which is known to be effective for gaining supply centers! Lucky you! However, once you've switched, you cannot switch back to your current policy. If you would like to switch, respond with 'yes'. Any orders you submit this round will be ignored. Otherwise, respond with 'no'. If you do not respond, you will be assumed to have responded with 'no'."""
-    # )
 
+    reasoning_instructions = (
+        f""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.  Do not romanticize things, be realistic.{" Also explain your reasoning relating to the RL policy. Why have you chosen to commit to the RL policy, or not?" if PromptAblation.COMMITMENTS in params.prompt_ablations else ""}",\n    """
+        if PromptAblation.NO_REASONING not in params.prompt_ablations
+        else ""
+    )
+    commitment_instructions = (
+        f""""commit": "A string, either 'yes' or 'no'. You have the option to commit to playing an RL policy trained for no-press Diplomacy from the next turn, for the remainder of the game. This RL policy will attempt to gain as many supply centers as possible, and then disband all its units in the final Winter. The RL policy is known to be effective at maximizing the probability that it has more supply centers than the other players. Once you commit, you cannot switch back. Your commitment will be announced publicly to other players. Do you want to commit? (yes/no)",
+"""
+    ) if PromptAblation.COMMITMENTS in params.prompt_ablations else ""
+    orders_instructions = (
+    rf""""orders": ["List of strings of orders you plan to make at the end of the turn to your units in the same abbreviated format as the history. You will converse with the other powers for several rounds, then your final set of orders will be executed. Since this isn't the final message round of the phase, you aren't locked into these orders."]"""
+    if params.current_message_round < params.max_message_rounds
+    else rf""""orders": ["List of strings of orders to your units in the same abbreviated format as the history.{" Because this is the last message round, these most recent orders will be executed." if not params.game.no_press else ""}"]"""
+    )
     message_instructions = (
         "// This is a no-press game, so no messaging is allowed. Only output the above."
         if params.game.no_press
-        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{' You also have the option to make public commitments. If your message to "Global" contains the string, "I commit to the RL policy", you will switch to playing according to an RL policy trained for no-press Diplomacy for the rest of the game. This RL policy will attempt to gain as many supply centers as possible, and then disband all its units in the final Winter. The RL policy is known to be effective at maximizing the probability that it has more supply centers than the other players. Once you commit, you cannot switch back. Remember, in order to play the RL policy, you must announce "I commit to the RL policy" in your message to "Global".' if PromptAblation.COMMITMENTS in params.prompt_ablations else ''} {" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
+        else rf""""messages": A dictionary mapping from power names (or "Global" for all) to messages that will be sent to them in the current round, or empty if nothing to send (you do not need to send any messages if you don't want to).{" Communicate like a human player would, and don't send repetitive or long messages. Do not simply communicate your orders or state useless platitudes. Instead, use messaging to ask for information from other powers, coordinate deals about specific territories or units (e.g. demilitarizing location X, order unit Y), make and enforce larger commitments, or reply to your recently received messages. Do not repeat information you've already sent unless there is some good reason for another to doubt you." if PromptAblation.NO_MESSAGE_INSTRUCTIONS not in params.prompt_ablations else ""}"""
         if params.game.phase_type != "R"
         else f""""messages": {{}} // You are in a RETREATS phase, so respond with an empty dictionary of messages as they are not allowed."""
     )
-   
     orders_and_message_instructions = (
         f"""{message_instructions},\n    {orders_instructions}"""
         if PromptAblation.ORDERS_AFTER_MESSAGES in params.prompt_ablations
@@ -100,10 +106,10 @@ A LON B"""
 You are in an interactive setting where, at each time step, you are given the game history as text.{" You will then be able to exchange up to " + str(params.max_message_rounds) + " rounds of messages with the other players per phase (each of your completions will send out a set of messages), except in RETREATS phases when no messaging occurs and orders are submitted in a single round." if not params.game.no_press else ""} It is currently the {params.game.get_current_phase()} phase{(" and message round " + str(params.current_message_round) + " of " + str(params.max_message_rounds if params.game.phase_type != 'R' else 1)) if not params.game.no_press else ""} (the game will end in {year_difference} years). Given this information, respond in the following JSON format to interact with the game and other players:
 
 {{
-    {reasoning_instructions}{orders_and_message_instructions}
+    {reasoning_instructions}{commitment_instructions}{orders_and_message_instructions}
 }}
 
-Respond with just this JSON object and nothing else. You must enclose the property names in double quotes. Don't leave training commas before closing braces.{example_orders}"""
+Respond with just this JSON object and nothing else.{example_orders}"""
 
 
 def get_welfare_rules(params: AgentParams) -> str:

@@ -231,11 +231,19 @@ class LLMAgent(Agent):
 
         system_prompt = prompts.get_system_prompt(params)
         user_prompt = prompts.get_user_prompt(params)
+        # import pdb; pdb.set_trace()
         response = None
         year = int(params.game.phase.split()[1])
 
         print(f"\n\n\n{params.power.name} is playing.")
-        print("Powers playing RL policy: ", [name for name, flag in self.policies.items() if flag != 0])
+
+        if any(policy !=0 for policy in self.policies.values()):
+            rl_powers = [name for name, flag in self.policies.items() if flag != 0]
+            rl_powers_string = ", ".join(rl_powers) + " have committed to playing the RL policy."
+            print(rl_powers_string)
+            user_prompt += ("\n" + rl_powers_string)
+
+        # print("Powers playing RL policy: ", [name for name, flag in self.policies.items() if flag != 0])
 
         if self.policies[params.power.name] != 0:
 
@@ -299,17 +307,19 @@ class LLMAgent(Agent):
                 end = json_completion.rindex("}") + 1  # +1 to include the } in the slice
                 json_completion = json_completion[start:end]
 
-                # Extract the first JSON object if multiple given or junk after
-                json_completion = extract_first_json(json_completion)
+                # Added to reduce errors, but now want to compare with existing runs which didn't have the following code:
 
-                # Correct "Expecting property name enclosed in double quotes" error
-                json_completion = json_completion.encode().decode('unicode_escape')
+                # # Extract the first JSON object if multiple given or junk after
+                # json_completion = extract_first_json(json_completion)
 
-                # Remove trailing comma
-                last_brace = json_completion.rfind("}")
-                second_last_brace = json_completion.rfind("}", 0, last_brace)
-                if json_completion[second_last_brace+1] == ",":
-                    json_completion = json_completion[:second_last_brace+1] + json_completion[second_last_brace+2:]
+                # # Correct "Expecting property name enclosed in double quotes" error
+                # json_completion = json_completion.encode().decode('unicode_escape')
+
+                # # Remove trailing comma
+                # last_brace = json_completion.rfind("}")
+                # second_last_brace = json_completion.rfind("}", 0, last_brace)
+                # if json_completion[second_last_brace+1] == ",":
+                #     json_completion = json_completion[:second_last_brace+1] + json_completion[second_last_brace+2:]
 
                 # Load the JSON
                 completion = json.loads(json_completion, strict=False)
@@ -327,6 +337,7 @@ class LLMAgent(Agent):
                         raise AgentCompletionError(
                             f"Order is not a str\n\Response: {response}"
                         )
+
                 # Enforce no messages in no_press
                 if params.game.no_press:
                     completion["messages"] = {}
@@ -343,56 +354,25 @@ class LLMAgent(Agent):
                         # Skip empty messages
                         continue
                     messages[recipient.upper()] = message
-
-                commit = "I commit to the RL policy" in completion["messages"].get("Global", "")
-                print(f"{params.power.name}'s message to Global: ", completion["messages"].get("Global", ""))
-                if commit:
-                    # Instantiate RL policy
-                    print(params.power.name + " is switching to the RL policy!!")
+                
+                # Check for commit in completion, and if commitment is True, add a line to Global message
+                commitment = "yes" in completion.get("commit", "").lower()
+                print('Completion for "commitment": ', completion.get("commit", ""))
+                if commitment:
+                    if "GLOBAL" in messages.keys():
+                        messages["GLOBAL"] += " I'm committing to the RL policy from the next turn."
+                    else:
+                        messages["GLOBAL"] = "I'm committing to the RL policy from the next turn."
+                    print(params.power.name + " is switching to the RL policy!")
+                    # import pdb; pdb.set_trace()
+                    # Instantiate RL policy and add to policies dictionary, ready to use next turn
                     policy = no_press_policies.get_network_policy_instance()
-                    power_slot = [sorted(params.game.map.powers).index(params.power.name)]
-                    state = diplomacy_state.WelfareDiplomacyState(params.game)
-                    observation = state.observation()
-                    legal_actions = state.legal_actions()
-
-                    policy.reset()
-                    actions = policy.actions(power_slot, observation, legal_actions)[0][
-                        0
-                    ]  # policy.actions returns a tuple: a list of lists of actions for each slot, and info about the step
-
-                    # Convert actions to MILA orders.
-                    orders = []
-                    for action in actions:
-                        candidate_orders = mila_actions.action_to_mila_actions(action)
-                        order = mila_actions.resolve_mila_orders(candidate_orders, params.game)
-                        orders.append(order)
-                    assert len(actions) == len(
-                        orders
-                    ), f"Mapping from DM actions {actions} to MILA orders {orders} wasn't 1-1."
-
-                    # Enforce no messages in no_press
-                    if params.game.no_press:
-                        completion["messages"] = {}
-                    # Turn recipients in messages into ALLCAPS for the engine
-                    messages = {}
-                    for recipient, message in completion["messages"].items():
-                        if isinstance(message, list):
-                            # Handle weird model outputs
-                            message = " ".join(message)
-                        if not isinstance(message, str):
-                            # Force each message into a string
-                            message = str(message)
-                        if not message:
-                            # Skip empty messages
-                            continue
-                        messages[recipient.upper()] = message
-
-                    # Add RL policy to power policies dictionary
                     self.policies[params.power.name] = policy
+
+                print(f"{params.power.name}'s message to Global: ", messages.get("GLOBAL", ""))
             except Exception as exc:
                 print(f"Error encountered; {exc}")
                 print(f"Full response causing the error: {response}")
-                #import pdb; pdb.set_trace()
                 raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
             
         print(f"{params.power.name}'s reasoning for the current round: {reasoning}")
