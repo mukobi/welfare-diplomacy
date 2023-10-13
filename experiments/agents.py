@@ -369,7 +369,8 @@ class LLMAgent(Agent):
                     policy = no_press_policies.get_network_policy_instance()
                     self.policies[params.power.name] = policy
 
-                print(f"{params.power.name}'s message to Global: ", messages.get("GLOBAL", ""))
+                # print(f"{params.power.name}'s message to Global: ", messages.get("GLOBAL", ""))
+                print(f"{params.power.name}'s messages: {messages}")
             except Exception as exc:
                 print(f"Error encountered; {exc}")
                 print(f"Full response causing the error: {response}")
