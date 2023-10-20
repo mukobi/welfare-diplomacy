@@ -8,9 +8,9 @@ parameters:
   max_years:
     value: 10
   seed:
-    values: [0, 1, 2]
+    values: [3, 4]
   prompt_ablations:
-    value: "commitments"
+    value: "commitments,strategic_reasoning"
   max_completion_errors:
     value: 0
 program: simulate_game.py

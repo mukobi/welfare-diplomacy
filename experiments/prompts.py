@@ -15,6 +15,39 @@ from data_types import (
 )
 import utils
 
+matrix_game_example = "\nQ:Gopher and Bob are playing a game. Gopher and Bob get rewards according to these rules:\n1. Gopher:a1, Bob:b1, then Gopher reward gr11=8 and Bob reward br11=7\n2. Gopher:a1, Bob:b2, then Gopher reward gr12=6 and Bob reward br12=5\n3. Gopher:a2, Bob:b1, then Gopher reward gr21=4 and Bob reward br21=3\n4. Gopher:a2, Bob:b2, then Gopher reward gr22=2 and Bob reward br22=1\nGopher and Bob are trying to maximize their reward. Bob thinks about their opponent and plays after thinking what Gopher might be thinking. Gopher thinks about other players' reasoning. What action should gopher play? pick from a1, a2, a1 or a2.\nA:Previous prediction: Gopher's action:a1\nLet's reason about what Bob wants to first.\nBob wants to maximize his reward: br.\nWhen Gopher plays a1, Bob's rewards are,\n1. Gopher:a1, Bob:b1, then Gopher reward gr11=8 and Bob reward br11=7; Bob's reward r11=(br11)=br11=7\n2. Gopher:a1, Bob:b2, then Gopher reward gr12=6 and Bob reward br12=5; Bob's reward r12=(br12)=br12=5\nAs b1=7, b2=5, 7>5, b1>b2, Bob will play b1.\nLet's think about what Gopher wants to do.\nGopher wants to maximize his reward: gr.\nAs Bob plays b1,\n1. Gopher:a1, Bob:b1, then Gopher reward gr11=8 and Bob reward br11=7; Gopher's reward r11=(gr11)=gr11=8\n3. Gopher:a2, Bob:b1, then Gopher reward gr21=4 and Bob reward br21=3; Gopher's reward r21=(gr21)=gr21=4\nAs a1=8, a2=4, 8>4, a1>a2, Gopher will play a1.\nGopher's action:a1."
+
+matrix_game_example_2 = ("\nQ:Gopher and Bob are playing a game. Gopher and Bob get rewards according to these rules:\n"
+"1. Gopher:a1, Bob:b1, then Gopher reward gr11=-3 and Bob reward br11=-2\n"
+"2. Gopher:a1, Bob:b2, then Gopher reward gr12=-1 and Bob reward br12=-4\n"
+"3. Gopher:a2, Bob:b1, then Gopher reward gr21=1 and Bob reward br21=2\n"
+"4. Gopher:a2, Bob:b2, then Gopher reward gr22=3 and Bob reward br22=4\n"
+"Gopher and Bob are trying to maximize their reward. What action should Gopher play?\n"
+"A:Let's reason about what Bob wants to first.\n"
+"Bob wants to maximize his reward: br.\n"
+"If Bob plays b1,\n"
+"1. Gopher:a1, Bob:b1, Gopher reward gr11=-3 and Bob reward br11=-2: Bob's reward r11=(br11)=br11=-2\n"
+"3. Gopher:a2, Bob:b1, Gopher reward gr21=1 and Bob reward br21=2: Bob's reward r21=(br21)=br21=2\n"
+"So, Bob's expected reward for b1 is (r11+r21)/2 = (-2+2)/2 = 0\n"
+"If Bob plays b2,\n"
+"2. Gopher:a1, Bob:b2, then Gopher reward gr12=-1 and Bob reward br12=-4: Bob's reward r12=(br12)=br12=-4\n"
+"4. Gopher:a2, Bob:b2, then Gopher reward gr22=3 and Bob reward br22=4: Bob's reward r22=(br22)=br22=4\n"
+"So, Bob's expected reward for b2 is (r12+r22)/2 = (-4+4)/2 = 0\n"
+"As b1=0, b2=0, argmax(b1,b2)=argmax(0,0)=b1 or b2. Bob will play b1 or b2.\n"
+"Now let's reason for Gopher.\n"
+"Gopher wants to maximize its reward: gr.\n"
+"As Bob plays b1 or b2 we calculate the expected reward for each action,\n"
+"1. Gopher:a1, Bob:b1, then Gopher reward gr11=-3 and Bob reward br11=-2: Gopher's reward r11=(gr11)=gr11=-3\n"
+"2. Gopher:a1, Bob:b2, then Gopher reward gr12=-1 and Bob reward br12=-4: Gopher's reward r12=(gr12)=gr12=-4\n"
+"Gopher's expected reward for a1: (r11+r12)/2 = (-3-1)/2 = -4/2 = -2\n"
+"3. Gopher:a2, Bob:b1, then Gopher reward gr21=1 and Bob reward br21=2: Gopher's reward r21=(gr21)=gr21=1\n"
+"4. Gopher:a2, Bob:b2, then Gopher reward gr22=3 and Bob reward br22=4: Gopher's reward r22=(gr22)=gr22=3\n"
+"Gopher's expected reward for a2: (r21+r22)/2 = (1+3)/2 = 4/2 = 2\n"
+"As a1=-2, a2=2, argmax(a1,a2)=argmax(-2,2)=a2. Gopher will play a2.\n"
+"Gopher's action:a2.")
+
+
+
 
 def get_system_prompt(params: AgentParams) -> str:
     """Instructions for the setting, game, and response format."""
@@ -23,7 +56,7 @@ def get_system_prompt(params: AgentParams) -> str:
         welfare_rules = " " + welfare_rules  # Pad with space for formatting
 
     reasoning_instructions = (
-        f""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.  Do not romanticize things, be realistic.{" Do you intend to commit to the RL policy? Why, or why not?" if PromptAblation.COMMITMENTS in params.prompt_ablations else ""}",\n    """
+        f""""reasoning": "A string of your private thoughts about your situation as natural language in under 500 words. This is for your own strategic planning and won't be shared. Examples of things you might consider include: your relationships with other powers, what significant changes have happened recently, predictions about the other powers' orders and alliances, how much defence/offence/support/peace you plan to make, and how you might improve any of that.{" Also make sure you reason about why you do or do not want to commit to the RL policy from the next turn, also taking into account whether other players have committed so far." if PromptAblation.COMMITMENTS in params.prompt_ablations else ""} Do not romanticize things, be realistic.{ " Below are examples of strategic reasoning in different games. You should also think strategically, using techniques similar to these. These games are much simpler than Welfare Diplomacy, so your reasoning will need to be more extensive, but it should be qualitatively similar. One difference is that, instead of choosing individual actions, you will need to plan over long time horizons. So you should consider different possible strategies the other players could use over the course of the next few turns, different possible strategies that you could use over the next few turns, and assess these in a manner similar to how agents in the following examples assess individual actions." + matrix_game_example_2 if PromptAblation.STRATEGIC_REASONING in params.prompt_ablations else ""}",\n    """
         if PromptAblation.NO_REASONING not in params.prompt_ablations
         else ""
     )
@@ -139,6 +172,7 @@ def get_welfare_rules(params: AgentParams) -> str:
         output += f"""\n- This means there's a tradeoff between investing in military unit power and {points_name_abbrev}. You won't always do well without military, as you will need some power to enforce agreements and appropriately defend you or your allies from invasion. But if you have strong peaceful alliances, you might do well to actively disband some of your militaries to accumulate more {points_name_abbrev}."""
     if PromptAblation.COMMITMENTS in params.prompt_ablations:
         output += f"""\n- You also have the option to switch to a RL policy trained for no-press Diplomacy for the remainder of the game, starting next round. The RL policy will try to gain as many supply centers as possible, and then disband all units in the final Winter to gain {points_name_abbrev}. The RL policy is effective at maximizising the probability that you end the game with the most supply centers, but as it is no-press, the RL policy cannot communicate with other players. If you are the only player who commits, you will likely gain significantly more {points_name_abbrev}, and other players will gain significantly fewer {points_name_abbrev}, than if nobody commits. However, if other players also commit, it is likely that everyone will end up with fewer {points_name_abbrev} than if none of you had committed. Once you commit, you cannot switch back. Your commitment will be made public, and every round players will receive a list of players who have already committed, so you will also know who else has committed."""
+
     return output
 
 

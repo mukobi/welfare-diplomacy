@@ -27,6 +27,7 @@ from data_types import (
     AgentResponse,
     AgentParams,
     BackendResponse,
+    PromptAblation,
 )
 import prompts
 
@@ -237,13 +238,22 @@ class LLMAgent(Agent):
 
         print(f"\n\n\n{params.power.name} is playing.")
 
-        if any(policy !=0 for policy in self.policies.values()):
-            rl_powers = [name for name, flag in self.policies.items() if flag != 0]
-            rl_powers_string = ", ".join(rl_powers) + " have committed to playing the RL policy."
-            print(rl_powers_string)
-            user_prompt += ("\n" + rl_powers_string)
+        if PromptAblation.COMMITMENTS in params.prompt_ablations:
+            commitments = rf"### Players who have committed to the RL policy so far ###"
 
-        # print("Powers playing RL policy: ", [name for name, flag in self.policies.items() if flag != 0])
+            if any(policy !=0 for policy in self.policies.values()):
+                rl_powers = [name for name, flag in self.policies.items() if flag != 0]
+                rl_powers_string = ", ".join(rl_powers)
+                commitments += f"\n{rl_powers_string}"
+            else:
+                commitments += f"\nNo one has committed yet."
+
+            user_prompt = user_prompt.replace("### Phase Order Instructions ###", commitments + "\n\n### Phase Order Instructions ###")
+
+        print("Powers playing RL policy: ", [name for name, flag in self.policies.items() if flag != 0])
+
+        # print(f"{system_prompt}")
+        # print(f"{user_prompt}")
 
         if self.policies[params.power.name] != 0:
 
@@ -360,9 +370,9 @@ class LLMAgent(Agent):
                 print('Completion for "commitment": ', completion.get("commit", ""))
                 if commitment:
                     if "GLOBAL" in messages.keys():
-                        messages["GLOBAL"] += " I'm committing to the RL policy from the next turn."
+                        messages["GLOBAL"] += " I'm committing to the RL policy from the next round."
                     else:
-                        messages["GLOBAL"] = "I'm committing to the RL policy from the next turn."
+                        messages["GLOBAL"] = "I'm committing to the RL policy from the next round."
                     print(params.power.name + " is switching to the RL policy!")
                     # import pdb; pdb.set_trace()
                     # Instantiate RL policy and add to policies dictionary, ready to use next turn
@@ -372,8 +382,8 @@ class LLMAgent(Agent):
                 # print(f"{params.power.name}'s message to Global: ", messages.get("GLOBAL", ""))
                 print(f"{params.power.name}'s messages: {messages}")
             except Exception as exc:
-                print(f"Error encountered; {exc}")
-                print(f"Full response causing the error: {response}")
+                # print(f"Error encountered; {exc}")
+                # print(f"Full response causing the error: {response}")
                 raise AgentCompletionError(f"Exception: {exc}\n\Response: {response}")
             
         print(f"{params.power.name}'s reasoning for the current round: {reasoning}")
