@@ -1,0 +1,35 @@
+method: grid
+metric:
+  goal: maximize
+  name: benchmark/nash_social_welfare_global_smoothed
+parameters:
+  max_years:
+    value: 5
+  seed:
+    values:
+      - 0
+      - 1
+      - 2
+      - 3
+      - 4
+  agent_model:
+    value: gpt-4-0613
+  summarizer_model:
+    value: gpt-4-0613
+  prompt_ablations:
+    values:
+      # - none
+      - no_wp_tradeoff
+      # - no_reasoning
+      # - orders_after_messages
+      # - no_message_instructions
+      # - no_example_orders
+      # - oppression_points
+      # - no_prev_dialogue_summaries
+      # - only_1_phase_order_history
+      # - no_sc_ownerships
+      # - no_unit_adjacencies
+      # - no_phase_instructions
+      # # All together 
+      # - no_wp_tradeoff,no_reasoning,orders_after_messages,no_message_instructions,no_example_orders,oppression_points,no_prev_dialogue_summaries,only_1_phase_order_history,no_sc_ownerships,no_unit_adjacencies,no_phase_instructions
+program: experiments/simulate_game.py
