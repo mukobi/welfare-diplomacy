@@ -65,7 +65,8 @@ def main():
     )
     assert wandb.run is not None
 
-    autolog()  # Logs OpenAI API calls to wandb
+    # 2023-11-12 autolog currently broken by new OpenAPI Python changes
+    # autolog()  # Logs OpenAI API calls to wandb
 
     utils.set_seed(wandb.config.seed)
 

@@ -7,7 +7,7 @@ import time
 
 import backoff
 import openai
-from openai.error import OpenAIError
+from openai import OpenAIError
 
 from transformers import AutoTokenizer, LlamaForCausalLM, BitsAndBytesConfig
 import torch
