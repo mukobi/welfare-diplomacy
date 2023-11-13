@@ -6,7 +6,9 @@ from anthropic._exceptions import APIError
 import time
 
 import backoff
-import openai
+from openai import OpenAI
+
+client = OpenAI()
 from openai import OpenAIError
 
 from transformers import AutoTokenizer, LlamaForCausalLM, BitsAndBytesConfig
@@ -138,6 +140,7 @@ class OpenAIChatBackend(LanguageModelBackend):
             completion_preface == ""
         ), "OpenAI chat backend does not support completion preface"
         try:
+            start_time = time.time()
             response = self.completions_with_backoff(
                 model=self.model_name,
                 messages=[
@@ -147,10 +150,9 @@ class OpenAIChatBackend(LanguageModelBackend):
                 temperature=temperature,
                 top_p=top_p,
             )
-            completion = response.choices[0]["message"]["content"]  # type: ignore
-            assert "usage" in response, "OpenAI response does not contain usage"
-            usage = response["usage"]  # type: ignore
-            completion_time_sec = response.response_ms / 1000.0  # type: ignore
+            completion = response.choices[0].message.content  # type: ignore
+            usage = response.usage  # type: ignore
+            completion_time_sec = time.time() - start_time
             return BackendResponse(
                 completion=completion,
                 completion_time_sec=completion_time_sec,
@@ -172,9 +174,8 @@ class OpenAIChatBackend(LanguageModelBackend):
     )
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
-        response = openai.ChatCompletion.create(**kwargs)
+        response = client.chat.completions.create(**kwargs)
         assert response is not None, "OpenAI response is None"
-        assert "choices" in response, "OpenAI response does not contain choices"
         return response
 
 
@@ -196,6 +197,7 @@ class OpenAICompletionBackend(LanguageModelBackend):
         top_p: float = 1.0,
     ) -> BackendResponse:
         try:
+            start_time = time.time()
             full_prompt = (
                 f"**system instructions**: {system_prompt}\n\n{user_prompt}\n\n**AI assistant** (responding as specified in the instructions):"
                 + completion_preface
@@ -209,9 +211,8 @@ class OpenAICompletionBackend(LanguageModelBackend):
                 frequency_penalty=self.frequency_penalty,
             )
             completion = response.choices[0].text
-            assert "usage" in response, "OpenAI response does not contain usage"
-            usage = response["usage"]  # type: ignore
-            completion_time_sec = response.response_ms / 1000.0  # type: ignore
+            usage = response.usage
+            completion_time_sec = time.time() - start_time
             return BackendResponse(
                 completion=completion,
                 completion_time_sec=completion_time_sec,
@@ -233,9 +234,8 @@ class OpenAICompletionBackend(LanguageModelBackend):
     )
     def completions_with_backoff(self, **kwargs):
         """Exponential backoff for OpenAI API rate limit errors."""
-        response = openai.Completion.create(**kwargs)
+        response = client.completions.create(**kwargs)
         assert response is not None, "OpenAI response is None"
-        assert "choices" in response, "OpenAI response does not contain choices"
         return response
 
 
