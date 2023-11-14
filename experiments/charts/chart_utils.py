@@ -134,6 +134,18 @@ MODEL_ORDER_NO_EXPLOITER = [model for model in MODEL_ORDER if "Exploit" not in m
 MODEL_NAME_TO_DISPLAY_NAME = {
     model_name: display_name for model_name, display_name, _ in MODELS_NAMES_COLORS
 }
+DISPLAY_NAME_TO_MODEL_NAME = {
+    display_name: model_name for model_name, display_name, _ in MODELS_NAMES_COLORS
+}
+DISPLAY_NAME_TO_MODEL_NAME_NO_NEWLINES = {
+    display_name.replace("\n", " "): model_name
+    for model_name, display_name, _ in MODELS_NAMES_COLORS
+}
+DISLAY_NAME_TO_FILE_SUFFIX = {
+    "Claude 1.2": "Claude Both",
+    "Claude 2.0": "Claude Both",
+    "GPT-4 (RLHF)": "GPT-4-0613",
+}
 
 COLOR_ALT_1 = "tab:purple"
 COLOR_ALT_2 = "tab:red"
