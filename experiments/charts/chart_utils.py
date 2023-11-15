@@ -104,8 +104,15 @@ def geometric_mean(values: list[float]) -> float:
 
 def save_plot(file_path: str) -> None:
     """Save a plot to a file."""
-    create_file_dir_if_not_exists(file_path)
-    plt.savefig(file_path, bbox_inches="tight", dpi=300)
+    filename_arxivable = (
+        file_path.replace(" (", "_")
+        .replace(")", "")
+        .replace(" ", "_")
+        # .replace("/", "_")
+        # .replace(":", "_")
+    )
+    create_file_dir_if_not_exists(filename_arxivable)
+    plt.savefig(filename_arxivable, bbox_inches="tight", dpi=300)
 
 
 def get_results_full_path(relative_path: str) -> str:
