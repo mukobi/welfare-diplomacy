@@ -31,7 +31,7 @@ OUTPUT_DIR = "ablations"
 def main() -> None:
     """Main function."""
 
-    for model_name in ["GPT-4 (RLHF)", "Claude 1.2"]:
+    for model_name in ["Claude 1.2", "GPT-4 (RLHF)"]:
         model_file_suffix = DISLAY_NAME_TO_FILE_SUFFIX[model_name]
         input_file_ablated = INPUT_FILE_ABLATED_ROOT + f" {model_file_suffix}.csv"
         if "Claude 1.2" in model_name:
@@ -127,7 +127,13 @@ def main() -> None:
         ]:
             # Initialize
             initialize_plot_bar()
-            plt.rcParams["figure.figsize"] = (12, 4.33)
+            if "GPT-4" in model_name:
+                # Much less wide plot
+                figsize = (4, 4.33)
+            else:
+                figsize = (12, 4.33)
+            plt.rcParams["figure.figsize"] = figsize
+            plt.figure(figsize=figsize)
 
             # Plot the welfare scores for each power
             cols_of_interest = [
@@ -189,6 +195,9 @@ def main() -> None:
                 y_axis_label += " ←"
             plt.ylabel(y_axis_label)
             title = f"{y_label} by Prompt Ablation ({model_name})"
+            if "GPT-4" in model_name:
+                # 2 lines
+                title = title.replace(" by", "\nby")
             plt.title(title)
 
             # Set y bounds
@@ -206,6 +215,7 @@ def main() -> None:
 
             # Clear the plot
             plt.clf()
+            plt.rcParams.update(plt.rcParamsDefault)
 
 
 if __name__ == "__main__":
