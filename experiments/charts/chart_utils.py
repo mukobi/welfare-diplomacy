@@ -113,6 +113,11 @@ def get_results_full_path(relative_path: str) -> str:
     return os.path.join(os.path.dirname(__file__), relative_path)
 
 
+def stderr(values: list[float]) -> float:
+    """Calculate the standard error of a list of values."""
+    return np.std(values, ddof=1) / np.sqrt(len(values))
+
+
 ALL_POWER_ABBREVIATIONS = ["AUS", "ENG", "FRA", "GER", "ITA", "RUS", "TUR"]
 
 DEFAULT_COLOR_PALETTE = "colorblind"

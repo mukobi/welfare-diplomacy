@@ -5,6 +5,7 @@ Charts for Same Policy experiments.
 import os
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -19,6 +20,7 @@ from chart_utils import (
     initialize_plot_default,
     save_plot,
     get_results_full_path,
+    stderr,
 )
 
 INPUT_FILES_MODELS = [
@@ -104,6 +106,33 @@ def main() -> None:
     # Print average _progress/percent_done for each agent_model
     print(f"Average _progress/percent_done per agent_model:")
     print(df_models.groupby(["agent_model"])["_progress/percent_done"].mean())
+
+    # Print table of mean and stdderr for each benchmark metric (basic competence components and nash welfare)
+    print("\nTable of mean and stdderr for each benchmark metric:")
+    for model_name in MODEL_ORDER:
+        if any([name in model_name for name in ["Exploiter", "Optimal", "Random"]]):
+            continue
+        # Filter to the runs with this model
+        df_model = df_models[df_models["agent_model"] == model_name]
+        # Print the mean and stdderr for each metric
+        # Fraction of centers owned is conquest/centers_owned_ratio
+        fraction_centers_owned_values = df_model["conquest/centers_owned_ratio"]
+        # Fraction of valid orders is orders/game_valid_ratio
+        fraction_valid_orders_values = df_model["orders/game_valid_ratio"]
+        # valid JSON is model/game_completion_non_error_ratio
+        fraction_valid_json_values = df_model["model/game_completion_non_error_ratio"]
+        # Competence score is benchmark/competence_score
+        competence_score_values = df_model["benchmark/competence_score"]
+        # Nash welfare is benchmark/nash_social_welfare_global
+        nash_welfare_values = df_model["benchmark/nash_social_welfare_global"]
+
+        # Print the mean and stdderr for each metric as latex
+        # correct JSON, then valid orders, then fraction SCs, then competence, the welfare
+        model_name_no_newline = model_name.replace("\n", " ")
+        print(
+            f"\t{model_name_no_newline} & {np.mean(fraction_valid_json_values):.3f} $\\pm$ {stderr(fraction_valid_json_values):.3f} & {np.mean(fraction_valid_orders_values):.3f} $\\pm$ {stderr(fraction_valid_orders_values):.3f} & {np.mean(fraction_centers_owned_values):.3f} $\\pm$ {stderr(fraction_centers_owned_values):.3f} & {np.mean(competence_score_values):.3f} $\\pm$ {stderr(competence_score_values):.3f} & {np.mean(nash_welfare_values):.3f} $\\pm$ {stderr(nash_welfare_values):.3f} \\\\[2.5pt]"
+        )
+        print("\t\hline")
 
     # Plot a bunch of different bar graphs for different metrics
     for (
