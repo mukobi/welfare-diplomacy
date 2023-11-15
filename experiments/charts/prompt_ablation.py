@@ -196,8 +196,9 @@ def main() -> None:
             plt.ylabel(y_axis_label)
             title = f"{y_label} by Prompt Ablation ({model_name})"
             if "GPT-4" in model_name:
-                # 2 lines
-                title = title.replace(" by", "\nby")
+                # Split to 2 lines
+                split_word = "Prompt"  # if "Welfare" in title else "Ablation"
+                title = title.replace(f" {split_word}", f"\n{split_word}")
             plt.title(title)
 
             # Set y bounds
